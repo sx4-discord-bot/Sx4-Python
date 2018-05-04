@@ -1,0 +1,77 @@
+{
+    "items" : [],
+    "picitems" : [
+        {
+            "durability" : 15,
+            "name" : "Wooden Pickaxe",
+            "price" : 250,
+            "multiplier": 6,
+            "rand_max" : 25,
+            "rand_min" : 15
+        },
+        {
+            "durability" : 25,
+            "name" : "Stone Pickaxe",
+            "price" : 800,
+            "multiplier": 5,
+            "rand_max" : 45,
+            "rand_min" : 30
+        },
+        {
+            "durability" : 35,
+            "name" : "Copper Pickaxe",
+            "price" : 1500,
+            "multiplier": 4,
+            "rand_max" : 60,
+            "rand_min" : 40
+        },
+        {
+            "durability" : 35,
+            "name" : "Bronze Pickaxe",
+            "multiplier": 3,
+            "price" : 2250,
+            "rand_max" : 72,
+            "rand_min" : 60
+        },
+        {
+            "durability" : 15,
+            "name" : "Gold Pickaxe",
+            "price" : 5000,
+            "multiplier": 2,
+            "rand_max" : 400,
+            "rand_min" : 250
+        },
+        {
+            "durability" : 60,
+            "name" : "Iron Pickaxe",
+            "price" : 6000,
+            "multiplier": 1,
+            "rand_max" : 150,
+            "rand_min" : 98
+        },
+        {
+            "durability" : 200,
+            "name" : "Titanium Pickaxe",
+            "price" : 10000,
+            "multiplier": 0.75,
+            "rand_max" : 175,
+            "rand_min" : 100
+        },
+        {
+            "durability" : 20,
+            "name" : "Uranium Pickaxe",
+            "price" : 55000,
+            "multiplier": 0.5,
+            "rand_max" : 3100,
+            "rand_min" : 2600
+        },
+        {
+            "durability" : 1000,
+            "name" : "Sx4 Pickaxe",
+            "price" : 1000000,
+            "multiplier": 0.25,
+            "rand_max" : 1500,
+            "rand_min" : 1200
+        }
+    ]
+}

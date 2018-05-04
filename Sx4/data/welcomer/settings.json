@@ -1,0 +1,2844 @@
+{
+    "110373943822540800" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "151618363490172928" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "206162353161502720" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "214510167209803778" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "218830637639925760" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "239754635529682945" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "240764269933756427" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "244094729023651841" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "244559473522376705" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "250077995543298048" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "254998130532155394" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "256797876099743744" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "257519942474268672" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "264445053596991498" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "271098974608424970" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "277414899607666688" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "277584869201018881" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "284420904975597569" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "284717379458695169" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "288707765495398402" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "292615421855662081" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "294291760195174401" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "299779817400958977" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "302905836450217994" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "308353898400186368" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "310444752900456448" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "314670358286434304" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "315482373506727936" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "315949332123615234" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "322141004679610380" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "322581089191460865" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "322585035762827265" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "322686417295900673" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "323091323504689162" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "324925691483127810" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "325096365917077515" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "325894281275637760" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "326352658644467712" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "327231967395315712" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "328072545595293696" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "330399610273136641" : {
+        "channel" : "330399610273136641",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Check out <#401158244283842571>  to see if your question is answered already and go to <#333244884687257601> if you need any help! We now have **{server.members}** members \ud83c\udf89",
+        "message-leave" : "Goodbye **{user.name}** \ud83d\udc4b",
+        "toggle" : true
+    },
+    "333459043610001418" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "333964761912049664" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "335405526806560769" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "336597544874541068" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "338343418457489409" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "338686191727542272" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "339529527963156480" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "341530103970267158" : {
+        "channel" : "429259068180398092",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}** stay updated in <#429259576064475136>.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "342430833791074314" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "342494708779581441" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "342829390947680263" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "342869615262564353" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "343028136679702548" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "345056552056651776" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "347267863222157312" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "348066703193800705" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "349985715800637440" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "350390984678572032" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "351260742214746115" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "351783985392779266" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "351848691939672067" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "351955325827416065" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "352715051200675850" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "353176252594520076" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "354233964174770178" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "354745025386643458" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "356823014676889600" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "357249897596190721" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "357568148158939136" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "357959778745712651" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "359776839222427649" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "359801125882298378" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "359917882978598913" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "360382189705232395" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "361397414223020034" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "363203853853786123" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "364889823049154571" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "365141135594881024" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "365721689365020672" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "366556618604937216" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "367039083605917697" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "367095796950106112" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "368678697059745792" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "368766164735623170" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "368867694436417548" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "369232061640474637" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "369324885677309952" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "369539613662117888" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "371054495637045248" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "371284753976131596" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "374665900772687872" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "375285453336870922" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "376752913306877952" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "377606322935300096" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "377951588922425345" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "378920287221186580" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "379016964443471885" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "379040054951018497" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "380432344458461184" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "380722981430886402" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "381042391416832001" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "381150170248642560" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "381208068140302346" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "381360725857140737" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "382843125053259776" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "382940454896795648" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "382982360301305867" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "383531174456328202" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "384233767474036736" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "384297983094554634" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "384488674060009503" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "384774927842017299" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "384884562582437889" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "385084015415263234" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "385902499380461569" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "386992670184046614" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "387673294179926020" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "388069891334340609" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "388878006111961101" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "388957177295011840" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "388969043635208203" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "389244263986233344" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "390259189470986240" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "390304674349318149" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "390672242268438540" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "391459903358894090" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "391708913776721920" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "391903083375886337" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "392291601600479262" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "392389903113125898" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "392611410342838274" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "392951184601907200" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "393254638033305600" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "393909967314354176" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "394094417885134849" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "394139759020081152" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "394319042908913675" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "396242876155166720" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "396269237804728321" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "396308628992294922" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "396422918642335744" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "398377621211316225" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "398482808512708608" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "398628890341277706" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "398833344995000320" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "398864579603464192" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "399327825301078031" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "399432761758318592" : {
+        "channel" : "429259068180398092",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}** stay updated in <#429259576064475136>.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "399977462097903627" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "399993520359997461" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "400157836715360288" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "400727818742530069" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "400943165726785547" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "401156314262274058" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "401448855998169088" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "401734707009683466" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "402140825720455178" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "402189236608172041" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "402198208652247040" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "402247338011394059" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "402267353447923714" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "402635424574734336" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "402880740444078083" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "402938329227591681" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "403096579503947795" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "403192790462496778" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "403297714848137236" : {
+        "channel" : "429259068180398092",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}** stay updated in <#429259576064475136>.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "403345028942135296" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "403937426118017046" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "403954165501657090" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "404015858046992386" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "404036252065726486" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "404218116776656906" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "404327416597708810" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "404644213364359188" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "405490780942106635" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "405801380113154069" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "405801751824826368" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "406043511008264192" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "406155576150589452" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "406252115518816267" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "406393556618575874" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "406611152341303307" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "406843297584119809" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "406845254038323211" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "407036343558995969" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "407109610369974272" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "407205684355268609" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "407282714295795713" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "407309564732506112" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "407608007132971009" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "407670254177615892" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "407886634634313739" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "408411717391876099" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "408440273413341196" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "408444022194176001" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "408595815464960000" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "408634218332291083" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "409301824135233546" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "409370283468914688" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "409404592493953045" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "409453680992190464" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "409465522963480599" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "409488556101337103" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "409563391787794445" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "409843418471071745" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "409876317312647168" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "410399641759121409" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "410792814595670016" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "410801864141963266" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "410846246027395082" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "411062896332898305" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "411507847847739392" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "412018157088145408" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "412105171443646464" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "412268478628888577" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "412476745787375648" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "412774244997398539" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "412957048754667525" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "413042483660849172" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "413327587293790228" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "413658888760721411" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "413808761543852032" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "414037735473676288" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "414291887856287744" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "414390475173396481" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "414420187476131853" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "414623799242129421" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "414705159864713216" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "414842374041108481" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "414993950961565697" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "415006600873377794" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "415034786248130570" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "415326819856941056" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "415478578210275328" : {
+        "channel" : "429259068180398092",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}** stay updated in <#429259576064475136>.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "415560693232828429" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "415577071272722435" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "415607279929393165" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "415715328891420674" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "415893235412631573" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "415924700976513046" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "416193449281454080" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "416356864117440512" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "416525790532993025" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "416638064195141672" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "416645632045088768" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "416700403938361365" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "416757490110169088" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "416894216342470657" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "417008805294112779" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "417131675701477386" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "417158411604590592" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "417226300038578176" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "417309144538939392" : {
+        "channel" : "429259068180398092",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}** stay updated in <#429259576064475136>.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "417428391508180996" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "417675574966878209" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "417719351836278794" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "418149320693645314" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "418342435542794241" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "418380327233257482" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "418560634288865281" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "418667371742363650" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "418803687054639114" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "418957578895360001" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "419862194889424919" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "419890468172857355" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "420191280471998484" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "420359290646429700" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "420676287443763211" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "420708727146938385" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "420995609873612800" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "421023795717865484" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "421051549062791178" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "421193607924416514" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "421861757531717634" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "421906537796337674" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "422452739537240066" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "422492151201660928" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "422499645022011412" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "423080785378279435" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "423132345118490634" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "423417884132245514" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "423576753588404225" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "423607891090604043" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "423628488961163275" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "423634969215369219" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "423689840161325057" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "424005720594317323" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "424139196270247937" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "424172203127603200" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "424259924831502336" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "425173141355233281" : {
+        "channel" : "429259068180398092",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}** stay updated in <#429259576064475136>.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "425247151849996288" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "425321535176310785" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "425594116022206464" : {
+        "channel" : "404036253068296193",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "425861294839562241" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "426010192715710466" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "426127961138397187" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "426296780930416640" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "426680388002250753" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "426774503306166282" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "426984132967530497" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "427003698267553792" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "427113038408056842" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "427145578846355456" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "427343307488755723" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "427539247881388033" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "428260691150110730" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "428557286999588874" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "428652668882255872" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "428670541080297482" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "428681800483602433" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "428696949680635914" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "428868745306439700" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "429095981968261120" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "429259068180398090" : {
+        "channel" : "429259068180398092",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}** stay updated in <#429259576064475136>.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "429376685264207872" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "429440839379582987" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "429614966824239104" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "429674540046614548" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "429677829093982218" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "429724996047208458" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "430221461555380238" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "430272629279293441" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "430461599141330944" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "430622464582615051" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "430824568492392458" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "430959258083917826" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "431121168020406306" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "431139604750401536" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "431258127497822209" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "431451172147167254" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "431465481313058816" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "431474107348156417" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "431482711224483850" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "431530133598371843" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "431552655886909460" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "431600572861513729" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "431773794017738764" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "431805914803077120" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "431808234228023306" : {
+        "channel" : "431985629753114635",
+        "dm" : false,
+        "message" : "Welcome to the Aaron team channel, {user.mention}, There is now {server.members}",
+        "message-leave" : "Bye, {user.mention}.",
+        "toggle" : true
+    },
+    "431874215600455691" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "432161915620425730" : {
+        "channel" : null,
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : false
+    },
+    "432262347751555087" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "432588143397699602" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "432737057245364226" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "432954122329653248" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "433408392468627466" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "433620097983315968" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "433701275339718671" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "433951397621530645" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "433979644015017984" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "434094033040834571" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "434130291305611264" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "434400559382921217" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "434527223933042689" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "434538113222574080" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "434789821160882176" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "434848168945909770" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "434905837518192640" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "434940133192499203" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "435116355331555348" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "435169473985511424" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "435441923315204096" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "435445876526284806" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "435456021650210830" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "435550247394082816" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "435711781084856330" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "435863522111389696" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "435937610582458399" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "435991418851295233" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "436342556037742592" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "436734182236880896" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "437076781539917825" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "437278411652595724" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "437316752557473803" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "437390797160185861" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "437468949202862082" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "437675991003955212" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "437731206675562499" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "437778873095290892" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "437891280824041474" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "438059408165961739" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "438323271692320768" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "438351480156585986" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "438705421520338957" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "438717602533998594" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "438735195126890516" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "438833633177108492" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "438839154424676352" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "438926224287334400" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "438932470163832832" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "439038494841634827" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "439107391695486976" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "439144631452565507" : {
+        "channel" : "438926224287334402",
+        "dm" : false,
+        "message" : "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
+        "message-leave" : "**{user.name}** has just left **{server}**. Bye **{user.name}**!",
+        "toggle" : true
+    },
+    "439417024498892810" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "439449339283111956" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "439726763988353024" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "439798983183826945" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "439806498860957697" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "439821581573947392" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "440415654760153088" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "440568643848372254" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "440680456095137792" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    },
+    "440692013864845312" : {
+        "channel" : "434166540267552780",
+        "dm" : false,
+        "message" : "Welcome to PrimalPVM! Please feel free to chat with other Members and Staff! Remember to check out our discord rules. Enjoy your stay!",
+        "message-leave" : "We valued your stay! We hope to see you soon!",
+        "toggle" : false
+    }
+}

@@ -1,0 +1,167 @@
+{
+    "110373943822540800" : {
+        "case" : true,
+        "toggle" : true
+    },
+    "284420904975597569" : {
+        "case" : true,
+        "trigger" : {
+            "phoenix" : {
+                "response" : "\ud83c\udd92 \ud83c\udde7 \ud83c\uddee \ud83c\uddf7 \ud83c\udde7"
+            }
+        }
+    },
+    "330399610273136641" : {
+        "case" : false,
+        "toggle" : true,
+        "trigger" : {
+            "Help" : {
+                "response" : "Provide a question rather than just asking for help"
+            },
+            "help?" : {
+                "response" : "Provide a question rather than just asking for help"
+            },
+            "how to invite Sx4?" : {
+                "response" : "Use ?invite"
+            },
+            "neweco" : {
+                "response" : "You can see all the new commands in the `help` command under the economy section https://cdn.discordapp.com/attachments/344091594972069888/431093863520665630/unknown.png"
+            },
+            "please help me" : {
+                "response" : "We will assist you, please be patient."
+            }
+        }
+    },
+    "381150170248642560" : {
+        "case" : true,
+        "toggle" : true,
+        "trigger" : {
+            "<@!412347257233604609>" : {
+                "response" : "m!"
+            },
+            "<@412347257233604609>" : {
+                "response" : "m!"
+            },
+            "DankBonkRipper" : {
+                "response" : "Massive Faggot"
+            },
+            "Deficio" : {
+                "response" : "**__Our Danish king and leader__**"
+            },
+            "Dyynamic" : {
+                "response" : "*super meanie baka*"
+            },
+            "Joakim" : {
+                "response" : "**__Our lord and saviour__**"
+            },
+            "Nexus" : {
+                "response" : "btec Shea"
+            },
+            "Saba" : {
+                "response" : "Sahba*"
+            },
+            "Shea" : {
+                "response" : "**My Dad**"
+            },
+            "Toby" : {
+                "response" : "There is always a way to virusspam if your name is Toby \ud83d\ude24"
+            },
+            "Victor" : {
+                "response" : "doesn't know what he's doing"
+            },
+            "ash" : {
+                "response" : "giant pink glittery dick"
+            },
+            "coke" : {
+                "response" : "I love mwah"
+            },
+            "dom" : {
+                "response" : "ill beat you up cunt"
+            },
+            "dyy" : {
+                "response" : "<:gay:429292670519869442>"
+            },
+            "epilepsy" : {
+                "response" : "<a:epilepsy:410855001326485504><a:epilepsy:410855001326485504><a:epilepsy:410855001326485504><a:epilepsy:410855001326485504><a:epilepsy:410855001326485504><a:epilepsy:410855001326485504><a:epilepsy:410855001326485504><a:epilepsy:410855001326485504>"
+            },
+            "fuzzy" : {
+                "response" : "hoe"
+            },
+            "mwah" : {
+                "response" : "grand ty"
+            },
+            "negus" : {
+                "response" : "shit cunt #1"
+            },
+            "nexus" : {
+                "response" : "**Nexus is my Daddy**... F**k Shea"
+            },
+            "one" : {
+                "response" : "two"
+            },
+            "rival" : {
+                "response" : "console player"
+            },
+            "sheepy" : {
+                "response" : "\ud83c\uddf3 \ud83c\uddf4 \ud83c\uddf9   \ud83c\udde6   \ud83c\uddf8 \ud83c\udded \ud83c\uddea \ud83c\uddea \ud83c\uddf5"
+            },
+            "something" : {
+                "response" : "..."
+            },
+            "test" : {
+                "response" : "dbd"
+            },
+            "tobeh" : {
+                "response" : "I like ***P e n i s***"
+            },
+            "toby" : {
+                "response" : "There is always a way to virusspam if your name is Toby \ud83d\ude24"
+            },
+            "two" : {
+                "response" : "one"
+            },
+            "victor" : {
+                "response" : "is a retard"
+            }
+        }
+    },
+    "393815353664471041" : {
+        "case" : true,
+        "toggle" : true
+    },
+    "399327825301078031" : {
+        "case" : true,
+        "toggle" : true
+    },
+    "403954165501657090" : {
+        "case" : true,
+        "toggle" : true
+    },
+    "417309144538939392" : {
+        "case" : true,
+        "trigger" : {
+            "Shea" : {
+                "response" : "My Dad"
+            },
+            "Toby" : {
+                "response" : "Retard"
+            },
+            "joakim" : {
+                "response" : "our lord and saviour"
+            }
+        }
+    },
+    "429674540046614548" : {
+        "case" : true,
+        "toggle" : true
+    },
+    "432262347751555087" : {
+        "case" : false,
+        "toggle" : true,
+        "trigger" : {
+            "tag" : {
+                "response" : "T\u0245"
+            }
+        }
+    }
+}

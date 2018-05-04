@@ -1,0 +1,53 @@
+{
+    "factory" : [
+        {
+            "item" : "Coal",
+            "name" : "Coal Factory",
+            "price" : 200,
+            "rand_max" : 125,
+            "rand_min" : 75
+        },
+        {
+            "item" : "Shoe",
+            "name" : "Shoe Factory",
+            "price" : 400,
+            "rand_max" : 30,
+            "rand_min" : 10
+        },
+        {
+            "item" : "Iron",
+            "name" : "Iron Factory",
+            "price" : 100,
+            "rand_max" : 200,
+            "rand_min" : 150
+        },
+        {
+            "item" : "Diamond",
+            "name" : "Diamond Factory",
+            "price" : 5,
+            "rand_max" : 30000,
+            "rand_min" : 10000
+        },
+        {
+            "item" : "Gold",
+            "name" : "Gold Factory",
+            "price" : 40,
+            "rand_max" : 320,
+            "rand_min" : 250
+        },
+        {
+            "item" : "Titanium",
+            "name" : "Titanium Factory",
+            "price" : 20,
+            "rand_max" : 450,
+            "rand_min" : 350
+        },
+        {
+            "item" : "Oil",
+            "name" : "Oil Factory",
+            "price" : 75,
+            "rand_max" : 300,
+            "rand_min" : 200
+        }
+    ]
+}

@@ -1,0 +1,2044 @@
+{
+    "330399610273136641" : {
+        "case" : {
+            "1" : {
+                "action" : "Ban",
+                "message" : "433915077175803904",
+                "mod" : "153286414212005888",
+                "reason" : "\ud83d\udc4b\ud83c\udffe",
+                "user" : "314175997836787713"
+            },
+            "2" : {
+                "action" : "Warn",
+                "message" : "435254713634783242",
+                "mod" : "290850860806832128",
+                "reason" : "chatting in <#333244884687257601> and being disrespectful",
+                "user" : "242201856980287490"
+            },
+            "3" : {
+                "action" : "Ban",
+                "message" : "437345855276580885",
+                "mod" : "402557516728369153",
+                "reason" : "tried to advertise then left",
+                "user" : "375686984426848257"
+            },
+            "4" : {
+                "action" : "Warn",
+                "message" : "437549810229313537",
+                "mod" : "402557516728369153",
+                "reason" : "pinging notified",
+                "user" : "406300208910041098"
+            },
+            "5" : {
+                "action" : "Mute",
+                "message" : "437693218990063616",
+                "mod" : "290850860806832128",
+                "reason" : "act mature",
+                "user" : "406300208910041098"
+            },
+            "6" : {
+                "action" : "Unmute",
+                "message" : "437695737430671387",
+                "mod" : "290850860806832128",
+                "reason" : "act mature",
+                "user" : "406300208910041098"
+            },
+            "7" : {
+                "action" : "Kick",
+                "message" : "439145483425021953",
+                "mod" : "402557516728369153",
+                "reason" : "Don't need nadeko anymore",
+                "user" : "116275390695079945"
+            },
+            "8" : {
+                "action" : "Warn",
+                "message" : "440210539474321419",
+                "mod" : "290850860806832128",
+                "reason" : "abusing contact, please use the command correctly",
+                "user" : "410362501222367232"
+            }
+        },
+        "case#" : 8,
+        "channel" : "432898619943813132",
+        "toggle" : true
+    },
+    "379040054951018497" : {
+        "case" : {},
+        "case#" : 0,
+        "channel" : null,
+        "toggle" : false
+    },
+    "381150170248642560" : {
+        "case" : {
+            "1" : {
+                "action" : "Mute",
+                "message" : "433233447037960193",
+                "mod" : "402557516728369153",
+                "reason" : "test",
+                "user" : "151766611097944064"
+            },
+            "10" : {
+                "action" : "Unmute",
+                "message" : "433647468740345866",
+                "mod" : "414634093100400640",
+                "reason" : null,
+                "user" : "202891513145851904"
+            },
+            "100" : {
+                "action" : "Ban",
+                "message" : "437526724859789323",
+                "mod" : "410473941274984448",
+                "reason" : "please stfu :>",
+                "user" : "418099512519950346"
+            },
+            "101" : {
+                "action" : "Ban",
+                "message" : "437539971839164416",
+                "mod" : "402557516728369153",
+                "reason" : "ads",
+                "user" : "244397405846372354"
+            },
+            "102" : {
+                "action" : "Ban",
+                "message" : "437581418940465152",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "188614474167484416"
+            },
+            "103" : {
+                "action" : "Unban",
+                "message" : "437581513547055104",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "188614474167484416"
+            },
+            "104" : {
+                "action" : "Mute",
+                "message" : "437600840682045440",
+                "mod" : "218871068973072384",
+                "reason" : null,
+                "user" : "290491115830771713"
+            },
+            "105" : {
+                "action" : "Unmute",
+                "message" : "437601095519567872",
+                "mod" : "325196085159002112",
+                "reason" : "Time limit served",
+                "user" : "290491115830771713"
+            },
+            "106" : {
+                "action" : "Ban",
+                "message" : "437655911033733120",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "329458256428793856"
+            },
+            "107" : {
+                "action" : "Ban",
+                "message" : "437655944244232192",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "164150819678060544"
+            },
+            "108" : {
+                "action" : "Ban",
+                "message" : "437655977647538178",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "243521301510225920"
+            },
+            "109" : {
+                "action" : "Ban",
+                "message" : "437656007213318145",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "258025938627985420"
+            },
+            "11" : {
+                "action" : "Warn",
+                "message" : "433665564674883634",
+                "mod" : "414634093100400640",
+                "reason" : "don't spam",
+                "user" : "399800007236124672"
+            },
+            "110" : {
+                "action" : "Ban",
+                "message" : "437656039312064512",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "354135718131662850"
+            },
+            "111" : {
+                "action" : "Ban",
+                "message" : "437656070618480660",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "241735290035634178"
+            },
+            "112" : {
+                "action" : "Ban",
+                "message" : "437656121902104596",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "251932048258891777"
+            },
+            "113" : {
+                "action" : "Ban",
+                "message" : "437656184556617728",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "392881746393169921"
+            },
+            "114" : {
+                "action" : "Ban",
+                "message" : "437667797598994432",
+                "mod" : "186520259992354818",
+                "reason" : null,
+                "user" : "220222403907682304"
+            },
+            "115" : {
+                "action" : "Unban",
+                "message" : "437669232935698443",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "220222403907682304"
+            },
+            "116" : {
+                "action" : "Ban",
+                "message" : "437676324174168068",
+                "mod" : "238489589419999242",
+                "reason" : null,
+                "user" : "156162196806696961"
+            },
+            "117" : {
+                "action" : "Ban",
+                "message" : "437684569576046602",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "437660101969575956"
+            },
+            "118" : {
+                "action" : "Ban",
+                "message" : "437689138443976705",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "437660101969575956"
+            },
+            "119" : {
+                "action" : "Warn",
+                "message" : "437692014138753024",
+                "mod" : "410473941274984448",
+                "reason" : "do not spam",
+                "user" : "329051532781813761"
+            },
+            "12" : {
+                "action" : "Warn",
+                "message" : "433690101000699916",
+                "mod" : "129402695898365952",
+                "reason" : "concerning behavior",
+                "user" : "154962464985841665"
+            },
+            "120" : {
+                "action" : "Kick",
+                "message" : "437692561252024343",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "329051532781813761"
+            },
+            "121" : {
+                "action" : "Warn",
+                "message" : "437692685780779008",
+                "mod" : "410473941274984448",
+                "reason" : "dont spam",
+                "user" : "300324590599798787"
+            },
+            "122" : {
+                "action" : "Ban",
+                "message" : "437764519289421834",
+                "mod" : "238489589419999242",
+                "reason" : "Account was made on 4/20. Account checked and banned on 4/22.",
+                "user" : "304724019872268289"
+            },
+            "123" : {
+                "action" : "Mute",
+                "message" : "437765528606736384",
+                "mod" : "238489589419999242",
+                "reason" : "no spam",
+                "user" : "180773680253632513"
+            },
+            "124" : {
+                "action" : "Unmute",
+                "message" : "437768046963326977",
+                "mod" : "238489589419999242",
+                "reason" : "no spam",
+                "user" : "180773680253632513"
+            },
+            "125" : {
+                "action" : "Ban",
+                "message" : "437775194623574026",
+                "mod" : "238489589419999242",
+                "reason" : null,
+                "user" : "437762059116085258"
+            },
+            "126" : {
+                "action" : "Ban",
+                "message" : "437786976675037206",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "437660101969575956"
+            },
+            "127" : {
+                "action" : "Ban",
+                "message" : "437787061018296330",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "437660101969575956"
+            },
+            "128" : {
+                "action" : "Ban",
+                "message" : "437926218726244358",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "148299077178753024"
+            },
+            "129" : {
+                "action" : "Ban",
+                "message" : "437927078365626378",
+                "mod" : "346138549088944129",
+                "reason" : "rude to staff",
+                "user" : "348591059862945792"
+            },
+            "13" : {
+                "action" : "Ban",
+                "message" : "433691934939414539",
+                "mod" : "129402695898365952",
+                "reason" : "Psycho sent pics of himself with gun pointed to head, sent female nudes to other servers without permission, harassed people demanding pity, then responded rudely to staff",
+                "user" : "154962464985841665"
+            },
+            "130" : {
+                "action" : "Ban",
+                "message" : "437961305970966528",
+                "mod" : "238489589419999242",
+                "reason" : "Eden claims that this user nuked savvy's server with a faek Tatsumaki bot.",
+                "user" : "428743826006474753"
+            },
+            "131" : {
+                "action" : "Ban",
+                "message" : "437961461705342976",
+                "mod" : "238489589419999242",
+                "reason" : "Fake Tatsumaki bot claimed to be used for nuking a server.",
+                "user" : "435955724099649577"
+            },
+            "132" : {
+                "action" : "Mute",
+                "message" : "437982125736853514",
+                "mod" : "190551803669118976",
+                "reason" : "NSFW in general",
+                "user" : "375648551323172873"
+            },
+            "133" : {
+                "action" : "Warn",
+                "message" : "437999186542198785",
+                "mod" : "346138549088944129",
+                "reason" : "disrespectful towards staff",
+                "user" : "290682765114867715"
+            },
+            "134" : {
+                "action" : "Kick",
+                "message" : "438000437115879445",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "290682765114867715"
+            },
+            "135" : {
+                "action" : "Warn",
+                "message" : "438021759535677452",
+                "mod" : "436261619836649472",
+                "reason" : null,
+                "user" : "164436189745512449"
+            },
+            "136" : {
+                "action" : "Mute",
+                "message" : "438048726850994178",
+                "mod" : "141665478010601472",
+                "reason" : null,
+                "user" : "164436189745512449"
+            },
+            "137" : {
+                "action" : "Unmute",
+                "message" : "438051245253722113",
+                "mod" : "141665478010601472",
+                "reason" : null,
+                "user" : "164436189745512449"
+            },
+            "138" : {
+                "action" : "Kick",
+                "message" : "438073338963689482",
+                "mod" : "303378891597414401",
+                "reason" : null,
+                "user" : "212712525844709376"
+            },
+            "139" : {
+                "action" : "Mute",
+                "message" : "438077317382668311",
+                "mod" : "186520259992354818",
+                "reason" : null,
+                "user" : "375648551323172873"
+            },
+            "14" : {
+                "action" : "Warn",
+                "message" : "433698848435601418",
+                "mod" : "123891817081995265",
+                "reason" : "It is nsfw if you look carefully.",
+                "user" : "346138549088944129"
+            },
+            "140" : {
+                "action" : "Ban",
+                "message" : "438371117129007114",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "438364620332466176"
+            },
+            "141" : {
+                "action" : "Ban",
+                "message" : "438404996409589760",
+                "mod" : "123891817081995265",
+                "reason" : "Requested for ban \"inactive\"",
+                "user" : "226381347738877954"
+            },
+            "142" : {
+                "action" : "Unban",
+                "message" : "438406014644125696",
+                "mod" : "123891817081995265",
+                "reason" : null,
+                "user" : "226381347738877954"
+            },
+            "143" : {
+                "action" : "Ban",
+                "message" : "438437756679487499",
+                "mod" : "402557516728369153",
+                "reason" : "soooo ban",
+                "user" : "252592925207298048"
+            },
+            "144" : {
+                "action" : "Ban",
+                "message" : "438507591484571668",
+                "mod" : "238489589419999242",
+                "reason" : "Continuous disrespect, starting drama, and being verrryy rude!!!",
+                "user" : "212712525844709376"
+            },
+            "145" : {
+                "action" : "Warn",
+                "message" : "438520579528851457",
+                "mod" : "238489589419999242",
+                "reason" : "disrespect",
+                "user" : "315299119864217610"
+            },
+            "146" : {
+                "action" : "Mute",
+                "message" : "438523531945443328",
+                "mod" : "346138549088944129",
+                "reason" : "annoying",
+                "user" : "315299119864217610"
+            },
+            "147" : {
+                "action" : "Ban",
+                "message" : "438524122411302912",
+                "mod" : "238489589419999242",
+                "reason" : "Disrespect, rudeness towards staff, and other members, causing drama.",
+                "user" : "315299119864217610"
+            },
+            "148" : {
+                "action" : "Ban",
+                "message" : "438530827765153793",
+                "mod" : "304022209792311306",
+                "reason" : null,
+                "user" : "370390086610583552"
+            },
+            "149" : {
+                "action" : "Warn",
+                "message" : "438565500092416010",
+                "mod" : "129402695898365952",
+                "reason" : "nsfw",
+                "user" : "379343874251948034"
+            },
+            "15" : {
+                "action" : "Ban",
+                "message" : "433769748308819969",
+                "mod" : "402557516728369153",
+                "reason" : "dm ads",
+                "user" : "384519686001262593"
+            },
+            "150" : {
+                "action" : "Ban",
+                "message" : "438650646468493313",
+                "mod" : "304022209792311306",
+                "reason" : null,
+                "user" : "430291786041262082"
+            },
+            "151" : {
+                "action" : "Warn",
+                "message" : "438665320916320256",
+                "mod" : "123891817081995265",
+                "reason" : "Religious talks.",
+                "user" : "205234539243503616"
+            },
+            "152" : {
+                "action" : "Warn",
+                "message" : "438666862449131551",
+                "mod" : "123891817081995265",
+                "reason" : "Disrespecting members.",
+                "user" : "264270796942213131"
+            },
+            "153" : {
+                "action" : "Ban",
+                "message" : "438667426268446730",
+                "mod" : "123891817081995265",
+                "reason" : "I believe he refused to stop his actions which breaks a rule about religious",
+                "user" : "205234539243503616"
+            },
+            "154" : {
+                "action" : "Ban",
+                "message" : "438667572267712520",
+                "mod" : "123891817081995265",
+                "reason" : "Same action as ^ where he is disrespecting",
+                "user" : "264270796942213131"
+            },
+            "155" : {
+                "action" : "Warn",
+                "message" : "438668260909514762",
+                "mod" : "218871068973072384",
+                "reason" : "spam",
+                "user" : "393631389779755008"
+            },
+            "156" : {
+                "action" : "Kick",
+                "message" : "438799102038376454",
+                "mod" : "402557516728369153",
+                "reason" : "Disrespecting staff/partner team",
+                "user" : "329755090082725891"
+            },
+            "157" : {
+                "action" : "Ban",
+                "message" : "438802546165809184",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "329755090082725891"
+            },
+            "158" : {
+                "action" : "Ban",
+                "message" : "438903968073252864",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "434596155045838868"
+            },
+            "159" : {
+                "action" : "Kick",
+                "message" : "439131914444603394",
+                "mod" : "303378891597414401",
+                "reason" : null,
+                "user" : "220230087016972288"
+            },
+            "16" : {
+                "action" : "Ban",
+                "message" : "433996371658539008",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "287262609923768320"
+            },
+            "160" : {
+                "action" : "Mute",
+                "message" : "439137096264056853",
+                "mod" : "346138549088944129",
+                "reason" : "annoying",
+                "user" : "180773680253632513"
+            },
+            "161" : {
+                "action" : "Unmute",
+                "message" : "439138360628346880",
+                "mod" : "325196085159002112",
+                "reason" : "Time limit served",
+                "user" : "180773680253632513"
+            },
+            "162" : {
+                "action" : "Ban",
+                "message" : "439398119663337472",
+                "mod" : "402557516728369153",
+                "reason" : "advertising https://cdn.discordapp.com/attachments/439398034279890964/439398052533633034/Screenshot_2018-04-27-14-10-47.png",
+                "user" : "419846228638171147"
+            },
+            "163" : {
+                "action" : "Ban",
+                "message" : "439403772670902272",
+                "mod" : "190551803669118976",
+                "reason" : "http://prntscr.com/jatddu",
+                "user" : "349415125788131328"
+            },
+            "164" : {
+                "action" : "Ban",
+                "message" : "439470476167741451",
+                "mod" : "190551803669118976",
+                "reason" : "Get the fuck out of here https://cdn.discordapp.com/attachments/438805116989210634/439470394957889536/unknown.png",
+                "user" : "404921485304528916"
+            },
+            "165" : {
+                "action" : "Ban",
+                "message" : "439473920832307212",
+                "mod" : "186520259992354818",
+                "reason" : "this guy here has legit no braincells",
+                "user" : "247655326831083520"
+            },
+            "166" : {
+                "action" : "Warn",
+                "message" : "439477633915551745",
+                "mod" : "129402695898365952",
+                "reason" : "disrespecting staff",
+                "user" : "426760260506746882"
+            },
+            "167" : {
+                "action" : "Warn",
+                "message" : "439479072809156608",
+                "mod" : "402557516728369153",
+                "reason" : "don't even try",
+                "user" : "369205715669221396"
+            },
+            "168" : {
+                "action" : "Mute",
+                "message" : "439479176119058433",
+                "mod" : "129402695898365952",
+                "reason" : "stop calling me a stripper",
+                "user" : "426760260506746882"
+            },
+            "169" : {
+                "action" : "Kick",
+                "message" : "439479185145069579",
+                "mod" : "129402695898365952",
+                "reason" : "stop calling me a stripper",
+                "user" : "426760260506746882"
+            },
+            "17" : {
+                "action" : "Kick",
+                "message" : "434015787498340353",
+                "mod" : "123891817081995265",
+                "reason" : "Doesn't know how to leave servers, lol",
+                "user" : "218932513685372928"
+            },
+            "170" : {
+                "action" : "Ban",
+                "message" : "439482003574751232",
+                "mod" : "284235130913030157",
+                "reason" : "DM advertised and deleted link https://media.discordapp.net/attachments/439481063740276736/439481106547474432/unknown.png",
+                "user" : "404818811703787532"
+            },
+            "171" : {
+                "action" : "Ban",
+                "message" : "439576818924912645",
+                "mod" : "238489589419999242",
+                "reason" : "Recently made account",
+                "user" : "435066561670414336"
+            },
+            "172" : {
+                "action" : "Ban",
+                "message" : "439629723690074115",
+                "mod" : "238489589419999242",
+                "reason" : "Recently made account",
+                "user" : "407308330906812428"
+            },
+            "173" : {
+                "action" : "Mute",
+                "message" : "439658318198341642",
+                "mod" : "129402695898365952",
+                "reason" : "huge ass text wall",
+                "user" : "328325784634785795"
+            },
+            "174" : {
+                "action" : "Unmute",
+                "message" : "439660837968543744",
+                "mod" : "325196085159002112",
+                "reason" : "Time limit served",
+                "user" : "328325784634785795"
+            },
+            "175" : {
+                "action" : "Ban",
+                "message" : "439740077145456640",
+                "mod" : "186520259992354818",
+                "reason" : "layeen told me to",
+                "user" : "434049182228283407"
+            },
+            "176" : {
+                "action" : "Ban",
+                "message" : "439804470625435659",
+                "mod" : "393875674785382410",
+                "reason" : "\"I dislike u on so many levels x x x\"",
+                "user" : "202891513145851904"
+            },
+            "177" : {
+                "action" : "Unban",
+                "message" : "439805829974065172",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "202891513145851904"
+            },
+            "178" : {
+                "action" : "Ban",
+                "message" : "439818764674924554",
+                "mod" : "177737620959395840",
+                "reason" : null,
+                "user" : "220222403907682304"
+            },
+            "179" : {
+                "action" : "Kick",
+                "message" : "439877980995715072",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "426449570822619137"
+            },
+            "18" : {
+                "action" : "Warn",
+                "message" : "434099185256497152",
+                "mod" : "346138549088944129",
+                "reason" : "being racist",
+                "user" : "180773680253632513"
+            },
+            "180" : {
+                "action" : "Ban",
+                "message" : "439990633168502795",
+                "mod" : "304022209792311306",
+                "reason" : "constantly joining and leaving server and ghost pinging multiple people",
+                "user" : "272817997167722499"
+            },
+            "181" : {
+                "action" : "Ban",
+                "message" : "440075263506776064",
+                "mod" : "410473941274984448",
+                "reason" : "ops",
+                "user" : "329051532781813761"
+            },
+            "182" : {
+                "action" : "Unban",
+                "message" : "440075476183023638",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "329051532781813761"
+            },
+            "183" : {
+                "action" : "Warn",
+                "message" : "440109249234862080",
+                "mod" : "304022209792311306",
+                "reason" : "disrespect to staff",
+                "user" : "265526064434905089"
+            },
+            "184" : {
+                "action" : "Kick",
+                "message" : "440109359498788865",
+                "mod" : "303378891597414401",
+                "reason" : "on his period",
+                "user" : "265526064434905089"
+            },
+            "185" : {
+                "action" : "Kick",
+                "message" : "440110091086069770",
+                "mod" : "177737620959395840",
+                "reason" : "lies",
+                "user" : "265526064434905089"
+            },
+            "186" : {
+                "action" : "Ban",
+                "message" : "440111587030859796",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "265526064434905089"
+            },
+            "187" : {
+                "action" : "Ban",
+                "message" : "440149369719881739",
+                "mod" : "223424602150273024",
+                "reason" : null,
+                "user" : "151766611097944064"
+            },
+            "188" : {
+                "action" : "Ban",
+                "message" : "440217881020596224",
+                "mod" : "402557516728369153",
+                "reason" : "Advertising",
+                "user" : "404705944912789505"
+            },
+            "189" : {
+                "action" : "Ban",
+                "message" : "440229419366350868",
+                "mod" : "436261619836649472",
+                "reason" : "https://cdn.discordapp.com/attachments/439133340402974732/440229917599334401/unknown.png",
+                "user" : "351056724972666880"
+            },
+            "19" : {
+                "action" : "Ban",
+                "message" : "434135501633617941",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "319985709199130625"
+            },
+            "190" : {
+                "action" : "Ban",
+                "message" : "440250736241278976",
+                "mod" : "301651218030264320",
+                "reason" : "advertising",
+                "user" : "417266219167645708"
+            },
+            "191" : {
+                "action" : "Mute",
+                "message" : "440260841439363082",
+                "mod" : "436261619836649472",
+                "reason" : "Go <#417656413469278218>  don't use here",
+                "user" : "329051532781813761"
+            },
+            "192" : {
+                "action" : "Warn",
+                "message" : "440261046377119755",
+                "mod" : "123891817081995265",
+                "reason" : "Use <#417656413469278218>",
+                "user" : "373271242066886657"
+            },
+            "193" : {
+                "action" : "Unmute",
+                "message" : "440261141202075668",
+                "mod" : "218871068973072384",
+                "reason" : null,
+                "user" : "329051532781813761"
+            },
+            "194" : {
+                "action" : "Warn",
+                "message" : "440261832452603914",
+                "mod" : "123891817081995265",
+                "reason" : "Use <#417656413469278218>",
+                "user" : "296052620718505984"
+            },
+            "195" : {
+                "action" : "Ban",
+                "message" : "440264129308000257",
+                "mod" : "352072755061194752",
+                "reason" : "adv",
+                "user" : "241908030315298816"
+            },
+            "196" : {
+                "action" : "Warn",
+                "message" : "440269243422998529",
+                "mod" : "123891817081995265",
+                "reason" : "Can you please use <#398266229342863360> or <#425424268499746828> but not others?",
+                "user" : "414656519762739203"
+            },
+            "197" : {
+                "action" : "Ban",
+                "message" : "440271863290265600",
+                "mod" : "123891817081995265",
+                "reason" : "New to discord and server",
+                "user" : "438126814892785665"
+            },
+            "198" : {
+                "action" : "Warn",
+                "message" : "440339928912625686",
+                "mod" : "399232543800426506",
+                "reason" : "sexual harassment towards Niggette",
+                "user" : "375137041882677248"
+            },
+            "199" : {
+                "action" : "Mute",
+                "message" : "440340959058853889",
+                "mod" : "414634093100400640",
+                "reason" : "being annoying bitch",
+                "user" : "375137041882677248"
+            },
+            "2" : {
+                "action" : "Unmute",
+                "message" : "433233533918642176",
+                "mod" : "325196085159002112",
+                "reason" : "Time limit served",
+                "user" : "151766611097944064"
+            },
+            "20" : {
+                "action" : "Ban",
+                "message" : "434145596404662274",
+                "mod" : "402557516728369153",
+                "reason" : "dm ads",
+                "user" : "345889108859551745"
+            },
+            "200" : {
+                "action" : "Unmute",
+                "message" : "440343478145253376",
+                "mod" : "414634093100400640",
+                "reason" : "being annoying bitch",
+                "user" : "375137041882677248"
+            },
+            "201" : {
+                "action" : "Ban",
+                "message" : "440349321225830400",
+                "mod" : "238489589419999242",
+                "reason" : "Apart of spam raid, proof not provided due to quick actions and messages deleted",
+                "user" : "179398262514647051"
+            },
+            "202" : {
+                "action" : "Ban",
+                "message" : "440349391728017409",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "327220363559960578"
+            },
+            "203" : {
+                "action" : "Ban",
+                "message" : "440349443733061643",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "247935200728842241"
+            },
+            "204" : {
+                "action" : "Ban",
+                "message" : "440349469490282508",
+                "mod" : "238489589419999242",
+                "reason" : "Apart of a spam raid, proof not provided due to quick actions and messages deleted",
+                "user" : "288071398377783297"
+            },
+            "205" : {
+                "action" : "Ban",
+                "message" : "440349474611789825",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "247561052592668673"
+            },
+            "206" : {
+                "action" : "Ban",
+                "message" : "440349585651793921",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "321057740976029696"
+            },
+            "207" : {
+                "action" : "Ban",
+                "message" : "440349617784225792",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "280549188482367488"
+            },
+            "208" : {
+                "action" : "Warn",
+                "message" : "440516875152261121",
+                "mod" : "123891817081995265",
+                "reason" : "Please, do not consider of spamming to warn yourself.",
+                "user" : "223424602150273024"
+            },
+            "209" : {
+                "action" : "Kick",
+                "message" : "440518461698080779",
+                "mod" : "223424602150273024",
+                "reason" : null,
+                "user" : "289066747443675143"
+            },
+            "21" : {
+                "action" : "Kick",
+                "message" : "434361680957407262",
+                "mod" : "402557516728369153",
+                "reason" : "shit bot",
+                "user" : "398601531525562369"
+            },
+            "210" : {
+                "action" : "Ban",
+                "message" : "440528707682172949",
+                "mod" : "190551803669118976",
+                "reason" : "https://cdn.discordapp.com/attachments/438805116989210634/440528648957591556/unknown.png",
+                "user" : "434478974844928007"
+            },
+            "211" : {
+                "action" : "Warn",
+                "message" : "440558045211262986",
+                "mod" : "402557516728369153",
+                "reason" : "testy",
+                "user" : "223424602150273024"
+            },
+            "212" : {
+                "action" : "Warn",
+                "message" : "440558400498040852",
+                "mod" : "402557516728369153",
+                "reason" : "testy",
+                "user" : "223424602150273024"
+            },
+            "213" : {
+                "action" : "Mute",
+                "message" : "440558409851338763",
+                "mod" : "402557516728369153",
+                "reason" : "testy",
+                "user" : "223424602150273024"
+            },
+            "214" : {
+                "action" : "Warn",
+                "message" : "440559154533498880",
+                "mod" : "402557516728369153",
+                "reason" : "testy",
+                "user" : "223424602150273024"
+            },
+            "215" : {
+                "action" : "Mute",
+                "message" : "440559159478583317",
+                "mod" : "402557516728369153",
+                "reason" : "testy2",
+                "user" : "223424602150273024"
+            },
+            "216" : {
+                "action" : "Ban",
+                "message" : "440584232583168011",
+                "mod" : "352072755061194752",
+                "reason" : "i warned u",
+                "user" : "331845262169473025"
+            },
+            "217" : {
+                "action" : "Ban",
+                "message" : "440589668749148168",
+                "mod" : "346138549088944129",
+                "reason" : "disrespecting staff",
+                "user" : "251466318824472588"
+            },
+            "218" : {
+                "action" : "Ban",
+                "message" : "440594210681520156",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "303378891597414401"
+            },
+            "219" : {
+                "action" : "Mute",
+                "message" : "440605879113351201",
+                "mod" : "304022209792311306",
+                "reason" : "disrespecting staff",
+                "user" : "323233489048698892"
+            },
+            "22" : {
+                "action" : "Warn",
+                "message" : "434537639744503819",
+                "mod" : "85536634258362368",
+                "reason" : "change your pfp",
+                "user" : "319985709199130625"
+            },
+            "220" : {
+                "action" : "Unmute",
+                "message" : "440608397734182932",
+                "mod" : "304022209792311306",
+                "reason" : "disrespecting staff",
+                "user" : "323233489048698892"
+            },
+            "221" : {
+                "action" : "Warn",
+                "message" : "440614188952322079",
+                "mod" : "123891817081995265",
+                "reason" : "Use <#417679683040051210> or speak English.",
+                "user" : "388092691159973888"
+            },
+            "222" : {
+                "action" : "Kick",
+                "message" : "440718439921745921",
+                "mod" : "238489589419999242",
+                "reason" : null,
+                "user" : "128677352245821440"
+            },
+            "223" : {
+                "action" : "Ban",
+                "message" : "440718494888099852",
+                "mod" : "238489589419999242",
+                "reason" : null,
+                "user" : "128677352245821440"
+            },
+            "224" : {
+                "action" : "Warn",
+                "message" : "440748169966387210",
+                "mod" : "410473941274984448",
+                "reason" : "no no spam XD",
+                "user" : "317081840882024448"
+            },
+            "225" : {
+                "action" : "Warn",
+                "message" : "440828678008602634",
+                "mod" : "223424602150273024",
+                "reason" : "spam",
+                "user" : "361191464732196875"
+            },
+            "226" : {
+                "action" : "Warn",
+                "message" : "440837425292640256",
+                "mod" : "123891817081995265",
+                "reason" : "Please, this is not for NSFW.",
+                "user" : "408715850732929035"
+            },
+            "227" : {
+                "action" : "Mute",
+                "message" : "440841676765003787",
+                "mod" : "123891817081995265",
+                "reason" : "Another link that leads to NSFW.",
+                "user" : "408715850732929035"
+            },
+            "228" : {
+                "action" : "Unmute",
+                "message" : "440844195758866432",
+                "mod" : "123891817081995265",
+                "reason" : "Another link that leads to NSFW.",
+                "user" : "408715850732929035"
+            },
+            "229" : {
+                "action" : "Kick",
+                "message" : "440861762963767307",
+                "mod" : "129402695898365952",
+                "reason" : "English please",
+                "user" : "329051532781813761"
+            },
+            "23" : {
+                "action" : "Kick",
+                "message" : "434537820535783424",
+                "mod" : "85536634258362368",
+                "reason" : "starting drama",
+                "user" : "319985709199130625"
+            },
+            "230" : {
+                "action" : "Warn",
+                "message" : "440938430042603540",
+                "mod" : "238489589419999242",
+                "reason" : "<#417656413469278218>",
+                "user" : "331845262169473025"
+            },
+            "231" : {
+                "action" : "Ban",
+                "message" : "440947083466244106",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "372705101460275200"
+            },
+            "232" : {
+                "action" : "Warn",
+                "message" : "441011117884702723",
+                "mod" : "223424602150273024",
+                "reason" : "respect staff",
+                "user" : "118129848991350791"
+            },
+            "233" : {
+                "action" : "Ban",
+                "message" : "441153956950048768",
+                "mod" : "284235130913030157",
+                "reason" : "DM Advertising and soliciting",
+                "user" : "218065734792642560"
+            },
+            "234" : {
+                "action" : "Warn",
+                "message" : "441175465722511360",
+                "mod" : "410473941274984448",
+                "reason" : "do not spam",
+                "user" : "441169798609502208"
+            },
+            "235" : {
+                "action" : "Ban",
+                "message" : "441176792389386241",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "441169798609502208"
+            },
+            "236" : {
+                "action" : "Warn",
+                "message" : "441217625989709825",
+                "mod" : "190551803669118976",
+                "reason" : "Don't be fucking retarded",
+                "user" : "208665486043381761"
+            },
+            "237" : {
+                "action" : "Mute",
+                "message" : "441218043599650821",
+                "mod" : "190551803669118976",
+                "reason" : "Still writing in <#417660334732607488> after a verbal and bot warning",
+                "user" : "208665486043381761"
+            },
+            "238" : {
+                "action" : "Unmute",
+                "message" : "441219075176398858",
+                "mod" : "177737620959395840",
+                "reason" : null,
+                "user" : "208665486043381761"
+            },
+            "239" : {
+                "action" : "Ban",
+                "message" : "441272231700725780",
+                "mod" : "436261619836649472",
+                "reason" : "Advertising",
+                "user" : "353806228008206338"
+            },
+            "24" : {
+                "action" : "Kick",
+                "message" : "434555586697363456",
+                "mod" : "346138549088944129",
+                "reason" : "exposing face reveals and harassing people",
+                "user" : "319985709199130625"
+            },
+            "240" : {
+                "action" : "Mute",
+                "message" : "441306362111197194",
+                "mod" : "402557516728369153",
+                "reason" : null,
+                "user" : "270198738570444801"
+            },
+            "241" : {
+                "action" : "Unmute",
+                "message" : "441306397691478028",
+                "mod" : "402557516728369153",
+                "reason" : null,
+                "user" : "270198738570444801"
+            },
+            "242" : {
+                "action" : "Mute",
+                "message" : "441306423847157760",
+                "mod" : "402557516728369153",
+                "reason" : null,
+                "user" : "270198738570444801"
+            },
+            "243" : {
+                "action" : "Unmute",
+                "message" : "441306512472932353",
+                "mod" : "440996323156819968",
+                "reason" : "Time limit served",
+                "user" : "270198738570444801"
+            },
+            "244" : {
+                "action" : "Ban",
+                "message" : "441345019379449867",
+                "mod" : "304022209792311306",
+                "reason" : null,
+                "user" : "427071815182188544"
+            },
+            "245" : {
+                "action" : "Kick",
+                "message" : "441377738562076677",
+                "mod" : "301651218030264320",
+                "reason" : "she's 10 so",
+                "user" : "425583562146840587"
+            },
+            "246" : {
+                "action" : "Mute",
+                "message" : "441435671715119105",
+                "mod" : "238489589419999242",
+                "reason" : null,
+                "user" : "328997640882749452"
+            },
+            "247" : {
+                "action" : "Unmute",
+                "message" : "441435800568332288",
+                "mod" : "238489589419999242",
+                "reason" : "Spamming a youtube link",
+                "user" : "328997640882749452"
+            },
+            "248" : {
+                "action" : "Mute",
+                "message" : "441594598394036245",
+                "mod" : "346138549088944129",
+                "reason" : "starting drama",
+                "user" : "295617497250398208"
+            },
+            "249" : {
+                "action" : "Mute",
+                "message" : "441650913875066881",
+                "mod" : "402557516728369153",
+                "reason" : "testing",
+                "user" : "270198738570444801"
+            },
+            "25" : {
+                "action" : "Ban",
+                "message" : "434579619191193611",
+                "mod" : "346138549088944129",
+                "reason" : "alt",
+                "user" : "338054712815386624"
+            },
+            "250" : {
+                "action" : "Unmute",
+                "message" : "441650935337582602",
+                "mod" : "402557516728369153",
+                "reason" : "testing",
+                "user" : "270198738570444801"
+            },
+            "251" : {
+                "action" : "Warn",
+                "message" : "441692517730353152",
+                "mod" : "129402695898365952",
+                "reason" : "stop it. Idc if you're trolling, it's annoying.",
+                "user" : "216751137091485697"
+            },
+            "252" : {
+                "action" : "Kick",
+                "message" : "441707686141100042",
+                "mod" : "238489589419999242",
+                "reason" : null,
+                "user" : "284986795194580993"
+            },
+            "253" : {
+                "action" : "Ban",
+                "message" : "441756222777982977",
+                "mod" : "304022209792311306",
+                "reason" : "alt",
+                "user" : "329710821368135680"
+            },
+            "254" : {
+                "action" : "Warn",
+                "message" : "441773412663296020",
+                "mod" : "129402695898365952",
+                "reason" : "stop making drama. DM me if you'd like to continue. Thank you.",
+                "user" : "141665478010601472"
+            },
+            "255" : {
+                "action" : "Warn",
+                "message" : "441773875253215248",
+                "mod" : "141665478010601472",
+                "reason" : "you're the one who started by interfering in a convo you weren't even in",
+                "user" : "129402695898365952"
+            },
+            "256" : {
+                "action" : "Ban",
+                "message" : "441778412709871637",
+                "mod" : "399232543800426506",
+                "reason" : "DM Advertise",
+                "user" : "395040614384664586"
+            },
+            "257" : {
+                "action" : "Warn",
+                "message" : "441810793563029515",
+                "mod" : "238489589419999242",
+                "reason" : "<#417656413469278218>",
+                "user" : "360614559049842699"
+            },
+            "258" : {
+                "action" : "Kick",
+                "message" : "441827431410565120",
+                "mod" : "399232543800426506",
+                "reason" : "spam",
+                "user" : "323388334749777921"
+            },
+            "259" : {
+                "action" : "Warn",
+                "message" : "441957494148038680",
+                "mod" : "414634093100400640",
+                "reason" : "NSFW in face reveal won't be tolerated, if you want the NSFW role please dm an admin and provide them with verfication 18+",
+                "user" : "380419070304190488"
+            },
+            "26" : {
+                "action" : "Ban",
+                "message" : "434708107034230785",
+                "mod" : "352072755061194752",
+                "reason" : "HAPPY BIRTHDAYYY",
+                "user" : "186520259992354818"
+            },
+            "27" : {
+                "action" : "Ban",
+                "message" : "434760030173003776",
+                "mod" : "352072755061194752",
+                "reason" : "\u0645\u0648\u062a",
+                "user" : "156162196806696961"
+            },
+            "28" : {
+                "action" : "Mute",
+                "message" : "434830332382937118",
+                "mod" : "238489589419999242",
+                "reason" : "DO bots in <#417656413469278218>",
+                "user" : "156162196806696961"
+            },
+            "29" : {
+                "action" : "Ban",
+                "message" : "434840036664672287",
+                "mod" : "346138549088944129",
+                "reason" : "advertising",
+                "user" : "434813082032668672"
+            },
+            "3" : {
+                "action" : "Kick",
+                "message" : "433304350287331338",
+                "mod" : "303378891597414401",
+                "reason" : null,
+                "user" : "141665478010601472"
+            },
+            "30" : {
+                "action" : "Warn",
+                "message" : "434849567846957056",
+                "mod" : "238489589419999242",
+                "reason" : "<#417656413469278218>",
+                "user" : "307302534140264448"
+            },
+            "31" : {
+                "action" : "Ban",
+                "message" : "434876874162831371",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "272732766175756291"
+            },
+            "32" : {
+                "action" : "Ban",
+                "message" : "434898272591544322",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "404185581267189774"
+            },
+            "33" : {
+                "action" : "Warn",
+                "message" : "434923934299979777",
+                "mod" : "129402695898365952",
+                "reason" : "no nsfw please",
+                "user" : "422797592099946497"
+            },
+            "34" : {
+                "action" : "Ban",
+                "message" : "435000859395620864",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "378818904547655681"
+            },
+            "35" : {
+                "action" : "Ban",
+                "message" : "435004984241684491",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "398633514615963660"
+            },
+            "36" : {
+                "action" : "Ban",
+                "message" : "435056118276816897",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "147398625075396608"
+            },
+            "37" : {
+                "action" : "Unban",
+                "message" : "435056365967376394",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "147398625075396608"
+            },
+            "38" : {
+                "action" : "Ban",
+                "message" : "435061823302270978",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "433872277285634048"
+            },
+            "39" : {
+                "action" : "Ban",
+                "message" : "435091819060133888",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "279362452045561858"
+            },
+            "4" : {
+                "action" : "Kick",
+                "message" : "433304425256452096",
+                "mod" : "303378891597414401",
+                "reason" : null,
+                "user" : "141665478010601472"
+            },
+            "40" : {
+                "action" : "Warn",
+                "message" : "435111736702533644",
+                "mod" : "414634093100400640",
+                "reason" : null,
+                "user" : "375648551323172873"
+            },
+            "41" : {
+                "action" : "Ban",
+                "message" : "435140192450379787",
+                "mod" : "346138549088944129",
+                "reason" : null,
+                "user" : "326046566630817792"
+            },
+            "42" : {
+                "action" : "Mute",
+                "message" : "435153316373069825",
+                "mod" : "218871068973072384",
+                "reason" : null,
+                "user" : "212712525844709376"
+            },
+            "43" : {
+                "action" : "Unmute",
+                "message" : "435153570975842315",
+                "mod" : "325196085159002112",
+                "reason" : "Time limit served",
+                "user" : "212712525844709376"
+            },
+            "44" : {
+                "action" : "Warn",
+                "message" : "435196855710908436",
+                "mod" : "238489589419999242",
+                "reason" : "do bots in bots",
+                "user" : "208887014542671872"
+            },
+            "45" : {
+                "action" : "Kick",
+                "message" : "435226350358364172",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "202891513145851904"
+            },
+            "46" : {
+                "action" : "Kick",
+                "message" : "435228089165938699",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "202891513145851904"
+            },
+            "47" : {
+                "action" : "Ban",
+                "message" : "435237909281636358",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "407314497842184210"
+            },
+            "48" : {
+                "action" : "Ban",
+                "message" : "435447327810125824",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "330449126259032065"
+            },
+            "49" : {
+                "action" : "Ban",
+                "message" : "435497237829648394",
+                "mod" : "402557516728369153",
+                "reason" : "ads + trying to mention @ everyone",
+                "user" : "345890708361576458"
+            },
+            "5" : {
+                "action" : "Unban",
+                "message" : "433306248390377472",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "141665478010601472"
+            },
+            "50" : {
+                "action" : "Ban",
+                "message" : "435513455852781578",
+                "mod" : "190551803669118976",
+                "reason" : "Bye",
+                "user" : "348591059862945792"
+            },
+            "51" : {
+                "action" : "Ban",
+                "message" : "435547869236166696",
+                "mod" : "238489589419999242",
+                "reason" : null,
+                "user" : "434643184329555989"
+            },
+            "52" : {
+                "action" : "Ban",
+                "message" : "435570666159210516",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "389481457673961482"
+            },
+            "53" : {
+                "action" : "Ban",
+                "message" : "435764400427892765",
+                "mod" : "129402695898365952",
+                "reason" : "advertising suspicious bot",
+                "user" : "390847703568875520"
+            },
+            "54" : {
+                "action" : "Ban",
+                "message" : "435835860479377410",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "204272198477807616"
+            },
+            "55" : {
+                "action" : "Kick",
+                "message" : "435875157618327562",
+                "mod" : "303378891597414401",
+                "reason" : "no advertising nigga",
+                "user" : "205496126240063488"
+            },
+            "56" : {
+                "action" : "Mute",
+                "message" : "435917094610272285",
+                "mod" : "304022209792311306",
+                "reason" : "block o' texts",
+                "user" : "297039960169775105"
+            },
+            "57" : {
+                "action" : "Unmute",
+                "message" : "435919612711010304",
+                "mod" : "304022209792311306",
+                "reason" : "block o' texts",
+                "user" : "297039960169775105"
+            },
+            "58" : {
+                "action" : "Ban",
+                "message" : "435927767150755851",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "297039960169775105"
+            },
+            "59" : {
+                "action" : "Ban",
+                "message" : "435942547630587914",
+                "mod" : "346138549088944129",
+                "reason" : "sending inappropriate vidoes to people in DM",
+                "user" : "212712525844709376"
+            },
+            "6" : {
+                "action" : "Kick",
+                "message" : "433308834585509898",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "141665478010601472"
+            },
+            "60" : {
+                "action" : "Ban",
+                "message" : "435945952973553664",
+                "mod" : "301651218030264320",
+                "reason" : "constantly pinging everyone unnecessarily, though he was told to stop",
+                "user" : "402595204730716161"
+            },
+            "61" : {
+                "action" : "Kick",
+                "message" : "435954496774864898",
+                "mod" : "346138549088944129",
+                "reason" : "posted a picture or shit in general",
+                "user" : "351722146138947585"
+            },
+            "62" : {
+                "action" : "Warn",
+                "message" : "435970715796242432",
+                "mod" : "129402695898365952",
+                "reason" : "pinging people for no reason",
+                "user" : "390708851558711298"
+            },
+            "63" : {
+                "action" : "Mute",
+                "message" : "435971072148635650",
+                "mod" : "129402695898365952",
+                "reason" : "making excuses",
+                "user" : "390708851558711298"
+            },
+            "64" : {
+                "action" : "Unmute",
+                "message" : "435971636294844426",
+                "mod" : "129402695898365952",
+                "reason" : "time served",
+                "user" : "390708851558711298"
+            },
+            "65" : {
+                "action" : "Ban",
+                "message" : "436133057595179009",
+                "mod" : "346138549088944129",
+                "reason" : "pinging level 5+ non-stop",
+                "user" : "332327989834547212"
+            },
+            "66" : {
+                "action" : "Kick",
+                "message" : "436300246121840640",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "372705101460275200"
+            },
+            "67" : {
+                "action" : "Mute",
+                "message" : "436341891173187586",
+                "mod" : "238489589419999242",
+                "reason" : "use <#417656413469278218>",
+                "user" : "346138549088944129"
+            },
+            "68" : {
+                "action" : "Kick",
+                "message" : "436522295994089472",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "285014869307162629"
+            },
+            "69" : {
+                "action" : "Ban",
+                "message" : "436524124362375168",
+                "mod" : "410473941274984448",
+                "reason" : "opps sorry I'm just mean :> <33",
+                "user" : "285014869307162629"
+            },
+            "7" : {
+                "action" : "Ban",
+                "message" : "433451747663675392",
+                "mod" : "238489589419999242",
+                "reason" : "Spamming, and shittalking right after he joined the server.",
+                "user" : "201825811110559744"
+            },
+            "70" : {
+                "action" : "Unban",
+                "message" : "436524326770966528",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "285014869307162629"
+            },
+            "71" : {
+                "action" : "Kick",
+                "message" : "436534953828679699",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "285014869307162629"
+            },
+            "72" : {
+                "action" : "Ban",
+                "message" : "436535618642771979",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "285014869307162629"
+            },
+            "73" : {
+                "action" : "Unban",
+                "message" : "436535696283533332",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "285014869307162629"
+            },
+            "74" : {
+                "action" : "Kick",
+                "message" : "436536433252237313",
+                "mod" : "303378891597414401",
+                "reason" : null,
+                "user" : "285014869307162629"
+            },
+            "75" : {
+                "action" : "Ban",
+                "message" : "436536730179338240",
+                "mod" : "393875674785382410",
+                "reason" : null,
+                "user" : "285014869307162629"
+            },
+            "76" : {
+                "action" : "Unban",
+                "message" : "436536839721975819",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "285014869307162629"
+            },
+            "77" : {
+                "action" : "Ban",
+                "message" : "436629265023238145",
+                "mod" : "402557516728369153",
+                "reason" : null,
+                "user" : "436364158456299520"
+            },
+            "78" : {
+                "action" : "Warn",
+                "message" : "436721159128481802",
+                "mod" : "238489589419999242",
+                "reason" : "disrespect",
+                "user" : "414464494090190850"
+            },
+            "79" : {
+                "action" : "Mute",
+                "message" : "436721235259424768",
+                "mod" : "238489589419999242",
+                "reason" : "being rude",
+                "user" : "414464494090190850"
+            },
+            "8" : {
+                "action" : "Ban",
+                "message" : "433642451157254154",
+                "mod" : "177737620959395840",
+                "reason" : null,
+                "user" : "151736766683021312"
+            },
+            "80" : {
+                "action" : "Warn",
+                "message" : "436984952723341312",
+                "mod" : "402557516728369153",
+                "reason" : "using bots in general",
+                "user" : "183435666548457472"
+            },
+            "81" : {
+                "action" : "Kick",
+                "message" : "436996497440243713",
+                "mod" : "402557516728369153",
+                "reason" : null,
+                "user" : "235088799074484224"
+            },
+            "82" : {
+                "action" : "Ban",
+                "message" : "437024272150429696",
+                "mod" : "410473941274984448",
+                "reason" : "aiirreedd",
+                "user" : "372705101460275200"
+            },
+            "83" : {
+                "action" : "Ban",
+                "message" : "437036676292804611",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "162362890450501632"
+            },
+            "84" : {
+                "action" : "Warn",
+                "message" : "437262117763284993",
+                "mod" : "410473941274984448",
+                "reason" : "dont spam",
+                "user" : "411310948041621528"
+            },
+            "85" : {
+                "action" : "Ban",
+                "message" : "437263731504709632",
+                "mod" : "346138549088944129",
+                "reason" : "alt",
+                "user" : "415126151913144322"
+            },
+            "86" : {
+                "action" : "Mute",
+                "message" : "437264533698904064",
+                "mod" : "129402695898365952",
+                "reason" : "disrespecting staff",
+                "user" : "411310948041621528"
+            },
+            "87" : {
+                "action" : "Unmute",
+                "message" : "437267052462342144",
+                "mod" : "129402695898365952",
+                "reason" : "disrespecting staff",
+                "user" : "411310948041621528"
+            },
+            "88" : {
+                "action" : "Kick",
+                "message" : "437268956437282834",
+                "mod" : "303378891597414401",
+                "reason" : null,
+                "user" : "411310948041621528"
+            },
+            "89" : {
+                "action" : "Ban",
+                "message" : "437272604898885654",
+                "mod" : "410473941274984448",
+                "reason" : "bye bye \u2764",
+                "user" : "244213811085705217"
+            },
+            "9" : {
+                "action" : "Mute",
+                "message" : "433646699135631362",
+                "mod" : "414634093100400640",
+                "reason" : "being disrespectful",
+                "user" : "202891513145851904"
+            },
+            "90" : {
+                "action" : "Ban",
+                "message" : "437273308459827200",
+                "mod" : "352072755061194752",
+                "reason" : null,
+                "user" : "180773680253632513"
+            },
+            "91" : {
+                "action" : "Unban",
+                "message" : "437273426705514526",
+                "mod" : "410473941274984448",
+                "reason" : null,
+                "user" : "180773680253632513"
+            },
+            "92" : {
+                "action" : "Kick",
+                "message" : "437279486711431168",
+                "mod" : "303378891597414401",
+                "reason" : null,
+                "user" : "180773680253632513"
+            },
+            "93" : {
+                "action" : "Mute",
+                "message" : "437325238582116372",
+                "mod" : "218871068973072384",
+                "reason" : null,
+                "user" : "418099512519950346"
+            },
+            "94" : {
+                "action" : "Unmute",
+                "message" : "437325493197602837",
+                "mod" : "325196085159002112",
+                "reason" : "Time limit served",
+                "user" : "418099512519950346"
+            },
+            "95" : {
+                "action" : "Ban",
+                "message" : "437341390364475393",
+                "mod" : "218871068973072384",
+                "reason" : null,
+                "user" : "85536634258362368"
+            },
+            "96" : {
+                "action" : "Warn",
+                "message" : "437410991328722944",
+                "mod" : "218871068973072384",
+                "reason" : "<#417656413469278218>",
+                "user" : "336604862403837955"
+            },
+            "97" : {
+                "action" : "Warn",
+                "message" : "437494241380270090",
+                "mod" : "410473941274984448",
+                "reason" : "bot",
+                "user" : "384174419691438090"
+            },
+            "98" : {
+                "action" : "Kick",
+                "message" : "437524842892230656",
+                "mod" : "372705101460275200",
+                "reason" : "bye bitch",
+                "user" : "379962547132039168"
+            },
+            "99" : {
+                "action" : "Warn",
+                "message" : "437526148394647552",
+                "mod" : "399232543800426506",
+                "reason" : "disrespectful language toward staff",
+                "user" : "418099512519950346"
+            }
+        },
+        "case#" : 259,
+        "channel" : "432900429349650432",
+        "toggle" : true
+    },
+    "408411717391876099" : {
+        "case" : {},
+        "case#" : 0,
+        "channel" : "440756181292548096",
+        "toggle" : true
+    },
+    "410077580658606081" : {
+        "case" : {},
+        "case#" : 0,
+        "channel" : null,
+        "toggle" : false
+    },
+    "417719351836278794" : {
+        "case" : {},
+        "case#" : 0,
+        "channel" : null,
+        "toggle" : false
+    },
+    "421274181053972481" : {
+        "case" : {},
+        "case#" : 0,
+        "channel" : null,
+        "toggle" : false
+    },
+    "427145578846355456" : {
+        "case" : {
+            "1" : {
+                "action" : "Warn",
+                "message" : "438636848827334666",
+                "mod" : "406300208910041098",
+                "reason" : "Telling bad about the server and telling that the owner copied their server even when someone gave them the idea!",
+                "user" : "418777556049854469"
+            },
+            "2" : {
+                "action" : "Mute",
+                "message" : "438637685272215552",
+                "mod" : "406300208910041098",
+                "reason" : "Telling bad about the server and telling that the owner copied their server even when someone gave them the idea!",
+                "user" : "418777556049854469"
+            },
+            "3" : {
+                "action" : "Unmute",
+                "message" : "438637770747936768",
+                "mod" : "406300208910041098",
+                "reason" : null,
+                "user" : "418777556049854469"
+            },
+            "4" : {
+                "action" : "Mute",
+                "message" : "438637845339439104",
+                "mod" : "406300208910041098",
+                "reason" : "Telling bad about the server and telling that the owner copied their server even when someone gave them the idea!",
+                "user" : "418777556049854469"
+            },
+            "5" : {
+                "action" : "Unmute",
+                "message" : "438693347926867968",
+                "mod" : "406300208910041098",
+                "reason" : "fight solved",
+                "user" : "418777556049854469"
+            },
+            "6" : {
+                "action" : "Ban",
+                "message" : "440488570713669633",
+                "mod" : "406300208910041098",
+                "reason" : "Raided old server",
+                "user" : "254617953796882433"
+            }
+        },
+        "case#" : 6,
+        "channel" : "437899158330933249",
+        "toggle" : true
+    },
+    "428931105119404042" : {
+        "case" : {
+            "1" : {
+                "action" : "Ban",
+                "message" : "433958621844602882",
+                "mod" : "402557516728369153",
+                "reason" : null,
+                "user" : "217256996309565441"
+            },
+            "2" : {
+                "action" : "Ban",
+                "message" : "433959432209039380",
+                "mod" : "402557516728369153",
+                "reason" : null,
+                "user" : "217256996309565441"
+            },
+            "3" : {
+                "action" : "Ban",
+                "message" : "433960196012769310",
+                "mod" : "402557516728369153",
+                "reason" : null,
+                "user" : "85614143951892480"
+            },
+            "4" : {
+                "action" : "Ban",
+                "message" : "433960305169793024",
+                "mod" : "402557516728369153",
+                "reason" : null,
+                "user" : "85614143951892480"
+            }
+        },
+        "case#" : 4,
+        "channel" : "432875095263019009",
+        "toggle" : true
+    },
+    "429677829093982218" : {
+        "case" : {},
+        "case#" : 0,
+        "channel" : null,
+        "toggle" : false
+    },
+    "433297155516792853" : {
+        "case" : {},
+        "case#" : 0,
+        "channel" : null,
+        "toggle" : false
+    },
+    "435596389808865298" : {
+        "case" : {},
+        "case#" : 0,
+        "channel" : "440206230150184962",
+        "toggle" : true
+    },
+    "435991418851295233" : {
+        "case" : {},
+        "case#" : 0,
+        "channel" : null,
+        "toggle" : false
+    },
+    "438926224287334400" : {
+        "case" : {
+            "1" : {
+                "action" : "Kick",
+                "message" : "439643471624798219",
+                "mod" : "227248326934790145",
+                "reason" : null,
+                "user" : "322246968263049217"
+            },
+            "2" : {
+                "action" : "Ban",
+                "message" : "439643813389271050",
+                "mod" : "227248326934790145",
+                "reason" : null,
+                "user" : "322246968263049217"
+            }
+        },
+        "case#" : 2,
+        "channel" : "439213648070574090",
+        "toggle" : true
+    }
+}
