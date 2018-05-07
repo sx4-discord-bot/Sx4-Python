@@ -14,7 +14,8 @@ import logging
 import datetime
 import math
 from urllib.request import Request, urlopen
-import jsonfrom utils.PagedResult import PagedResult
+import json
+from utils.PagedResult import PagedResult
 from utils.PagedResult import PagedResultData
 import random
 from random import choice
@@ -1759,7 +1760,7 @@ class Economy:
         await self.bot.say("Your description has been set it'll now be on your profile")
         
 endpoint = "https://discordbots.org/api/bots/325196085159002112/check?userId={userId}"
-token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMyNTE5NjA4NTE1OTAwMjExMiIsImJvdCI6dHJ1ZSwiaWF0IjoxNTIyNzAzOTY3fQ.O81cNpMDqcyvC1ck6Czj0ffXyCxPGKKwxA9nUFQBDe0"
+token = "nein"
         
 def has_voted(userId):
     request = Request(endpoint.replace("{userId}", userId))
