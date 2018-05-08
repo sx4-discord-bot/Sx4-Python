@@ -69,42 +69,6 @@ class Economy:
         if "factory" not in self._factories:
             self._factories["factory"] = []
             dataIO.save_json(self._factories_file, self._factories)
-            
-    @commands.command(pass_context=True, hidden=True)
-    @checks.is_owner()
-    async def parse(self, ctx):
-        code = ctx.message.content[8:]
-        code = "    " + code.replace("\n", "\n    ")
-        code = "async def __eval_function__():\n" + code
-
-        additional = {}
-        additional["self"] = self
-        additional["ctx"] = ctx
-        additional["channel"] = ctx.message.channel
-        additional["author"] = ctx.message.author
-        additional["server"] = ctx.message.server
-
-        try:
-            exec(code, {**globals(), **additional}, locals())
-
-            await locals()["__eval_function__"]()
-        except Exception as e:
-            await self.bot.say(str(e))
-			
-    @commands.command(pass_context=True, hidden=True)
-    @checks.is_owner()
-    async def eval(self, ctx, *, code):
-        author = ctx.message.author
-        server = ctx.message.server
-        channel = ctx.message.channel
-        try:
-            await self.bot.say(str(await eval(code))) 
-        except:
-            try:
-                await self.bot.say(str(eval(code))) 
-            except Exception as e:
-                await self.bot.say(str(e))
- 
         
     @commands.command(pass_context=True)
     async def votebonus(self, ctx):
