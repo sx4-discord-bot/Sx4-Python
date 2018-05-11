@@ -45,7 +45,7 @@ class General:
     @commands.command(pass_context=True)
     async def google(self, ctx, *, search): 
         """returns the top 3 results from google of your search query"""
-        url = "https://www.googleapis.com/customsearch/v1?key=AIzaSyAelnun4v79DNvzvQalyPMsPY5XuaMTlIQ&{}&cx=014023765838117903829:mm334tqd3kg".format(urllib.parse.urlencode({"q": search}))
+        url = "https://www.googleapis.com/customsearch/v1?key=api_key".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
         try:
@@ -63,8 +63,8 @@ class General:
         url = "https://od-api.oxforddictionaries.com:443/api/v1/entries/en/{}".format(word)
         request = Request(url)
         request.add_header("Accept", "application/json")
-        request.add_header("app_id", "e01b354a")
-        request.add_header("app_key", "16589a290cbf2462ff51a4ff984ccf8f")
+        request.add_header("app_id", "api_id")
+        request.add_header("app_key", "api_key")
         try:
             data = json.loads(urlopen(request).read().decode())
         except:
@@ -81,14 +81,14 @@ class General:
     @commands.command(pass_context=True)
     async def steam(self, ctx, *, profile_url: str=None):
         """To get a steam profile you need to click on the users profile and get the vanityurl which is the name after /id/{} <--- The name should be there""" 
-        idurl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=148756A557AACB36BF328E8534043BC1&{}".format(urllib.parse.urlencode({"vanityurl": profile_url.replace("https://steamcommunity.com/id/", "")}))
+        idurl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=api_key&{}".format(urllib.parse.urlencode({"vanityurl": profile_url.replace("https://steamcommunity.com/id/", "")}))
         idrequest = Request(idurl)
         try:
             id = json.loads(urlopen(idrequest).read().decode())["response"]["steamid"]
         except:
             await self.bot.say("No results :no_entry:")
             return
-        url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=148756A557AACB36BF328E8534043BC1&steamids={}".format(id)
+        url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=api_key&steamids={}".format(id)
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())["response"]["players"][0]
         m, s = divmod(ctx.message.timestamp.timestamp() - data["lastlogoff"], 60)
