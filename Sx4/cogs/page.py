@@ -20,7 +20,7 @@ from enum import Enum
 import asyncio
 from difflib import get_close_matches
 
-class Page:
+class page:
 	def __init__(self, bot):
 		self.bot = bot
 	
@@ -192,4 +192,4 @@ class Page:
 				await paged_result.select(number)
 	
 def setup(bot):
-	bot.add_cog(Page(bot))
+	bot.add_cog(page(bot))

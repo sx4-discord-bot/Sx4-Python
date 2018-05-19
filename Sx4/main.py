@@ -4,6 +4,7 @@ from discord.ext import commands
 from random import choice as randchoice
 import time
 import datetime
+from utils.dataIO import dataIO
 from utils import checks
 import aiohttp
 import json
@@ -14,11 +15,11 @@ import subprocess
 
 bot = commands.Bot(command_prefix=['sx4 ', 's?', 'S?'], description='Sx4 Bot', pm_help=None) 
 wrap = "```py\n{}\n```"
-dbltoken = "A Discord bot list token would go here"
-url = "https://discordbots.org/api/bots/{bot.id}/stats"
+dbltoken = "stealmytokenplex"
+url = "https://discordbots.org/api/bots/440996323156819968/stats"
 headers = {"Authorization" : dbltoken}
 
-modules = ['cogs.general', 'cogs.status', 'cogs.owner', 'cogs.economy', 'cogs.help', 'cogs.mod', 'cogs.joinleave', 'cogs.antiad', 'cogs.antilink', 'cogs.serverlog', 'cogs.logs', 'cogs.autorole', 'cogs.mention', 'cogs.afk', 'cogs.selfroles', 'cogs.page', 'cogs.music']
+modules = ['cogs.general', 'cogs.status', 'cogs.owner', 'cogs.economy', 'cogs.help', 'cogs.mod', 'cogs.joinleave', 'cogs.antiad', 'cogs.antilink', 'cogs.serverlog', 'cogs.logs', 'cogs.autorole', 'cogs.mention', 'cogs.afk', 'cogs.selfroles', 'cogs.page']
 
 @bot.event
 async def on_ready():
@@ -35,19 +36,28 @@ async def on_ready():
             print('Failed to load extension {}\n{}: {}'.format(extension, type(e).name, e))
     payload = {"server_count"  : len(bot.servers)}
     async with aiohttp.ClientSession() as aioclient:
-        await aioclient.post(url, data=payload, headers=headers)
+        await aioclient.post(url, data=payload, headers=headers) 
+    if not hasattr(bot, 'uptime'):
+        bot.uptime = datetime.datetime.utcnow().timestamp()
 
 @bot.event
 async def on_server_join(server):
     payload = {"server_count"  : len(bot.servers)}
     async with aiohttp.ClientSession() as aioclient:
-            await aioclient.post(url, data=payload, headers=headers)
-
+        await aioclient.post(url, data=payload, headers=headers)
+		
+@bot.event 
+async def on_message(message):
+    if message.author.bot:
+        return
+    else:
+        await bot.process_commands(message)
+		
 @bot.event
 async def on_server_remove(server):
     payload = {"server_count"  : len(bot.servers)}
     async with aiohttp.ClientSession() as aioclient:
-            await aioclient.post(url, data=payload, headers=headers)
+        await aioclient.post(url, data=payload, headers=headers)
 			
 @bot.event
 async def on_command_error(error, ctx, *args, **kwargs):
@@ -154,7 +164,8 @@ async def reload(*, module: str):
         e=discord.Embed(description="Error:" + wrap.format(type(e).name + ': ' + str(e)), colour=discord.Colour.red())
         await bot.say(embed=e)
 		
+		
 bot.add_cog(Main(bot))
 
-bot.run('Not getting my Token')
+bot.run('hi(thiswillactuallyrunthebottry)')
 

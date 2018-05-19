@@ -20,9 +20,10 @@ from discord.ext.commands import CommandNotFound
 from utils.dataIO import fileIO
 
 
-class Mod:
+class mod:
     def __init__(self, bot):
         self.bot = bot
+        self.bot.loop.create_task(self.check_mute())
         self.file_path = "data/mod/autobotclean.json"
         self.settings = dataIO.load_json(self.file_path)
         self.JSON = "data/mod/warn.json"
@@ -31,7 +32,22 @@ class Mod:
         self.d = dataIO.load_json(self.file)
         self._logs_file = "data/mod/logs.json"
         self._logs = dataIO.load_json(self._logs_file)
-        
+		
+    @commands.command(pass_context=True)
+    @checks.mod_or_permissions(manage_roles=True)
+    async def announce(self, ctx, role: discord.Role, *, text: str):
+        """Send an announcement in the channel you want by using the command in the channel you want choose a role you want to use and some text and the rest the bot will do"""
+        try:
+            await self.bot.delete_message(ctx.message)
+        except: 
+            pass
+        try:
+            await self.bot.edit_role(ctx.message.server, role, mentionable=True)
+        except:
+            await self.bot.say("I'm not able to edit that role :no_entry:") 
+            return
+        await self.bot.say(role.mention + ", " + text + " - " + str(ctx.message.author))
+        await self.bot.edit_role(ctx.message.server, role, mentionable=False)
     
     @commands.command(pass_context=True, aliases=["mm"])
     @checks.mod_or_permissions(move_members=True)
@@ -747,7 +763,7 @@ class Mod:
         else:
             try:
                 unit = time_and_unit[len(time_and_unit)-1:len(time_and_unit)]
-            except:
+            except ValueError:
                 await self.bot.say("Invalid time unit :no_entry:")
                 return
             try:
@@ -756,25 +772,41 @@ class Mod:
                 await self.bot.say("Invalid time unit :no_entry:")
                 return
             if unit == "s":
-                time2 = int(time)
+                try:
+                    time2 = int(time)
+                except ValueError:
+                    await self.bot.say("Invalid time unit :no_entry:")
+                    return
                 if time == 1:
                     unit = "second"
                 else:
                     unit = "seconds"
             elif unit == "m":
-                time2 = int(time) * 60
+                try:
+                    time2 = int(time) * 60
+                except ValueError:
+                    await self.bot.say("Invalid time unit :no_entry:")
+                    return
                 if time == 1:
                     unit = "minute"
                 else:
                     unit = "minutes"
             elif unit == "h":
-                time2 = int(time) * 3600
+                try:
+                    time2 = int(time) * 3600
+                except ValueError:
+                    await self.bot.say("Invalid time unit :no_entry:")
+                    return
                 if time == 1:
                     unit = "hour"
                 else:
                     unit = "hours"
             elif unit == "d":
-                time2 = int(time) * 86400
+                try:
+                    time2 = int(time) * 86400
+                except ValueError:
+                    await self.bot.say("Invalid time unit :no_entry:")
+                    return
                 if time == 1:
                     unit = "day"
                 else:
@@ -1184,56 +1216,58 @@ class Mod:
         dataIO.save_json(self.JSON, self.data)
         await self.bot.say("**{}'s** warnings have been set to **{}**".format(user.name, warnings))  
 
-    async def on_ready(self):
-        for serverid in list(self.d)[:len(self.d)]:
-            server = self.bot.get_server(serverid)
-            if server != None:
-                role = discord.utils.get(server.roles, name="Muted - Sx4")
-                if self.d[server.id] != None:
-                    for userid in self.d[serverid]:
-                        user = discord.utils.get(server.members, id=userid)
-                        if user != None:
-                            if self.d[server.id][user.id]["toggle"] != False and self.d[server.id][user.id]["time"] != None and self.d[server.id][user.id]["amount"] != None:
-                                time2 = self.d[server.id][user.id]["time"] - datetime.datetime.now().timestamp() + self.d[server.id][user.id]["amount"]
-                                if time2 <= 0:
-                                    await self.bot.remove_roles(user, role)
-                                    self.d[server.id][user.id]["time"] = None
-                                    self.d[server.id][user.id]["toggle"] = False
-                                    dataIO.save_json(self.file, self.d)
-                                    s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.now())
-                                    s.add_field(name="Moderator", value="{} ({})".format(self.bot.user, self.bot.user.id), inline=False)
-                                    s.add_field(name="Reason", value="Time Served", inline=False)
-                                    try:
-                                        await self.bot.send_message(user, embed=s)
-                                    except:
-                                        pass
-                                    action = "Unmute"
-                                    author = self.bot.user
-                                    reason = "Time limit served"
-                                    try:
-                                        await self._log(author, server, action, reason, user)
-                                    except:
-                                        pass
-                                else:
-                                    await asyncio.sleep(round(time2))
-                                    await self.bot.remove_roles(user, role)
-                                    self.d[server.id][user.id]["time"] = None
-                                    self.d[server.id][user.id]["toggle"] = False
-                                    dataIO.save_json(self.file, self.d)
-                                    s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.now())
-                                    s.add_field(name="Moderator", value="{} ({})".format(self.bot.user, self.bot.user.id), inline=False)
-                                    s.add_field(name="Reason", value="Time Served", inline=False)
-                                    try:
-                                        await self.bot.send_message(user, embed=s)
-                                    except:
-                                        pass
-                                    action = "Unmute"
-                                    author = self.bot.user
-                                    reason = "Time limit served"
-                                    try:
-                                        await self._log(author, server, action, reason, user)
-                                    except:
-                                        pass
+    async def check_mute(self):
+        while not self.bot.is_closed:
+            for serverid in list(self.d)[:len(self.d)]:
+                server = self.bot.get_server(serverid)
+                if server != None:
+                    role = discord.utils.get(server.roles, name="Muted - Sx4")
+                    if self.d[server.id] != None:
+                        for userid in self.d[serverid]:
+                            user = discord.utils.get(server.members, id=userid)
+                            if user != None:
+                                if self.d[server.id][user.id]["toggle"] != False and self.d[server.id][user.id]["time"] != None and self.d[server.id][user.id]["amount"] != None:
+                                    time2 = self.d[server.id][user.id]["time"] - datetime.datetime.now().timestamp() + self.d[server.id][user.id]["amount"]
+                                    if time2 <= 0:
+                                        await self.bot.remove_roles(user, role)
+                                        self.d[server.id][user.id]["time"] = None
+                                        self.d[server.id][user.id]["toggle"] = False
+                                        dataIO.save_json(self.file, self.d)
+                                        s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.now())
+                                        s.add_field(name="Moderator", value="{} ({})".format(self.bot.user, self.bot.user.id), inline=False)
+                                        s.add_field(name="Reason", value="Time Served", inline=False)
+                                        try:
+                                            await self.bot.send_message(user, embed=s)
+                                        except:
+                                            pass
+                                        action = "Unmute"
+                                        author = self.bot.user
+                                        reason = "Time limit served"
+                                        try:
+                                            await self._log(author, server, action, reason, user)
+                                        except:
+                                            pass
+                                    else:
+                                        await asyncio.sleep(round(time2))
+                                        await self.bot.remove_roles(user, role)
+                                        self.d[server.id][user.id]["time"] = None
+                                        self.d[server.id][user.id]["toggle"] = False
+                                        dataIO.save_json(self.file, self.d)
+                                        s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.now())
+                                        s.add_field(name="Moderator", value="{} ({})".format(self.bot.user, self.bot.user.id), inline=False)
+                                        s.add_field(name="Reason", value="Time Served", inline=False)
+                                        try:
+                                            await self.bot.send_message(user, embed=s)
+                                        except:
+                                            pass
+                                        action = "Unmute"
+                                        author = self.bot.user
+                                        reason = "Time limit served"
+                                        try:
+                                            await self._log(author, server, action, reason, user)
+                                        except:
+                                            pass
+            await asyncio.sleep(300)
       
                     
         
@@ -1294,4 +1328,4 @@ def check_files():
 def setup(bot): 
     check_folders()
     check_files()
-    bot.add_cog(Mod(bot))
+    bot.add_cog(mod(bot))

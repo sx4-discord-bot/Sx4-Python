@@ -6,6 +6,8 @@ import time
 import datetime
 import random
 import math
+import psutil
+from datetime import datetime, timedelta
 from utils import checks
 from urllib.request import Request, urlopen
 import json
@@ -21,14 +23,13 @@ from copy import deepcopy
 from collections import namedtuple, defaultdict, deque
 from copy import deepcopy
 from enum import Enum
-from datetime import datetime
 import asyncio
 from difflib import get_close_matches
 
 rps_settings = {"rps_wins": 0, "rps_draws": 0, "rps_losses": 0}
 giveaway = {"users": None}
 
-class General:
+class general:
     def __init__(self, bot):
         self.bot = bot
         self.bot.loop.create_task(self.checktime())
@@ -45,7 +46,7 @@ class General:
     @commands.command(pass_context=True)
     async def google(self, ctx, *, search): 
         """returns the top 3 results from google of your search query"""
-        url = "https://www.googleapis.com/customsearch/v1?key=api_key".format(urllib.parse.urlencode({"q": search}))
+        url = "https://www.googleapis.com/customsearch/v1?key=apikeywouldgoherebutit'smineha".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
         try:
@@ -63,8 +64,8 @@ class General:
         url = "https://od-api.oxforddictionaries.com:443/api/v1/entries/en/{}".format(word)
         request = Request(url)
         request.add_header("Accept", "application/json")
-        request.add_header("app_id", "api_id")
-        request.add_header("app_key", "api_key")
+        request.add_header("app_id", "46573563563471256734567435674675(its real trust me)")
+        request.add_header("app_key", "apikeywouldgoherebutit'smineha")
         try:
             data = json.loads(urlopen(request).read().decode())
         except:
@@ -81,14 +82,14 @@ class General:
     @commands.command(pass_context=True)
     async def steam(self, ctx, *, profile_url: str=None):
         """To get a steam profile you need to click on the users profile and get the vanityurl which is the name after /id/{} <--- The name should be there""" 
-        idurl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=api_key&{}".format(urllib.parse.urlencode({"vanityurl": profile_url.replace("https://steamcommunity.com/id/", "")}))
+        idurl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=dfnjtysr874fbyew7ryf43gyfeshHJD(real){}".format(urllib.parse.urlencode({"vanityurl": profile_url.replace("https://steamcommunity.com/id/", "")}))
         idrequest = Request(idurl)
         try:
             id = json.loads(urlopen(idrequest).read().decode())["response"]["steamid"]
         except:
             await self.bot.say("No results :no_entry:")
             return
-        url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=api_key&steamids={}".format(id)
+        url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=dfnjtysr874fbyew7ryf43gyfeshHJD(real)&steamids={}".format(id)
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())["response"]["players"][0]
         m, s = divmod(ctx.message.timestamp.timestamp() - data["lastlogoff"], 60)
@@ -128,7 +129,10 @@ class General:
         if data["communityvisibilitystate"] == 1:
             await self.bot.say(embed=s)
             return
-        s.add_field(name="Real name", value=data["realname"])
+        try:
+            s.add_field(name="Real name", value=data["realname"])
+        except:
+            pass
         try:
             s.add_field(name="Currently Playing", value=data["gameextrainfo"])
         except:
@@ -404,12 +408,7 @@ class General:
     @commands.command(pass_context=True)
     async def ping(self, ctx):
         """Am i alive? (Well if you're reading this, yes)"""
-        channel = ctx.message.channel
-        author = ctx.message.author
-        t1 = time.perf_counter()
-        msg = await self.bot.say("Pong! :ping_pong:")
-        t2 = time.perf_counter()
-        await self.bot.edit_message(msg, "Pong! :ping_pong: **{}ms**".format(round((t2-t1)*1000)))
+        await self.bot.say('Pong! :ping_pong: **{}ms**'.format(round((datetime.now().timestamp() - ctx.message.timestamp.timestamp())*1000)))
         
     @commands.command(pass_context=True)
     async def report(self, ctx, *, bug_description):
@@ -550,11 +549,7 @@ class General:
     @commands.command(pass_context=True)
     async def info(self, ctx): 
         """Info about me"""
-        t1 = time.perf_counter()
-        msg = await self.bot.say("Pinging...")
-        t2 = time.perf_counter()
-        ping = round((t2-t1)*1000)
-        await self.bot.delete_message(msg)
+        ping = round((datetime.now().timestamp() - ctx.message.timestamp.timestamp())*1000)
         users = str(len(set(self.bot.get_all_members())))
         servers = len(self.bot.servers)
         channel = ctx.message.channel
@@ -564,15 +559,15 @@ class General:
         description = ("Sx4 is a bot which intends to make your discord experience easier yet fun, it has multiple different purposes"
         ", which includes Moderation, utility and economy. Sx4 began as a red bot to help teach it's owner more about coding, it has now evolved in to"
         " a self coded bot with the help of some bot developers and intends to go further.")
-        await self.bot.send_typing(channel)
         s=discord.Embed(description=description, colour=0xfff90d)
         s.set_author(name="Info!", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Stats", value="Ping: {}ms\nServers: {}\nUsers: {}".format(ping, servers, users))
-        s.add_field(name="Credits", value="[Nexus](https://discord.gg/u7J3c6C)\n[Python](https://www.python.org/downloads/release/python-352/)\n[discord.py](https://pypi.python.org/pypi/discord.py/)")
+        s.add_field(name="Credits", value="[Nexus](https://discord.gg/t2umQq3)\n[Python](https://www.python.org/downloads/release/python-352/)\n[discord.py](https://pypi.python.org/pypi/discord.py/)")
         s.add_field(name="Sx4", value="Developers: {}, {}, {}\nInvite: [Click Here](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\nSupport: [Click Here](https://discord.gg/p5cWHjS)\nDonate: [PayPal](https://paypal.me/SheaCartwright), [Patreon](https://www.patreon.com/SheaBots)".format(shea, legacy, joakim))
         await self.bot.say(embed=s)
         
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 60, commands.BucketType.user)
     async def dm(self, ctx, user_id, *, text):
         """Dm a user using me"""
         author = ctx.message.author 
@@ -596,6 +591,17 @@ class General:
             await self.bot.say("I am unable to send a message to that user :no_entry:")
             return
         await self.bot.say("I have sent a message to **{}** <:done:403285928233402378>".format(user))
+		
+		
+    @commands.command(pass_context=True, aliases=["shared"])
+    async def sharedservers(self, ctx, user: discord.Member=None):
+        """Find out what mutual servers i'm in with another user or yourself"""
+        if not user:
+            user = ctx.message.author
+        shared = "\n".join([x.name for x in self.bot.servers if user in x.members])
+        s=discord.Embed(description=shared, colour=user.colour)
+        s.set_author(name="Shared servers with {}".format(user), icon_url=user.avatar_url)
+        await self.bot.say(embed=s)
     
     @commands.command(pass_context=True)
     async def servers(self, ctx, page: int=None):
@@ -914,9 +920,15 @@ class General:
         await self.bot.say("The trigger **{}** has been removed <:done:403285928233402378>".format(trigger))
         
     async def on_message(self, message):
+        server = message.server
+        if server.id not in self._stats:
+            self._stats[server.id] = {}
+        if "messages" not in self._stats[server.id]:
+            self._stats[server.id]["messages"] = 0
+        self._stats[server.id]["messages"] += 1
+        dataIO.save_json(self._stats_file, self._stats)
         if message.author.id == self.bot.user.id:
             return
-        server = message.server
         if self.d[server.id]["toggle"] == False:
             return 
         if self.d[server.id]["case"] == True:
@@ -1150,27 +1162,63 @@ class General:
         await self.bot.say(embed=s)
 		
     @commands.command(pass_context=True)
+    async def serverstats(self, ctx):
+        server = ctx.message.server
+        if server.id not in self._stats:
+            self._stats[server.id] = {}
+            dataIO.save_json(self._stats_file, self._stats)
+        if "messages" not in self._stats[server.id]:
+            self._stats[server.id]["messages"] = 0
+            dataIO.save_json(self._stats_file, self._stats)
+        if "members" not in self._stats[server.id]:
+            self._stats[server.id]["members"] = 0
+            dataIO.save_json(self._stats_file, self._stats)
+        s=discord.Embed()
+        s.set_author(name=server.name + " Stats", icon_url=server.icon_url)
+        s.add_field(name="Users Joined Today", value=self._stats[server.id]["members"])
+        s.add_field(name="Messages Sent Today", value=self._stats[server.id]["messages"])
+        await self.bot.say(embed=s)
+		
+    @commands.command(pass_context=True)
     async def stats(self, ctx):
         """View the bots live stats"""
         if "servers" not in self._stats:
             self._stats["servers"] = 0
             dataIO.save_json(self._stats_file, self._stats)
+        if "commands" not in self._stats:
+            self._stats["commands"] = 0
+            dataIO.save_json(self._stats_file, self._stats)
+        m, s = divmod(ctx.message.timestamp.timestamp() - self.bot.uptime, 60)
+        h, m = divmod(m, 60)
+        d, h = divmod(h, 24)
+        if d == 0 and h == 0:
+            uptime = "%d minutes %d seconds" % (m, s)
+        elif d == 0 and h == 0 and m == 0:
+            uptime = "%d seconds" % (s)
+        elif d == 0:
+            uptime = "%d hours %d minutes %d seconds" % (h, m, s)
+        else:
+            uptime = "%d days %d hours %d minutes %d seconds" % (d, h, m, s)
         members = list(set(self.bot.get_all_members()))
         online = len(set(filter(lambda m: m.status is discord.Status.online, members)))
         idle = len(set(filter(lambda m: m.status is discord.Status.idle, members)))
         dnd = len(set(filter(lambda m: m.status is discord.Status.do_not_disturb, members)))
         offline = len(set(filter(lambda m: m.status is discord.Status.offline, members)))
-        s=discord.Embed()
+        process = psutil.Process(os.getpid())
+        s=discord.Embed(description="Been up for {}".format(uptime))
         s.set_author(name=self.bot.user.name + " Stats", icon_url=self.bot.user.avatar_url)
         s.set_thumbnail(url=self.bot.user.avatar_url)
         s.add_field(name="Bot ID", value=self.bot.user.id)
         s.add_field(name="Developer", value=str(discord.utils.get(self.bot.get_all_members(), id="402557516728369153")))
         s.add_field(name="Library", value="discord.py")
+        s.add_field(name="Memory Usage", value=str(round(process.memory_info().rss/1000000)) + " MB")
+        s.add_field(name="CPU Usage", value=str(psutil.cpu_percent()) + "%")
         s.add_field(name="Servers", value=len(self.bot.servers))
         s.add_field(name="Servers Joined Today", value=self._stats["servers"])
         s.add_field(name="Users", value="{} Online<:online:361440486998671381>\n{} Idle<:idle:361440487233814528>\n{} DND<:dnd:361440487179157505>\n{} Offline<:offline:361445086275567626>\n{} Total".format(online, idle, dnd, offline, len(members)))
         s.add_field(name="Text Channels", value=len([x for x in self.bot.get_all_channels() if x.type == discord.ChannelType.text]))
         s.add_field(name="Voice Channels", value=len([x for x in self.bot.get_all_channels() if x.type == discord.ChannelType.voice]))
+        s.add_field(name="Commands Used Today", value=self._stats["commands"])
         await self.bot.say(embed=s)
 		
     async def on_server_join(self, server):
@@ -1180,13 +1228,45 @@ class General:
     async def on_server_remove(self, server):
         self._stats["servers"] -= 1
         dataIO.save_json(self._stats_file, self._stats) 
+		
+    async def on_member_join(self, member):
+        server = member.server
+        if server.id not in self._stats:
+            self._stats[server.id] = {}
+        if "members" not in self._stats[server.id]:
+            self._stats[server.id]["members"] = 0
+        self._stats[server.id]["members"] += 1
+        dataIO.save_json(self._stats_file, self._stats) 
+		
+    async def on_member_remove(self, member):
+        server = member.server
+        if server.id not in self._stats:
+            self._stats[server.id] = {}
+        if "members" not in self._stats[server.id]:
+            self._stats[server.id]["members"] = 0
+        self._stats[server.id]["members"] -= 1
+        dataIO.save_json(self._stats_file, self._stats) 
+		
+    async def on_command(self, command, ctx):
+        self._stats["commands"] += 1
+        dataIO.save_json(self._stats_file, self._stats) 
 
     async def checktime(self):
-        await self.bot.wait_until_ready() 
-        if datetime.datetime.utcnow.strftime("%-H") == "1":
-            self._stats["servers"] = 0 
-            dataIO.save_json(self._stats_file, self._stats) 
-        asyncio.sleep(1800)
+        while not self.bot.is_closed:
+            if datetime.utcnow().strftime("%-H") == "23":
+                s=discord.Embed(colour=0xffff00, timestamp=datetime.now())
+                s.set_author(name="Bot Logs", icon_url=self.bot.user.avatar_url)
+                s.add_field(name="Average Command Usage", value="1 every {}s".format(round(86400/self._stats["commands"])))
+                s.add_field(name="Servers", value=len(self.bot.servers), inline=False)
+                s.add_field(name="Users (No Bots)", value=len(set(filter(lambda m: not m.bot, list(set(self.bot.get_all_members()))))))
+                await self.bot.send_message(self.bot.get_channel("445982429522690051"), embed=s)
+                self._stats["servers"] = 0
+                self._stats["commands"] = 0
+                for serverid in [x for x in self._stats if x != "commands" and x != "servers"]:
+                    self._stats[serverid]["members"] = 0
+                    self._stats[serverid]["messages"] = 0
+                dataIO.save_json(self._stats_file, self._stats) 
+            await asyncio.sleep(2700)
         
 def check_folders():
     if not os.path.exists("data/general"):
@@ -1211,4 +1291,4 @@ def check_files():
 def setup(bot):
     check_folders()
     check_files()
-    bot.add_cog(General(bot))
+    bot.add_cog(general(bot))

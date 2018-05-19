@@ -107,9 +107,22 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
     @welcomer.command(pass_context=True)
     async def preview(self, ctx):
         """Look at the preview of your welcomer"""
-        message = self.settings[ctx.message.server.id]["message"]
-        await self.bot.say(message.format(ctx.message.server, ctx.message.author, len(ctx.message.server.members)))
-        await self.bot.say("**{}** just left **{}**. Goodbye **{}**!".format(ctx.message.author.name, ctx.message.server, ctx.message.author.name))
+        server = ctx.message.server
+        author = ctx.message.author
+        message = self.settings[server.id]["message"]
+        message = message.replace("{server}", server.name)
+        message = message.replace("{user.mention}", author.mention)
+        message = message.replace("{user.name}", author.name)
+        message = message.replace("{user}", str(author))
+        message = message.replace("{server.members}", str(len(server.members))) 
+        message2 = self.settings[server.id]["message-leave"]
+        message2 = message2.replace("{server}", server.name)
+        message2 = message2.replace("{user.mention}", author.mention)
+        message2 = message2.replace("{user.name}", author.name)
+        message2 = message2.replace("{user}", str(author))
+        message2 = message2.replace("{server.members}", str(len(server.members))) 
+        await self.bot.say(message)
+        await self.bot.say(message2)
 			
     @welcomer.command(pass_context=True)
     @checks.admin_or_permissions(manage_messages=True)

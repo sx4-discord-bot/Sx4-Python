@@ -17,7 +17,7 @@ from random import choice as randchoice
 from discord.ext.commands import CommandNotFound
 from utils.dataIO import fileIO
 
-class Logs:
+class logs:
     def __init__(self, bot):
         self.bot = bot
         self.JSON = "data/logs/settings.json"
@@ -254,4 +254,4 @@ def check_files():
 def setup(bot): 
     check_folders()
     check_files() 
-    bot.add_cog(Logs(bot))
+    bot.add_cog(logs(bot))

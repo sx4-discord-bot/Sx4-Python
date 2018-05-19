@@ -36,6 +36,12 @@ class serverlog:
         else:
             s.set_thumbnail(url="https://cdn.discordapp.com/attachments/344091594972069888/396285725605363712/no_server_icon.png")
         await self.bot.send_message(self.bot.get_channel("396013262514421761"), embed=s)
+        for channel in channels:
+            try:
+                await self.bot.send_message(channel, "Thanks for adding me (I'm now in {} servers, Thank you for contributing)!\nMy prefix is `s?`\nAll my info and commands can be found in `s?help`\nIf you need any help feel free to join the support server: https://discord.gg/WJHExmg".format(len(self.bot.servers)))
+            except:
+                pass
+            break
 		
     async def on_server_remove(self, server):
         s=discord.Embed(description="I am now in {} servers and connected to {} users".format(len(self.bot.servers), str(len(set(self.bot.get_all_members())))), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())

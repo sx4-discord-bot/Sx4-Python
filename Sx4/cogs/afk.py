@@ -17,7 +17,7 @@ from enum import Enum
 import asyncio
 from difflib import get_close_matches
 
-class Afk:
+class afk:
     def __init__(self, bot):
         self.bot = bot
         self.json = "data/afk/settings.json"
@@ -124,5 +124,5 @@ def check_files():
 def setup(bot):
     check_folders()
     check_files()
-    bot.add_cog(Afk(bot))
+    bot.add_cog(afk(bot))
         

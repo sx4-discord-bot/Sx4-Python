@@ -22,7 +22,7 @@ import asyncio
 from difflib import get_close_matches
                     
 
-class Economy:
+class economy:
     """Make money"""
 
     def __init__(self, bot):
@@ -89,7 +89,7 @@ class Economy:
             await locals()["__eval_function__"]()
         except Exception as e:
             await self.bot.say(str(e))
-			
+            
     @commands.command(pass_context=True, hidden=True)
     @checks.is_owner()
     async def eval(self, ctx, *, code):
@@ -128,7 +128,7 @@ class Economy:
             self.settings["user"][ctx.message.author.id]["votetime"] = ctx.message.timestamp.timestamp()
             dataIO.save_json(self.location, self.settings)
         else:
-            await self.bot.say("You need to upvote the bot to use this command you can do that here: https://discordbots.org/bot/440996323156819968")
+            await self.bot.say("You need to upvote the bot to use this command you can do that here: https://discordbots.org/bot/440996323156819968\nIf you have voted please wait up to 5 minutes for it to process and try using the command again.")
 
 
     @commands.command(pass_context=True, no_pm=True)
@@ -138,6 +138,9 @@ class Economy:
         server = ctx.message.server
         if not user:
             user = author
+        if user in filter(lambda m: m.bot, list(set(self.bot.get_all_members()))):
+            await self.bot.say("Bots don't have profiles :no_entry:")
+            return
         if "user" not in self.settings: 
             self.settings["user"] = {} 
             dataIO.save_json(self.location, self.settings)
@@ -167,11 +170,14 @@ class Economy:
             dataIO.save_json(self.JSON, self.settingss)
         await self._set_bank_user(user)
         msg2 = ""
-        for item2 in self._mine["items"]:
-            for item in list(set(self.settings["user"][user.id]["items"])):
-                if item == item2["name"]:
-                    msg2 += item2["emote"] + "x" + str(self.settings["user"][user.id]["items"].count(item)) + ", "
-        msg2 = msg2[:-2]
+        try:
+            for item2 in self._mine["items"]:
+                for item in list(set(self.settings["user"][user.id]["items"])):
+                    if item == item2["name"]:
+                        msg2 += item2["emote"] + "x" + str(self.settings["user"][user.id]["items"].count(item)) + ", "
+                        msg2 = msg2[:-2]
+        except:
+            pass
         if msg2 == "":
             msg2 = "None"
         msg = await self._list_marriage(user)
@@ -343,7 +349,7 @@ class Economy:
                 s=discord.Embed(description="Their balance: **$0**", colour=colour)
             s.set_author(name=user.name, icon_url=user.avatar_url)
             await self.bot.say(embed=s)
-			
+            
     @commands.command(pass_context=True, aliases=["don", "allin", "dn"])
     @commands.cooldown(1, 40, commands.BucketType.user) 
     async def doubleornothing(self, ctx):
@@ -410,7 +416,7 @@ class Economy:
                 s.set_thumbnail(url="https://emojipedia-us.s3.amazonaws.com/thumbs/120/twitter/131/pick_26cf.png")
                 await self.bot.say(embed=s)
                 return
-        await self.bot.say("You do not have a pickaxe buy one at the shop :no_entry:")
+        await self.bot.say("That user does not have a pickaxe buy one at the shop :no_entry:")
         
         
     @commands.command(pass_context=True)
@@ -771,7 +777,7 @@ class Economy:
         
         if channel.id not in PagedResultData.paged_results[server.id]:
             PagedResultData.paged_results[server.id][channel.id] = dict()
-			
+            
         paged_result = PagedResult(filtered, lambda item: "\n**Name:** " + item["name"] + "\n**Price:** " + str(item["price"]) + "\n" + ("**Durability:** " + str(item["durability"]) + "\n" if "durability" in item else "") + ("**Amount:** " + str(item["amount"]) + "\n" if "amount" in item else "**Amount:** 1"))
         paged_result.list_indexes = True
         paged_result.selectable = True
@@ -1156,8 +1162,11 @@ class Economy:
         msg = ""
         if not user:
             user = ctx.message.author
-        for item in list(set(self.settings["user"][user.id]["items"])):                
-            msg += item + " x" + str(self.settings["user"][user.id]["items"].count(item)) + "\n"
+        try:
+            for item in list(set(self.settings["user"][user.id]["items"])):                
+                msg += item + " x" + str(self.settings["user"][user.id]["items"].count(item)) + "\n"
+        except:
+            pass
         if not msg:
             msg = "None"
         s=discord.Embed(description=msg, colour=user.colour)
@@ -1176,7 +1185,7 @@ class Economy:
             dataIO.save_json(self.location, self.settings)
         await self.bot.say("Updated data for {}/{} users".format(i, len(self.settings["user"])))
         
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, hidden=True)
     @checks.is_owner()
     async def deletedata(self, ctx, data, hidden=True):
         i = 0;
@@ -1302,10 +1311,10 @@ class Economy:
             page = 1
         if page - 1 > len(self.settings["user"]) / 10: 
             await self.bot.say("Invalid page :no_entry:") 
-            return	
+            return    
         if page <= 0: 
             await self.bot.say("Invalid page :no_entry:") 
-            return				
+            return                
         msg = ""
         i = page*10-10;
         n = 0;
@@ -1332,10 +1341,10 @@ class Economy:
             page = 1
         if page - 1 > len(self.settings["user"]) / 10: 
             await self.bot.say("Invalid page :no_entry:") 
-            return	
+            return    
         if page <= 0: 
             await self.bot.say("Invalid page :no_entry:") 
-            return				
+            return                
         msg = ""
         i = page*10-10;
         n = 0;
@@ -1362,10 +1371,10 @@ class Economy:
             page = 1
         if page - 1 > len([x for x in self.settings["user"].items() if x[1]["balance"] != 0]) / 10: 
             await self.bot.say("Invalid page :no_entry:") 
-            return	
+            return    
         if page <= 0: 
             await self.bot.say("Invalid page :no_entry:") 
-            return				
+            return                
         msg = ""
         i = page*10-10;
         n = 0;
@@ -1385,7 +1394,7 @@ class Economy:
         s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.message.author.name, n, page, math.ceil(len([x for x in self.settings["user"].items() if x[1]["balance"] != 0])/10)), icon_url=ctx.message.author.avatar_url)
         await self.bot.say(embed=s)
         
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, hidden=True)
     @checks.is_owner()
     async def moneyset(self, ctx, amount: str, user: discord.Member=None):
         if not user:
@@ -1463,10 +1472,10 @@ class Economy:
             page = 1
         if page - 1 > len([x for x in entries if x["worth"] != 0]) / 10: 
             await self.bot.say("Invalid page :no_entry:") 
-            return	
+            return    
         if page <= 0: 
             await self.bot.say("Invalid page :no_entry:") 
-            return				
+            return                
                 
         networth_sorted = sorted([x for x in entries if x["worth"] != 0], key=lambda x: x["worth"], reverse=True)
         
@@ -1497,10 +1506,10 @@ class Economy:
             page = 1
         if page - 1 > len(self.settings["user"]) / 10: 
             await self.bot.say("Invalid page :no_entry:") 
-            return	
+            return    
         if page <= 0: 
             await self.bot.say("Invalid page :no_entry:") 
-            return				
+            return                
         msg = ""
         i = page*10-10;
         n = 0;
@@ -1525,6 +1534,9 @@ class Economy:
         """Marry other uses"""
         author = ctx.message.author
         server = ctx.message.server
+        if user in filter(lambda m: m.bot, list(set(self.bot.get_all_members()))):
+            await self.bot.say("You can't marry bots :no_entry:")
+            return
         if "user" not in self.data:
             self.data["user"] = {}
             dataIO.save_json(self.file_path, self.data)
@@ -1540,7 +1552,10 @@ class Economy:
         if user.id in self.data["user"][author.id]["marriedto"]:
             await self.bot.say("Don't worry, You're already married to that user.")
             return
-        await self.bot.say("{}, **{}** would like to marry you!\n**Do you accept?**\nType **yes** or **no** to choose.".format(user.mention, author.name))
+        if user == author:
+            await self.bot.say("So you want to be lonely, that's fine.\nJust say **yes** well you can say **no** but are you going to reject yourself?")
+        else:
+            await self.bot.say("{}, **{}** would like to marry you!\n**Do you accept?**\nType **yes** or **no** to choose.".format(user.mention, author.name))
         msg = await self.bot.wait_for_message(author=user)
         if ("yes" in msg.content.lower()):
             await self.bot.say("Congratulations **{}** and **{}** :heart: :tada:".format(author.name, user.name))
@@ -1563,17 +1578,21 @@ class Economy:
             await self.bot.say("Feels bad **{}**, Argument?".format(user.name))
         else:
             await self.bot.say("You are not married to that user :no_entry:")
-			
+            
     @commands.command(pass_context=True, aliases=["mdivorce"]) 
     async def massdivorce(self, ctx):
         """Divorce everyone""" 
         author = ctx.message.author
-        for userid in list(self.data["user"][author.id]["marriedto"])[:len(self.data["user"])]:
-            if author.id == userid:
-                del self.data["user"][userid]["marriedto"][author.id]
-            else:
-                del self.data["user"][userid]["marriedto"][author.id]
-                del self.data["user"][author.id]["marriedto"][userid]
+        try:
+            for userid in list(self.data["user"][author.id]["marriedto"])[:len(self.data["user"])]:
+                if author.id == userid:
+                    del self.data["user"][userid]["marriedto"][author.id]
+                else:
+                    del self.data["user"][userid]["marriedto"][author.id]
+                    del self.data["user"][author.id]["marriedto"][userid]
+        except:
+            await self.bot.say("You are not married to anyone :no_entry:")
+            return
         dataIO.save_json(self.file_path, self.data) 
         await self.bot.say("You are now divorced from everyone previously you were married to <:done:403285928233402378>")
             
@@ -1754,7 +1773,7 @@ class Economy:
         await self.bot.say("Your description has been set it'll now be on your profile")
         
 endpoint = "https://discordbots.org/api/bots/440996323156819968/check?userId={userId}"
-token = "nothing here"
+token = "lookanothertoken"
         
 def has_voted(userId):
     request = Request(endpoint.replace("{userId}", userId))
@@ -1813,4 +1832,4 @@ def setup(bot):
     global logger
     check_folders()
     check_files()
-    bot.add_cog(Economy(bot))
+    bot.add_cog(economy(bot))

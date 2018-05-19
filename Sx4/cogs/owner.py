@@ -7,14 +7,14 @@ import datetime
 from utils import checks
 import os
 
-class Owner:
+class owner:
     def __init__(self, bot):
         self.bot = bot
 		
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, hidden=True)
     @checks.is_owner()
-    async def updateavatar(self, ctx):
-        with open('blurple_sx4.png', 'rb') as r:
+    async def updateavatar(self, ctx, *, logoname):
+        with open('sx4-{}.png'.format(logoname), 'r') as r:
             avatar_url = r.read()
         await self.bot.edit_profile(password=None, avatar=avatar_url)
         await self.bot.say("I have changed my profile picture")
@@ -48,7 +48,7 @@ class Owner:
 		
     @commands.command(pass_context=True, hidden=True) 
     @checks.is_owner()
-    async def announce(self, ctx, *, text):
+    async def announceserver(self, ctx, *, text):
         i = 0;
         for server in self.bot.servers:
             try:
@@ -67,4 +67,4 @@ class Owner:
 
 		
 def setup(bot):
-    bot.add_cog(Owner(bot))
+    bot.add_cog(owner(bot))

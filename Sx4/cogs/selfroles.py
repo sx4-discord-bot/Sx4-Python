@@ -85,6 +85,12 @@ class selfroles:
         """Self assign a role in the selfrole list"""
         author = ctx.message.author
         server = ctx.message.server
+        if server.id not in self.data:
+            self.data[server.id] = {}
+            dataIO.save_json(self.file_path, self.data)
+        if "role" not in self.data[server.id]:
+            self.data[server.id]["role"] = {}
+            dataIO.save_json(self.file_path, self.data)
         if role.id in self.data[server.id]["role"]:
             if role in author.roles:
                 await self.bot.remove_roles(author, role)

@@ -5,14 +5,14 @@ from discord.utils import find
 from random import randint
 import asyncio
 
-class Statuses:
+class statuses:
     """Bot Status"""
 
     def __init__(self, bot):
         self.bot = bot
 
     async def display_status(self):
-        while self == self.bot.get_cog('Statuses'):
+        while self == self.bot.get_cog('statuses'):
             try:
                 statuses = [
                     '{} servers'.format(len(self.bot.servers)),
@@ -26,7 +26,7 @@ class Statuses:
             await asyncio.sleep(30)
 
 def setup(bot):
-    n = Statuses(bot)
+    n = statuses(bot)
     loop = asyncio.get_event_loop()
     loop.create_task(n.display_status())  
     bot.add_cog(n)

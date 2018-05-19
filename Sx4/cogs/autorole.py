@@ -18,7 +18,7 @@ from discord.ext.commands import CommandNotFound
 from utils.dataIO import fileIO
 
 
-class Autorole:
+class autorole:
     def __init__(self, bot):
         self.bot = bot
         self.JSON = "data/mod/autorole.json"
@@ -115,4 +115,4 @@ def check_files():
 def setup(bot): 
     check_folders()
     check_files()
-    bot.add_cog(Autorole(bot))
+    bot.add_cog(autorole(bot))
