@@ -38,55 +38,52 @@ class mod:
     async def announce(self, ctx, role: discord.Role, *, text: str):
         """Send an announcement in the channel you want by using the command in the channel you want choose a role you want to use and some text and the rest the bot will do"""
         try:
-            await self.bot.delete_message(ctx.message)
+            await ctx.message.delete()
         except: 
             pass
         try:
-            await self.bot.edit_role(ctx.message.server, role, mentionable=True)
+            await role.edit(mentionable=True)
         except:
-            await self.bot.say("I'm not able to edit that role :no_entry:") 
+            await ctx.send("I'm not able to edit that role :no_entry:") 
             return
-        await self.bot.say(role.mention + ", " + text + " - " + str(ctx.message.author))
-        await self.bot.edit_role(ctx.message.server, role, mentionable=False)
+        await ctx.send(role.mention + ", " + text + " - " + str(ctx.message.author))
+        await role.edit(mentionable=False)
     
     @commands.command(pass_context=True, aliases=["mm"])
     @checks.mod_or_permissions(move_members=True)
-    async def massmove(self, ctx, from_channel: discord.Channel, to_channel: discord.Channel):
+    async def massmove(self, ctx, from_channel: discord.VoiceChannel, to_channel: discord.VoiceChannel):
         """Mass move users from one channel to another"""
-        author = ctx.message.author
-        server = ctx.message.server
+        author = ctx.author
+        server = ctx.guild
         i = 0
-        if from_channel in [x for x in server.channels if x.type == discord.ChannelType.text] or to_channel in [x for x in server.channels if x.type == discord.ChannelType.text]:
-            await self.bot.say("You can only use voice channels as arguments :no_entry:")
-            return
         if len(from_channel.voice_members) == 0:
-            await self.bot.say("There is no one in that voice channel :no_entry:")
+            await ctx.send("There is no one in that voice channel :no_entry:")
             return
         for user in [x for x in from_channel.voice_members if x not in to_channel.voice_members]:
-            await self.bot.move_member(user, to_channel)
+            await user.edit(voice_channel=to_channel, reason="Massmove") 
             i = i + 1
-        await self.bot.say("Moved **{}** members from `{}` to `{}`".format(i, from_channel.name, to_channel.name))
+        await ctx.send("Moved **{}** members from `{}` to `{}`".format(i, from_channel.name, to_channel.name))
         
     @commands.command(pass_context=True)
     @checks.mod_or_permissions(move_members=True)
-    async def move(self, ctx, user: discord.Member, to_channel: discord.Channel=None):
+    async def move(self, ctx, user: discord.Member, to_channel: discord.VoiceChannel=None):
         """Move a user to your channel or a chosen channel"""
-        author = ctx.message.author
-        server = ctx.message.server
+        author = ctx.author
+        server = ctx.guild
         channel = to_channel
         if not to_channel:
-            channel = author.voice_channel
+            channel = author.voice.channel
             if channel is None:
-                await self.bot.say("You are not in a voice channel :no_entry:")
+                await ctx.send("You are not in a voice channel :no_entry:")
                 return
-        if channel in [x for x in server.channels if x.type == discord.ChannelType.text]:
-            await self.bot.say("You can only use voice channels as arguments :no_entry:")
+        if not user.voice.channel:
+            await ctx.send("That user isn't in a voice channel :no_entry:")
             return
-        if channel == user.voice_channel:
-            await self.bot.say("They are already in that voice channel :no_entry:")
+        if channel == user.voice.channel:
+            await ctx.send("They are already in that voice channel :no_entry:")
             return
-        await self.bot.move_member(user, channel)
-        await self.bot.say("Moved **{}** to `{}`".format(user, channel.name))
+        await user.edit(voice_channel=channel)
+        await ctx.send("Moved **{}** to `{}`".format(user, channel.name))
         
         
     @commands.command(pass_context=True)
@@ -97,39 +94,39 @@ class mod:
         if not nickname:
             nickname = user.name
         try:
-            await self.bot.change_nickname(user, nickname)
+            await user.edit(nick=nickname)
         except discord.errors.Forbidden:
-            await self.bot.say("I'm not able to change that users name :no_entry:")
+            await ctx.send("I'm not able to change that users name :no_entry:")
             return
-        await self.bot.say("I have changed **{}'s** name to **{}** <:done:403285928233402378>:ok_hand:".format(user.name, nickname))
+        await ctx.send("I have changed **{}'s** name to **{}** <:done:403285928233402378>:ok_hand:".format(user.name, nickname))
         
     @commands.command(pass_context=True, aliases=["c"])
     @checks.mod_or_permissions(manage_messages=True) 
     async def clear(self, ctx, user: discord.Member, amount: int=None):
         """Clear a users messages"""
-        channel = ctx.message.channel
-        server = ctx.message.server
-        has_permissions = channel.permissions_for(server.me).manage_messages
+        channel = ctx.channel
+        server = ctx.guild
+        has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await self.bot.say("I do not have the `MANAGE_MESSAGES` permission**")
+            await ctx.send("I do not have the `MANAGE_MESSAGES` permission**")
             return
         if amount is None:
             amount = 100
         elif amount > 100:
             amount = 100
-        await self.bot.delete_message(ctx.message)
+        await ctx.message.delete()
         try:
-            deleted = await self.bot.purge_from(ctx.message.channel, limit=amount, before=ctx.message, check=lambda m: m.author == user)
+            deleted = await channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author == user)
         except discord.HTTPException:
-            await self.bot.say("I cannot delete messages 14 days or older :no_entry:")
+            await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
         if len(deleted) == 1:
-            msg = await self.bot.say("Deleted **{}** message from **{}** <:done:403285928233402378>:ok_hand:".format(len(deleted), user))
+            msg = await ctx.send("Deleted **{}** message from **{}** <:done:403285928233402378>:ok_hand:".format(len(deleted), user))
         else:
-            msg = await self.bot.say("Deleted **{}** messages from **{}** <:done:403285928233402378>:ok_hand:".format(len(deleted), user))
+            msg = await ctx.send("Deleted **{}** messages from **{}** <:done:403285928233402378>:ok_hand:".format(len(deleted), user))
         await asyncio.sleep(3)
         try:
-            await self.bot.delete_message(msg) 
+            await msg.delete() 
         except discord.HTTPException:
             pass
         
@@ -137,29 +134,29 @@ class mod:
     @checks.mod_or_permissions(manage_messages=True)
     async def botclean(self, ctx, limit: int=None):
         """Clears all bot messages"""
-        channel = ctx.message.channel
-        server = ctx.message.server
-        has_permissions = channel.permissions_for(server.me).manage_messages
+        channel = ctx.channel
+        server = ctx.guild
+        has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await self.bot.say("I do not have the `MANAGE_MESSAGES` permission**")
+            await ctx.send("I do not have the `MANAGE_MESSAGES` permission**")
             return
         if limit is None:
             limit = 100
         elif limit > 100:
             limit = 100
-        await self.bot.delete_message(ctx.message)
+        await ctx.message.delete()
         try:
-            deleted = await self.bot.purge_from(ctx.message.channel, limit=limit, before=ctx.message, check= lambda e: e.author.bot)
+            deleted = await channel.purge(limit=limit, before=ctx.message, check=lambda e: e.author.bot)
         except discord.HTTPException:
-            await self.bot.say("I cannot delete messages 14 days or older :no_entry:")
+            await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
         if len(deleted) == 1:
-            msg = await self.bot.say("*Deleted **{}** bot message <:done:403285928233402378>:ok_hand:*".format(len(deleted)))
+            msg = await ctx.send("*Deleted **{}** bot message <:done:403285928233402378>:ok_hand:*".format(len(deleted)))
         else:
-            msg = await self.bot.say("*Deleted **{}** bot messages* *<:done:403285928233402378>:ok_hand:*".format(len(deleted)))
+            msg = await ctx.send("*Deleted **{}** bot messages* *<:done:403285928233402378>:ok_hand:*".format(len(deleted)))
         await asyncio.sleep(3)
         try:
-            await self.bot.delete_message(msg) 
+            await msg.delete()
         except discord.HTTPException:
             pass
         
@@ -167,50 +164,50 @@ class mod:
     @checks.mod_or_permissions(manage_messages=True)
     async def purge(self, ctx, limit: int=None):
         """Purges a certain amount of messages"""
-        channel = ctx.message.channel
-        server = ctx.message.server
-        has_permissions = channel.permissions_for(server.me).manage_messages
+        channel = ctx.channel
+        server = ctx.guild
+        has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await self.bot.say("I do not have the `MANAGE_MESSAGES` permission**")
+            await ctx.send("I do not have the `MANAGE_MESSAGES` permission**")
             return
         if limit is None:
             limit = 100
         elif limit > 100:
             limit = 100
-        await self.bot.delete_message(ctx.message)
+        await ctx.message.delete()
         try:
-            deleted = await self.bot.purge_from(ctx.message.channel, limit=limit, before=ctx.message)
+            deleted = await channel.purge(limit=limit, before=ctx.message)
         except discord.HTTPException:
-            await self.bot.say("I cannot delete messages 14 days or older :no_entry:")
+            await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
         if len(deleted) == 1:
-            msg = await self.bot.say("*Deleted **{}** message <:done:403285928233402378>:ok_hand:*".format(len(deleted)))
+            msg = await ctx.send("*Deleted **{}** message <:done:403285928233402378>:ok_hand:*".format(len(deleted)))
         else:
-            msg = await self.bot.say("*Deleted **{}** messages* *<:done:403285928233402378>:ok_hand:*".format(len(deleted)))
+            msg = await ctx.send("*Deleted **{}** messages* *<:done:403285928233402378>:ok_hand:*".format(len(deleted)))
         await asyncio.sleep(3)
         try:
-            await self.bot.delete_message(msg) 
+            await msg.delete()
         except discord.HTTPException:
             pass
             
     @commands.group(pass_context=True)
     async def modlog(self, ctx):
         """Have logs for all mod actions"""
-        server = ctx.message.server
-        if server.id not in self._logs:
-            self._logs[server.id] = {}
+        server = ctx.guild
+        if str(server.id) not in self._logs:
+            self._logs[str(server.id)] = {}
             dataIO.save_json(self._logs_file, self._logs)
-        if "channel" not in self._logs[server.id]:
-            self._logs[server.id]["channel"] = None
+        if "channel" not in self._logs[str(server.id)]:
+            self._logs[str(server.id)]["channel"] = None
             dataIO.save_json(self._logs_file, self._logs)
-        if "toggle" not in self._logs[server.id]:
-            self._logs[server.id]["toggle"] = False
+        if "toggle" not in self._logs[str(server.id)]:
+            self._logs[str(server.id)]["toggle"] = False
             dataIO.save_json(self._logs_file, self._logs)
-        if "case#" not in self._logs[server.id]:
-            self._logs[server.id]["case#"] = 0
+        if "case#" not in self._logs[str(server.id)]:
+            self._logs[str(server.id)]["case#"] = 0
             dataIO.save_json(self._logs_file, self._logs)
-        if "case" not in self._logs[server.id]:
-            self._logs[server.id]["case"] = {}
+        if "case" not in self._logs[str(server.id)]:
+            self._logs[str(server.id)]["case"] = {}
             dataIO.save_json(self._logs_file, self._logs)
         
             
@@ -218,247 +215,248 @@ class mod:
     @checks.admin_or_permissions(manage_roles=True)
     async def toggle(self, ctx):
         """Toggle modlogs on or off"""
-        server = ctx.message.server
-        if self._logs[server.id]["toggle"] == True:
-            self._logs[server.id]["toggle"] = False
+        server = ctx.guild
+        if self._logs[str(server.id)]["toggle"] == True:
+            self._logs[str(server.id)]["toggle"] = False
             dataIO.save_json(self._logs_file, self._logs)
-            await self.bot.say("Modlogs are now disabled.")
+            await ctx.send("Modlogs are now disabled.")
             return
-        if self._logs[server.id]["toggle"] == False:
-            self._logs[server.id]["toggle"] = True
+        if self._logs[str(server.id)]["toggle"] == False:
+            self._logs[str(server.id)]["toggle"] = True
             dataIO.save_json(self._logs_file, self._logs)
-            await self.bot.say("Modlogs are now enabled.")
+            await ctx.send("Modlogs are now enabled.")
             return
             
     @modlog.command(pass_context=True) 
     @checks.admin_or_permissions(manage_roles=True)
-    async def channel(self, ctx, channel: discord.Channel):
+    async def channel(self, ctx, channel: discord.TextChannel):
         """Set the channel where you want modlogs to be posted"""
-        server = ctx.message.server
-        self._logs[server.id]["channel"] = channel.id
+        server = ctx.guild
+        self._logs[str(server.id)]["channel"] = str(channel.id)
         dataIO.save_json(self._logs_file, self._logs)    
-        await self.bot.say("<#{}> has been set as the modlog channel".format(channel.id))
+        await ctx.send("<#{}> has been set as the modlog channel".format(str(channel.id)))
         
     @modlog.command(pass_context=True)
     @checks.admin_or_permissions(manage_messages=True)
     async def case(self, ctx, case_number, *, reason):
         """Edit a modlog case"""
-        author = ctx.message.author
-        server = ctx.message.server 
-        if self._logs[server.id]["case"][case_number]["mod"] is not None and self._logs[server.id]["case"][case_number]["mod"] != author.id:
-            await self.bot.say("You do not have ownership of that log :no_entry:")
+        author = ctx.author
+        server = ctx.guild
+        if self._logs[str(server.id)]["case"][case_number]["mod"] is not None and self._logs[str(server.id)]["case"][case_number]["mod"] != str(author.id):
+            await ctx.send("You do not have ownership of that log :no_entry:")
             return
         try:
-            channel = self.bot.get_channel(self._logs[server.id]["channel"])
+            channel = self.bot.get_channel(int(self._logs[str(server.id)]["channel"]))
         except:
-            await self.bot.say("The modlog channel no longer exists :no_entry:")
+            await ctx.send("The modlog channel no longer exists :no_entry:")
             return
         try:
-            message = await self.bot.get_message(channel, self._logs[server.id]["case"][case_number]["message"])
+            message = await channel.get_message(int(self._logs[str(server.id)]["case"][case_number]["message"]))
         except:
-            await self.bot.say("I am unable to find that case :no_entry:")
+            await ctx.send("I am unable to find that case :no_entry:")
             return
-        s=discord.Embed(title="Case {} | {}".format(case_number, self._logs[server.id]["case"][case_number]["action"]))
-        s.add_field(name="User", value=await self.bot.get_user_info(self._logs[server.id]["case"][case_number]["user"]))
+        s=discord.Embed(title="Case {} | {}".format(case_number, self._logs[str(server.id)]["case"][case_number]["action"]))
+        s.add_field(name="User", value=await self.bot.get_user_info(int(self._logs[str(server.id)]["case"][case_number]["user"])))
         s.add_field(name="Moderator", value=author, inline=False)
-        self._logs[server.id]["case"][case_number]["mod"] = author.id
+        self._logs[str(server.id)]["case"][case_number]["mod"] = str(author.id)
         s.add_field(name="Reason", value=reason)
-        self._logs[server.id]["case"][case_number]["reason"] = reason
+        self._logs[str(server.id)]["case"][case_number]["reason"] = reason
         dataIO.save_json(self._logs_file, self._logs)      
         try:
-            await self.bot.edit_message(message, embed=s)
-            await self.bot.say("Case #{} has been updated <:done:403285928233402378>".format(case_number))
+            await message.edit(embed=s)
+            await ctx.send("Case #{} has been updated <:done:403285928233402378>".format(case_number))
         except: 
-            await self.bot.say("I am unable to edit that case or it doesn't exist :no_entry:")
+            await ctx.send("I am unable to edit that case or it doesn't exist :no_entry:")
             
     @modlog.command(pass_context=True)
     @checks.admin_or_permissions(manage_messages=True)
     async def viewcase(self, ctx, case_number):
         """Someone delete their modlog case in your modlog channel, i store all of them so use this command to see the deleted case"""
-        server = ctx.message.server
-        if self._logs[server.id]["case"][case_number]["reason"] is None:
+        server = ctx.guild
+        if self._logs[str(server.id)]["case"][case_number]["reason"] is None:
             reason = "None (Update using `s?modlog case {} <reason>`)".format(case_number)
         else:
-            reason = self._logs[server.id]["case"][case_number]["reason"]
-        if self._logs[server.id]["case"][case_number]["mod"] is None:
+            reason = self._logs[str(server.id)]["case"][case_number]["reason"]
+        if self._logs[str(server.id)]["case"][case_number]["mod"] is None:
             author = "Unknown"
         else:
-            author = await self.bot.get_user_info(self._logs[server.id]["case"][case_number]["mod"])
-        s=discord.Embed(title="Case {} | {}".format(case_number, self._logs[server.id]["case"][case_number]["action"]))
-        s.add_field(name="User", value=await self.bot.get_user_info(self._logs[server.id]["case"][case_number]["user"]))     
+            author = await self.bot.get_user_info(self._logs[str(server.id)]["case"][case_number]["mod"])
+        s=discord.Embed(title="Case {} | {}".format(case_number, self._logs[str(server.id)]["case"][case_number]["action"]))
+        s.add_field(name="User", value=await self.bot.get_user_info(int(self._logs[str(server.id)]["case"][case_number]["user"])))
         s.add_field(name="Moderator", value=author, inline=False)
         s.add_field(name="Reason", value=reason)
-        await self.bot.say(embed=s)
+        await ctx.send(embed=s)
             
     @modlog.command(pass_context=True)
     @checks.admin_or_permissions(manage_roles=True)
     async def resetcases(self, ctx):
         """Reset all the cases in the modlog"""
-        server = ctx.message.server
-        self._logs[server.id]["case#"] = 0
-        del self._logs[server.id]["case"]
+        server = ctx.guild
+        self._logs[str(server.id)]["case#"] = 0
+        del self._logs[str(server.id)]["case"]
         dataIO.save_json(self._logs_file, self._logs)    
-        await self.bot.say("All cases have been reset <:done:403285928233402378>")
+        await ctx.send("All cases have been reset <:done:403285928233402378>")
         
     async def _log(self, author, server, action, reason, user):
-        if "case" not in self._logs[server.id]:
-            self._logs[server.id]["case"] = {}
+        if "case" not in self._logs[str(server.id)]:
+            self._logs[str(server.id)]["case"] = {}
             dataIO.save_json(self._logs_file, self._logs)
-        channel = self.bot.get_channel(self._logs[server.id]["channel"])
-        if self._logs[server.id]["toggle"] == True and channel is not None:
-            self._logs[server.id]["case#"] += 1 
-            number = str(self._logs[server.id]["case#"])
-            if number not in self._logs[server.id]["case"]:
-                self._logs[server.id]["case"][number] = {}
+        channel = self.bot.get_channel(int(self._logs[str(server.id)]["channel"]))
+        if self._logs[str(server.id)]["toggle"] == True and channel is not None:
+            self._logs[str(server.id)]["case#"] += 1 
+            number = str(self._logs[str(server.id)]["case#"])
+            if number not in self._logs[str(server.id)]["case"]:
+                self._logs[str(server.id)]["case"][number] = {}
                 dataIO.save_json(self._logs_file, self._logs)
-            if "action" not in self._logs[server.id]["case"][number]:
-                self._logs[server.id]["case"][number]["action"] = action
+            if "action" not in self._logs[str(server.id)]["case"][number]:
+                self._logs[str(server.id)]["case"][number]["action"] = action
                 dataIO.save_json(self._logs_file, self._logs)
-            if "user" not in self._logs[server.id]["case"][number]:
-                self._logs[server.id]["case"][number]["user"] = user.id
+            if "user" not in self._logs[str(server.id)]["case"][number]:
+                self._logs[str(server.id)]["case"][number]["user"] = str(user.id)
                 dataIO.save_json(self._logs_file, self._logs)   
-            if "mod" not in self._logs[server.id]["case"][number]:
-                self._logs[server.id]["case"][number]["mod"] = author.id
+            if "mod" not in self._logs[str(server.id)]["case"][number]:
+                self._logs[str(server.id)]["case"][number]["mod"] = str(author.id)
                 dataIO.save_json(self._logs_file, self._logs)   
-            if "reason" not in self._logs[server.id]["case"][number]:
-                self._logs[server.id]["case"][number]["reason"] = {}
+            if "reason" not in self._logs[str(server.id)]["case"][number]:
+                self._logs[str(server.id)]["case"][number]["reason"] = {}
                 dataIO.save_json(self._logs_file, self._logs)                     
             if not reason: 
                 reason = "None (Update using `s?modlog case {} <reason>`)".format(number)
-                self._logs[server.id]["case"][number]["reason"] = None
+                self._logs[str(server.id)]["case"][number]["reason"] = None
             else:
-                self._logs[server.id]["case"][number]["reason"] = reason
+                self._logs[str(server.id)]["case"][number]["reason"] = reason
             s=discord.Embed(title="Case {} | {}".format(number, action))
             s.add_field(name="User", value=user)
             s.add_field(name="Moderator", value=author, inline=False)
             s.add_field(name="Reason", value=reason)
-            message = await self.bot.send_message(self.bot.get_channel(self._logs[server.id]["channel"]), embed=s)
-            if "message" not in self._logs[server.id]["case"][number]:
-                self._logs[server.id]["case"][number]["message"] = message.id
+            message = await channel.send(embed=s)
+            if "message" not in self._logs[str(server.id)]["case"][number]:
+                self._logs[str(server.id)]["case"][number]["message"] = str(message.id)
                 dataIO.save_json(self._logs_file, self._logs)    
         
     @commands.command(pass_context=True, aliases=["cr"])
     @checks.admin_or_permissions(manage_roles=True)
     async def createrole(self, ctx, rolename, colour_hex: discord.Colour=None):
         """Create a role in the server"""
-        if not ctx.message.channel.permissions_for(ctx.message.server.me).manage_roles:
-            await self.bot.say("I need the `MANGE_ROLES` Permission :no_entry:")
+        if not ctx.message.channel.permissions_for(ctx.me).manage_roles:
+            await ctx.send("I need the `MANGE_ROLES` Permission :no_entry:")
             return
         try:
-            await self.bot.create_role(ctx.message.server, name=rolename, colour=colour_hex)
-            await self.bot.say("I have created the role **{}** <:done:403285928233402378>:ok_hand:".format(rolename)) 
+            await ctx.guild.create_role(name=rolename, colour=colour_hex)
+            await ctx.send("I have created the role **{}** <:done:403285928233402378>:ok_hand:".format(rolename)) 
         except:
-            await self.bot.say("I was not able to create the role :no_entry:")
+            await ctx.send("I was not able to create the role :no_entry:")
             
     @commands.command(pass_context=True, aliases=["dr"])
     @checks.admin_or_permissions(manage_roles=True)
     async def deleterole(self, ctx, *, role: discord.Role):
         """Delete a role in the server"""
-        if not ctx.message.channel.permissions_for(ctx.message.server.me).manage_roles:
-            await self.bot.say("I need the `MANGE_ROLES` Permission :no_entry:")
+        if not ctx.message.channel.permissions_for(ctx.me).manage_roles:
+            await ctx.send("I need the `MANGE_ROLES` Permission :no_entry:")
             return
         try:
-            await self.bot.delete_role(ctx.message.server, role)
-            await self.bot.say("I have deleted the role **{}** <:done:403285928233402378>:ok_hand:".format(role.name)) 
+            await role.delete()
+            await ctx.send("I have deleted the role **{}** <:done:403285928233402378>:ok_hand:".format(role.name)) 
         except:
-            await self.bot.say("I was not able to delete the role or the role doesn't exist :no_entry:")
+            await ctx.send("I was not able to delete the role or the role doesn't exist :no_entry:")
         
     @commands.command(pass_context=True, aliases=["ar"]) 
     @checks.admin_or_permissions(manage_roles=True)
-    async def addrole(self, ctx, role: discord.Role, user: discord.Member=None):
+    async def addrole(self, ctx, role: discord.Role, *, user: discord.Member=None):
         """Add a role to a user"""
         author = ctx.message.author
-        server = ctx.message.server
-        if role.position > author.top_role.position:
+        server = ctx.message.guild
+        if role.position >= author.top_role.position:
             if author == server.owner:
                 pass
             else:
-                await self.bot.say("You can not add a role to a user higher than your own role :no_entry:")
+                await ctx.send("You can not add a role to a user higher than your own role :no_entry:")
                 return
         if user is None:
             user = author
         if role in user.roles:
-            await self.bot.say("The user already has that role :no_entry:")
+            await ctx.send("The user already has that role :no_entry:")
             return
         try:
-            await self.bot.add_roles(user, role)
-            await self.bot.say("**{}** has been added to **{}** <:done:403285928233402378>:ok_hand:".format(role, user))
+            await user.add_roles(role)
+            await ctx.send("**{}** has been added to **{}** <:done:403285928233402378>:ok_hand:".format(role, user))
         except discord.errors.Forbidden:
-            await self.bot.say("I'm not able to add the role to the user :no_entry:")
+            await ctx.send("I'm not able to add the role to the user :no_entry:")
         
     @commands.command(pass_context=True, aliases=["rr"]) 
     @checks.admin_or_permissions(manage_roles=True)
-    async def removerole(self, ctx, role: discord.Role, user: discord.Member=None):
+    async def removerole(self, ctx, role: discord.Role, *, user: discord.Member=None):
         """Remove a role from a user"""
         author = ctx.message.author
-        if role.position > author.top_role.position:
+        server = ctx.guild
+        if role.position >= author.top_role.position:
             if author == server.owner:
                 pass
             else:
-                await self.bot.say("You can not remove a role from a user higher than your own role :no_entry:")
+                await ctx.send("You can not remove a role from a user higher than your own role :no_entry:")
                 return
         if user is None:
             user = author
         if not role in user.roles:
-            await self.bot.say("The user doesn't have that role :no_entry:")
+            await ctx.send("The user doesn't have that role :no_entry:")
             return
         try:
-            await self.bot.remove_roles(user, role)
-            await self.bot.say("**{}** has been removed from **{}** <:done:403285928233402378>:ok_hand:".format(role, user))
+            await user.remove_roles(role)
+            await ctx.send("**{}** has been removed from **{}** <:done:403285928233402378>:ok_hand:".format(role, user))
         except discord.errors.Forbidden:
-            await self.bot.say("I'm not able to remove the role from the user :no_entry:")
+            await ctx.send("I'm not able to remove the role from the user :no_entry:")
             
     @commands.command(pass_context=True) 
     @checks.admin_or_permissions(ban_members=True)
     async def Ban(self, ctx, user: discord.Member):
         """This is a fake bean don't exp0se"""
-        await self.bot.say("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
+        await ctx.send("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
             
     @commands.command(no_pm=True, pass_context=True)
     @checks.admin_or_permissions(kick_members=True)
     async def kick(self, ctx, user: discord.Member, *, reason: str = None):
         """Kicks a user."""
         author = ctx.message.author
-        server = author.server
+        server = author.guild
         channel = ctx.message.channel
         destination = user
         action = "Kick"
-        can_ban = channel.permissions_for(server.me).kick_members
+        can_ban = channel.permissions_for(ctx.me).kick_members
         if not can_ban:
-            await self.bot.say("I need the `KICK_MEMBERS` permission :no_entry:")
+            await ctx.send("I need the `KICK_MEMBERS` permission :no_entry:")
             return
         if user == self.bot.user:
-            await self.bot.say("I'm not going to kick myself ¯\_(ツ)_/¯")
+            await ctx.send("I'm not going to kick myself ¯\_(ツ)_/¯")
             return
         if author == user:
-            await self.bot.say("Why would you want to kick yourself, just leave.")
+            await ctx.send("Why would you want to kick yourself, just leave.")
             return
-        if user.top_role.position > author.top_role.position:
+        if user.top_role.position >= author.top_role.position:
             if author == server.owner:
                 pass
             else:
-                await self.bot.say("You can not kick someone higher than your own role :no_entry:")
+                await ctx.send("You can not kick someone higher than your own role :no_entry:")
                 return
         try: 
-            await self.bot.kick(user)
-            await self.bot.say("**{}** has been kicked <:done:403285928233402378>:ok_hand:".format(user))
+            await server.kick(user, reason="Kick made by {}".format(author))
+            await ctx.send("**{}** has been kicked <:done:403285928233402378>:ok_hand:".format(user))
             try:
                 await self._log(author, server, action, reason, user)
             except:
                 pass
         except discord.errors.Forbidden:
-            await self.bot.say("I'm not able to kick that user :no_entry:")
+            await ctx.send("I'm not able to kick that user :no_entry:")
             return
         try: 
             u=discord.Embed(title="You have been kicked from {}".format(server.name), colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
-            u.add_field(name="Moderator", value="{} ({})".format(author, author.id), inline=False)
+            u.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)), inline=False)
             u.set_thumbnail(url=server.icon_url)
             if not reason:
                 u.add_field(name="Reason", value="No reason specified")
             else:
                 u.add_field(name="Reason", value=reason)
             try:
-                await self.bot.send_message(user, embed=u)
+                await user.send(embed=u)
             except discord.errors.HTTPException:
                 pass
         except Exception as e:
@@ -469,46 +467,46 @@ class mod:
     async def ban(self, ctx, user: discord.Member, *, reason: str = None):
         """Bans a user."""
         author = ctx.message.author
-        server = author.server
+        server = author.guild
         channel = ctx.message.channel
         action = "Ban"
         destination = user
-        can_ban = channel.permissions_for(server.me).ban_members
+        can_ban = channel.permissions_for(ctx.me).ban_members
         if not can_ban:
-            await self.bot.say("I need the `BAN_MEMBERS` permission :no_entry:")
+            await ctx.send("I need the `BAN_MEMBERS` permission :no_entry:")
             return
         if user == self.bot.user:
-            await self.bot.say("I'm not going to ban myself ¯\_(ツ)_/¯")
+            await ctx.send("I'm not going to ban myself ¯\_(ツ)_/¯")
             return
         if author == user:
-            await self.bot.say("Why would you want to ban yourself, just leave.")
+            await ctx.send("Why would you want to ban yourself, just leave.")
             return
-        if user.top_role.position > author.top_role.position:
+        if user.top_role.position >= author.top_role.position:
             if author == server.owner:
                 pass
             else:
-                await self.bot.say("You can not ban someone higher than your own role :no_entry:")
+                await ctx.send("You can not ban someone higher than your own role :no_entry:")
                 return
         try: 
-            await self.bot.ban(user)
-            await self.bot.say("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
+            await server.ban(user, reason="Ban made by {}".format(author))
+            await ctx.send("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
             try:
                 await self._log(author, server, action, reason, user)
             except:
                 pass
         except discord.errors.Forbidden:
-            await self.bot.say("I'm not able to ban that user :no_entry:")
+            await ctx.send("I'm not able to ban that user :no_entry:")
             return
         try: 
             u=discord.Embed(title="You have been banned from {}".format(server.name), colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
-            u.add_field(name="Moderator", value="{} ({})".format(author, author.id), inline=False)
+            u.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)), inline=False)
             u.set_thumbnail(url=server.icon_url)
             if not reason:
                 u.add_field(name="Reason", value="No reason specified")
             else:
                 u.add_field(name="Reason", value=reason)
             try:
-                await self.bot.send_message(user, embed=u)
+                await user.send(embed=u)
             except discord.errors.HTTPException:
                 pass
         except Exception as e:
@@ -519,50 +517,52 @@ class mod:
     async def unban(self, ctx, user_id: int, *, reason: str=None):
         """unbans a user by ID and will notify them about the unbanning in pm"""
         author = ctx.message.author 
-        server = ctx.message.server
+        server = ctx.message.guild
         channel = ctx.message.channel
         action = "Unban"
-        user_id = str(user_id)
         try:
             user = await self.bot.get_user_info(user_id)
         except discord.errors.NotFound:
-            await self.bot.say("The user was not found :no_entry:")
+            await ctx.send("The user was not found :no_entry:")
             return
         except discord.errors.HTTPException:
-            await self.bot.say("The ID specified does not exist :no_entry:")
+            await ctx.send("The ID specified does not exist :no_entry:")
             return
-        can_ban = channel.permissions_for(server.me).ban_members
+        can_ban = channel.permissions_for(ctx.me).ban_members
         if not can_ban:
-            await self.bot.say("I need the `BAN_MEMBERS` permission :no_entry:")
+            await ctx.send("I need the `BAN_MEMBERS` permission :no_entry:")
             return
-        ban_list = await self.bot.get_bans(server)
-        is_banned = discord.utils.get(ban_list, id=user_id)
-        invite = await self.bot.create_invite(channel)
+        ban_list = await server.bans()
+        invite = await channel.create_invite()
         s=discord.Embed(title="You have been unbanned from {}".format(server.name), description="Feel free to join back whenever.", colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
         s.set_thumbnail(url=server.icon_url)
-        s.add_field(name="Moderator", value="{} ({})".format(author, author.id), inline=False)
+        s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)), inline=False)
         s.add_field(name="Invite", value=invite)
         if user == author:
-            await self.bot.say("You can't unban yourself :no_entry:")
+            await ctx.send("You can't unban yourself :no_entry:")
             return
         if user == self.bot.user:
-            await self.bot.say("I'm not even banned ¯\_(ツ)_/¯")
+            await ctx.send("I'm not even banned ¯\_(ツ)_/¯")
             return
-        if not is_banned:
-            await self.bot.say("This user is not banned :no_entry:")
+        i = 0
+        n = 0
+        if user in [x.user for x in ban_list]:
+            pass
+        else:
+            await ctx.send("That user is not banned :no_entry:") 
             return
         try:
-            await self.bot.unban(server, user)
-            try:
-                await self._log(author, server, action, reason, user)
-            except:
-                pass
+            await server.unban(user, reason="Unban made by {}".format(author))
         except discord.errors.Forbidden:
-            await self.bot.say("I need the **Ban Members** permission to unban :no_entry:")
+            await ctx.send("I need the **Ban Members** permission to unban :no_entry:")
             return
-        await self.bot.say("**{}** has been unbanned <:done:403285928233402378>:ok_hand:".format(user))
+        await ctx.send("**{}** has been unbanned <:done:403285928233402378>:ok_hand:".format(user))
         try:
-            await self.bot.send_message(user, embed=s)
+            await self._log(author, server, action, reason, user)
+        except:
+            pass
+        try:
+            await user.send(embed=s)
         except:
             pass
             
@@ -570,7 +570,7 @@ class mod:
         #action = "Ban"
         #author = None
         #user = member
-        #server = member.server
+        #server = member.guild
         #reason = None
         #if not self.temp_cache.check(user, server, action):   
             #try:
@@ -594,40 +594,40 @@ class mod:
     async def hackban(self, ctx, user_id: int, *, reason: str=None):
         """Ban a user before they even join the server, make sure you provide a user id"""
         author = ctx.message.author
-        server = ctx.message.server
+        server = ctx.message.guild
         channel = ctx.message.channel
         action = "Ban"
         try:
             user = await self.bot.get_user_info(user_id)
         except discord.errors.NotFound:
-            await self.bot.say("The user was not found, check if the ID specified is correct :no_entry:")
+            await ctx.send("The user was not found, check if the ID specified is correct :no_entry:")
             return
         except discord.errors.HTTPException:
-            await self.bot.say("The ID specified does not exist :no_entry:")
+            await ctx.send("The ID specified does not exist :no_entry:")
             return
-        ban_list = await self.bot.get_bans(server)
-        is_banned = discord.utils.get(ban_list, id=user_id)
-        can_ban = channel.permissions_for(server.me).ban_members
+        ban_list = await server.bans()
+        can_ban = channel.permissions_for(ctx.me).ban_members
         if user in server.members:
-            await self.bot.say("Use the ban command to ban people in the server :no_entry:")
+            await ctx.send("Use the ban command to ban people in the server :no_entry:")
             return
         if not can_ban:
-            await self.bot.say("I need the `BAN_MEMBERS` permission :no_entry:")
+            await ctx.send("I need the `BAN_MEMBERS` permission :no_entry:")
             return
         if user == self.bot.user:
-            await self.bot.say("I'm not going to ban myself ¯\_(ツ)_/¯")
+            await ctx.send("I'm not going to ban myself ¯\_(ツ)_/¯")
             return
         if author == user:
-            await self.bot.say("Why would you want to ban yourself, just leave.")
+            await ctx.send("Why would you want to ban yourself, just leave.")
             return
-        if is_banned:
-            await self.bot.say("That user is already banned :no_entry:")
+        if user in [x.user for x in ban_list]:
+            await ctx.send("That user is already banned :no_entry:") 
+            return
         try:
             await self.bot.http.ban(user_id, server.id, 0)
         except:
-            await self.bot.say("I'm not able to ban that user :no_entry:")
+            await ctx.send("I'm not able to ban that user :no_entry:")
             return
-        await self.bot.say("**{}** has been banned by ID <:done:403285928233402378>:ok_hand:".format(user))
+        await ctx.send("**{}** has been banned by ID <:done:403285928233402378>:ok_hand:".format(user))
         try:
             await self._log(author, server, action, reason, user)
         except:
@@ -637,57 +637,57 @@ class mod:
     @checks.mod_or_permissions(manage_messages=True)
     async def cmute(self, ctx, user: discord.Member, *, reason=None):
         """Mute someone in the channel"""
-        server = ctx.message.server
+        server = ctx.message.guild
         author = ctx.message.author
         channel = ctx.message.channel
         action = "Mute"
         if channel.permissions_for(user).administrator:
-            await self.bot.say("That user has administrator perms, why would i even try :no_entry:")
+            await ctx.send("That user has administrator perms, why would i even try :no_entry:")
             return
         if not channel.permissions_for(user).send_messages:
-            await self.bot.say("{} is already muted :no_entry:".format(user))
+            await ctx.send("{} is already muted :no_entry:".format(user))
             return
-        if user.top_role.position > author.top_role.position:
+        if user.top_role.position >= author.top_role.position:
             if author == server.owner:
                 pass
             else:
-                await self.bot.say("You can not mute someone higher than your own role :no_entry:")
+                await ctx.send("You can not mute someone higher than your own role :no_entry:")
                 return
         overwrite = discord.PermissionOverwrite()
         overwrite.send_messages = False
         try:
-            await self.bot.edit_channel_permissions(channel, user, overwrite)
-            if server.id not in self.d:
-                self.d[server.id] = {}
+            await channel.set_permissions(user, overwrite=overwrite)
+            if str(server.id) not in self.d:
+                self.d[str(server.id)] = {}
                 dataIO.save_json(self.file, self.d)
-            if "channel" not in self.d[server.id]:
-                self.d[server.id]["channel"] = {}
+            if "channel" not in self.d[str(server.id)]:
+                self.d[str(server.id)]["channel"] = {}
                 dataIO.save_json(self.file, self.d)
-            if channel.id not in self.d[server.id]["channel"]:
-                self.d[server.id]["channel"][channel.id] = {}
+            if str(channel.id) not in self.d[str(server.id)]["channel"]:
+                self.d[str(server.id)]["channel"][str(str(channel.id))] = {}
                 dataIO.save_json(self.file, self.d)
-            if "user" not in self.d[server.id]["channel"][channel.id]:
-                self.d[server.id]["channel"][channel.id]["user"] = {}
+            if "user" not in self.d[str(server.id)]["channel"][str(channel.id)]:
+                self.d[str(server.id)]["channel"][str(channel.id)]["user"] = {}
                 dataIO.save_json(self.file, self.d)
-            if user.id not in self.d[server.id]["channel"][channel.id]["user"]:
-                self.d[server.id]["channel"][channel.id]["user"][user.id] = {}
+            if str(user.id) not in self.d[str(server.id)]["channel"][str(channel.id)]["user"]:
+                self.d[str(server.id)]["channel"][str(channel.id)]["user"][str(user.id)] = {}
                 dataIO.save_json(self.file, self.d)
         except discord.errors.Forbidden:
-            await self.bot.say("I do not have permissions to edit the current channel :no_entry:")
+            await ctx.send("I do not have permissions to edit the current channel :no_entry:")
             return
-        await self.bot.say("**{}** has been muted <:done:403285928233402378>".format(user))
+        await ctx.send("**{}** has been muted <:done:403285928233402378>".format(user))
         try:
             await self._log(author, server, action, reason, user)
         except:
             pass
         try:
             s=discord.Embed(title="You have been muted in {} :speak_no_evil:".format(server.name), colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
-            s.add_field(name="Moderator", value="{} ({})".format(author, author.id), inline=False)
+            s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)), inline=False)
             if reason:
                 s.add_field(name="Reason", value=reason) 
             else:
                 s.add_field(name="Reason", value="None")
-            await self.bot.send_message(user, embed=s)
+            await user.send(embed=s)
         except:
             pass
         
@@ -695,66 +695,66 @@ class mod:
     @checks.mod_or_permissions(manage_messages=True)
     async def cunmute(self, ctx, user: discord.Member, *, reason: str=None):
         """Unmute a muted user in the current channel"""
-        server = ctx.message.server
+        server = ctx.message.guild
         author = ctx.message.author
         action = "Unmute"
         channel = ctx.message.channel
         if channel.permissions_for(user).send_messages:
-            await self.bot.say("{} is not muted :no_entry:".format(user))
+            await ctx.send("{} is not muted :no_entry:".format(user))
             return
         overwrite = discord.PermissionOverwrite()
         overwrite.send_messages = True
         try:
-            await self.bot.edit_channel_permissions(channel, user, overwrite)
-            del self.d[server.id]["channel"][channel.id]
+            await channel.set_permissions(user, overwrite=overwrite)
+            del self.d[str(server.id)]["channel"][str(channel.id)]
             dataIO.save_json(self.file, self.d)
         except discord.errors.Forbidden:
-            await self.bot.say("I do not have permissions to edit the current channel :no_entry:")
+            await ctx.send("I do not have permissions to edit the current channel :no_entry:")
             return
         try:
             s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
-            s.add_field(name="Moderator", value="{} ({})".format(author, author.id))
-            await self.bot.send_message(user, embed=s)
+            s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)))
+            await user.send(embed=s)
         except:
             pass
-        await self.bot.say("**{}** has been unmuted <:done:403285928233402378>".format(user))
+        await ctx.send("**{}** has been unmuted <:done:403285928233402378>".format(user))
         try:
             await self._log(author, server, action, reason, user)
         except:
             pass
 
     async def on_member_join(self, member):
-        server = member.server
+        server = member.guild
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         overwrite = discord.PermissionOverwrite()
         overwrite.send_messages = False
-        if self.d[server.id][member.id]["toggle"] == True:
-            await self.bot.add_roles(member, role)
-        for channelid in self.d[server.id]["channel"]:
-            channel = discord.utils.get(server.channels, id=channelid)
-            if member.id in self.d[server.id]["channel"][channelid]["user"]:
-                await self.bot.edit_channel_permissions(channel, member, overwrite)
+        if self.d[str(server.id)][member.id]["toggle"] == True:
+            await member.add_roles(role)
+        for channelid in self.d[str(server.id)]["channel"]:
+            channel = discord.utils.get(server.channels, id=int(channelid))
+            if member.id in self.d[str(server.id)]["channel"][channelid]["user"]:
+                await channel.set_permissions(member, overwrite=overwrite)
         
     @commands.command(pass_context=True)
     @checks.mod_or_permissions(manage_messages=True)
     async def mute(self, ctx, user: discord.Member, time_and_unit=None, *, reason: str=None):
         """Mute a user for a certain amount of time
         Example: s?mute @Shea#4444 20m (this will mute the user for 20 minutes)"""
-        server = ctx.message.server
+        server = ctx.message.guild
         channel = ctx.message.channel
         author = ctx.message.author
         action = "Mute"
         if author == user:
-            await self.bot.say("You can't mute yourself :no_entry:")
+            await ctx.send("You can't mute yourself :no_entry:")
             return
         if channel.permissions_for(user).administrator:
-            await self.bot.say("That user has administrator perms, why would i even try :no_entry:")
+            await ctx.send("That user has administrator perms, why would i even try :no_entry:")
             return
-        if user.top_role.position > author.top_role.position:
+        if user.top_role.position >= author.top_role.position:
             if author == server.owner:
                 pass
             else:
-                await self.bot.say("You can not mute someone higher than your own role :no_entry:")
+                await ctx.send("You can not mute someone higher than your own role :no_entry:")
                 return
         if not time_and_unit: 
             time2 = 600
@@ -764,18 +764,18 @@ class mod:
             try:
                 unit = time_and_unit[len(time_and_unit)-1:len(time_and_unit)]
             except ValueError:
-                await self.bot.say("Invalid time unit :no_entry:")
+                await ctx.send("Invalid time unit :no_entry:")
                 return
             try:
                 time = time_and_unit[0:len(time_and_unit)-1]
             except ValueError:
-                await self.bot.say("Invalid time unit :no_entry:")
+                await ctx.send("Invalid time unit :no_entry:")
                 return
             if unit == "s":
                 try:
                     time2 = int(time)
                 except ValueError:
-                    await self.bot.say("Invalid time unit :no_entry:")
+                    await ctx.send("Invalid time unit :no_entry:")
                     return
                 if time == 1:
                     unit = "second"
@@ -785,7 +785,7 @@ class mod:
                 try:
                     time2 = int(time) * 60
                 except ValueError:
-                    await self.bot.say("Invalid time unit :no_entry:")
+                    await ctx.send("Invalid time unit :no_entry:")
                     return
                 if time == 1:
                     unit = "minute"
@@ -795,7 +795,7 @@ class mod:
                 try:
                     time2 = int(time) * 3600
                 except ValueError:
-                    await self.bot.say("Invalid time unit :no_entry:")
+                    await ctx.send("Invalid time unit :no_entry:")
                     return
                 if time == 1:
                     unit = "hour"
@@ -805,29 +805,29 @@ class mod:
                 try:
                     time2 = int(time) * 86400
                 except ValueError:
-                    await self.bot.say("Invalid time unit :no_entry:")
+                    await ctx.send("Invalid time unit :no_entry:")
                     return
                 if time == 1:
                     unit = "day"
                 else:
                     unit = "days"
             else:
-                await self.bot.say("Invalid time unit :no_entry:")
+                await ctx.send("Invalid time unit :no_entry:")
                 return
-        if server.id not in self.d:
-            self.d[server.id] = {}
+        if str(server.id) not in self.d:
+            self.d[str(server.id)] = {}
             dataIO.save_json(self.file, self.d)
-        if user.id not in self.d[server.id]:
-            self.d[server.id][user.id] = {}
+        if str(user.id) not in self.d[str(server.id)]:
+            self.d[str(server.id)][str(user.id)] = {}
             dataIO.save_json(self.file, self.d)
-        if "toggle" not in self.d[server.id][user.id]:
-            self.d[server.id][user.id]["toggle"] = False
+        if "toggle" not in self.d[str(server.id)][str(user.id)]:
+            self.d[str(server.id)][str(user.id)]["toggle"] = False
             dataIO.save_json(self.file, self.d)
-        if "time" not in self.d[server.id][user.id]:
-            self.d[server.id][user.id]["time"] = None
+        if "time" not in self.d[str(server.id)][str(user.id)]:
+            self.d[str(server.id)][str(user.id)]["time"] = None
             dataIO.save_json(self.file, self.d)
-        if "amount" not in self.d[server.id][user.id]:
-            self.d[server.id][user.id]["amount"] = None
+        if "amount" not in self.d[str(server.id)][str(user.id)]:
+            self.d[str(server.id)][str(user.id)]["amount"] = None
             dataIO.save_json(self.file, self.d)
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         overwrite = discord.PermissionOverwrite()
@@ -835,39 +835,39 @@ class mod:
         perms = discord.PermissionOverwrite()
         perms.speak = False
         if not role:
-            role = await self.bot.create_role(server, name="Muted - Sx4")
+            role = await server.create_role(name="Muted - Sx4")
             for channels in [x for x in server.channels if x.type == discord.ChannelType.text]:
-                await self.bot.edit_channel_permissions(channels, role, overwrite)
+                await channels.set_permissions(role, overwrite=overwrite)
             for channels in [x for x in server.channels if x.type == discord.ChannelType.voice]:
-                await self.bot.edit_channel_permissions(channels, role, perms)
+                await channels.set_permissions(role, overwrite=perms)
         if role in user.roles:
-            await self.bot.say("**{}** is already muted :no_entry:".format(user))
+            await ctx.send("**{}** is already muted :no_entry:".format(user))
             return
         try:
-            await self.bot.add_roles(user, role)
+            await user.add_roles(role)
         except: 
-            await self.bot.say("I cannot add the mute role to the user :no_entry:")
+            await ctx.send("I cannot add the mute role to the user :no_entry:")
             return
-        await self.bot.say("**{}** has been muted for {} {} <:done:403285928233402378>".format(user, time, unit))
+        await ctx.send("**{}** has been muted for {} {} <:done:403285928233402378>".format(user, time, unit))
         try:
             await self._log(author, server, action, reason, user)
         except:
             pass
-        self.d[server.id][user.id]["toggle"] = True
-        self.d[server.id][user.id]["amount"] = time2
-        self.d[server.id][user.id]["time"] = ctx.message.timestamp.timestamp()
+        self.d[str(server.id)][str(user.id)]["toggle"] = True
+        self.d[str(server.id)][str(user.id)]["amount"] = time2
+        self.d[str(server.id)][str(user.id)]["time"] = ctx.message.created_at.timestamp()
         dataIO.save_json(self.file, self.d)
         try:
             s=discord.Embed(title="You have been muted in {} :speak_no_evil:".format(server.name), colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
-            s.add_field(name="Moderator", value="{} ({})".format(author, author.id), inline=False)
+            s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)), inline=False)
             s.add_field(name="Time", value="{} {}".format(time, unit), inline=False)
-            await self.bot.send_message(user, embed=s)
+            await user.send(embed=s)
         except:
             pass
         await asyncio.sleep(time2)
         if role in user.roles:
             try:
-                await self.bot.remove_roles(user, role)
+                await user.remove_roles(role)
             except:
                 pass
             try:
@@ -877,14 +877,14 @@ class mod:
                 await self._log(author, server, action, reason, user)
             except:
                 pass
-            self.d[server.id][user.id]["time"] = None
-            self.d[server.id][user.id]["toggle"] = False
+            self.d[str(server.id)][str(user.id)]["time"] = None
+            self.d[str(server.id)][str(user.id)]["toggle"] = False
             dataIO.save_json(self.file, self.d)
             s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
             s.add_field(name="Moderator", value="{} ({})".format(self.bot.user, self.bot.user.id), inline=False)
             s.add_field(name="Reason", value="Time Served", inline=False)
             try:
-                await self.bot.send_message(user, embed=s)
+                await user.send(embed=s)
             except:
                 pass
             
@@ -893,34 +893,34 @@ class mod:
     @checks.mod_or_permissions(manage_messages=True)
     async def unmute(self, ctx, user: discord.Member, *, reason: str=None):
         """Unmute a user who is muted"""
-        server = ctx.message.server
+        server = ctx.message.guild
         channel = ctx.message.channel
         author = ctx.message.author
         action = "Unmute"
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         if not role:
-            await self.bot.say("No-one is muted in this server :no_entry:")
+            await ctx.send("No-one is muted in this server :no_entry:")
             return
         if role not in user.roles:
-            await self.bot.say("**{}** is not muted :no_entry:".format(user))
+            await ctx.send("**{}** is not muted :no_entry:".format(user))
             return
         try:
-            await self.bot.remove_roles(user, role)
+            await user.remove_roles(role)
         except: 
-            await self.bot.say("I cannot remove the mute role from the user :no_entry:")
+            await ctx.send("I cannot remove the mute role from the user :no_entry:")
             return
-        await self.bot.say("**{}** has been unmuted <:done:403285928233402378>".format(user))
+        await ctx.send("**{}** has been unmuted <:done:403285928233402378>".format(user))
         try:
             await self._log(author, server, action, reason, user)
         except:
             pass
-        self.d[server.id][user.id]["toggle"] = False
-        self.d[server.id][user.id]["time"] = None
+        self.d[str(server.id)][str(user.id)]["toggle"] = False
+        self.d[str(server.id)][str(user.id)]["time"] = None
         dataIO.save_json(self.file, self.d)
         try:
             s=discord.Embed(title="You have been unmuted early in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.utcnow())
-            s.add_field(name="Moderator", value="{} ({})".format(author, author.id))
-            await self.bot.send_message(user, embed=s)
+            s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)))
+            await user.send(embed=s)
         except:
             pass
             
@@ -928,20 +928,24 @@ class mod:
     @commands.command(pass_context=True) 
     async def mutedlist(self, ctx):
         """Check who is muted in the server and for how long"""
-        server = ctx.message.server
+        server = ctx.message.guild
         msg = ""
         i = 0;
-        for userid in self.d[server.id]:
-            if self.d[server.id][userid]["toggle"] == True:
-                i = i + 1
-        if i == 0:   
-            await self.bot.say("No one is muted in this server :no_entry:")
+        try:
+            for userid in self.d[str(server.id)]:
+                if self.d[str(server.id)][userid]["toggle"] == True:
+                    i = i + 1
+        except: 
+            await ctx.send("No one is muted in this server :no_entry:")
             return
-        for userid in self.d[server.id]:
-            if self.d[server.id][userid]["time"] == None or self.d[server.id][userid]["time"] - ctx.message.timestamp.timestamp() + self.d[server.id][userid]["amount"] <= 0:
+        if i == 0:   
+            await ctx.send("No one is muted in this server :no_entry:")
+            return
+        for userid in self.d[str(server.id)]:
+            if self.d[str(server.id)][userid]["time"] == None or self.d[str(server.id)][userid]["time"] - ctx.message.created_at.timestamp() + self.d[str(server.id)][userid]["amount"] <= 0:
                 time = "Infinite" 
             else:
-                m, s = divmod(self.d[server.id][userid]["time"] - ctx.message.timestamp.timestamp() + self.d[server.id][userid]["amount"], 60)
+                m, s = divmod(self.d[str(server.id)][userid]["time"] - ctx.message.created_at.timestamp() + self.d[str(server.id)][userid]["amount"], 60)
                 h, m = divmod(m, 60)
                 d, h = divmod(h, 24)
                 if d == 0:
@@ -952,38 +956,38 @@ class mod:
                     time = "%d seconds" % (s)
                 else:
                     time = "%d days %d hours %d minutes %d seconds" % (d, h, m, s)
-            if self.d[server.id][userid]["toggle"] == True:
-                user = discord.utils.get(server.members, id=userid)
+            if self.d[str(server.id)][userid]["toggle"] == True:
+                user = discord.utils.get(server.members, id=int(userid))
                 if user:
                     msg += "{} - {} (Till mute ends)\n".format(user, time)
         if not msg:
-            await self.bot.say("No one is muted in this server :no_entry:")
+            await ctx.send("No one is muted in this server :no_entry:")
             return
         s=discord.Embed(description=msg, colour=0xfff90d, timestamp=datetime.datetime.utcnow())
         s.set_author(name="Mute List for {}".format(server), icon_url=server.icon_url)
-        await self.bot.say(embed=s)
+        await ctx.send(embed=s)
             
     async def on_member_update(self, before, after):
-        server = before.server
+        server = before.guild
         user = after
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         if role in before.roles:
             if role not in after.roles:
-                self.d[server.id][before.id]["toggle"] = False
-                self.d[server.id][user.id]["time"] = None
-                self.d[server.id][user.id]["amount"] = None
+                self.d[str(server.id)][before.id]["toggle"] = False
+                self.d[str(server.id)][str(user.id)]["time"] = None
+                self.d[str(server.id)][str(user.id)]["amount"] = None
                 dataIO.save_json(self.file, self.d)
                 return
         if role in after.roles:
             if role not in before.roles:
-                self.d[server.id][before.id]["toggle"] = True
-                self.d[server.id][user.id]["time"] = None
-                self.d[server.id][user.id]["amount"] = None
+                self.d[str(server.id)][before.id]["toggle"] = True
+                self.d[str(server.id)][str(user.id)]["time"] = None
+                self.d[str(server.id)][str(user.id)]["amount"] = None
                 dataIO.save_json(self.file, self.d)
                 return
             
     async def on_channel_create(self, channel):
-        server = channel.server
+        server = channel.guild
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         overwrite = discord.PermissionOverwrite()
         overwrite.send_messages = False
@@ -992,40 +996,40 @@ class mod:
         if not role:
             return
         if channel.type == discord.ChannelType.text:
-            await self.bot.edit_channel_permissions(channel, role, overwrite)
+            await channel.set_permissions(role, overwrite=overwrite)
         if channel.type == discord.ChannelType.voice:
-            await self.bot.edit_channel_permissions(channel, role, perms)
+            await channel.set_permissions(role, overwrite=perms)
         
     @commands.command(pass_context=True, no_pm=True)
     @checks.mod_or_permissions(manage_messages=True)
     async def warn(self, ctx, user: discord.Member, *, reason: str=None):
         """Warns a user in pm, a reason is also optional."""
         author = ctx.message.author
-        server = ctx.message.server
+        server = ctx.message.guild
         channel = ctx.message.channel
         if user == author:
-            await self.bot.say("You can not warn yourself :no_entry:")
+            await ctx.send("You can not warn yourself :no_entry:")
             return
-        if user.top_role.position > author.top_role.position:
+        if user.top_role.position >= author.top_role.position:
             if author == server.owner:
                 pass
             else:
-                await self.bot.say("You can not warn someone higher than your own role :no_entry:")
+                await ctx.send("You can not warn someone higher than your own role :no_entry:")
                 return
         if server.id not in self.d:
-            self.d[server.id] = {}
+            self.d[str(server.id)] = {}
             dataIO.save_json(self.file, self.d)
-        if user.id not in self.d[server.id]:
-            self.d[server.id][user.id] = {}
+        if str(user.id) not in self.d[str(server.id)]:
+            self.d[str(server.id)][str(user.id)] = {}
             dataIO.save_json(self.file, self.d)
-        if "muted" not in self.d[server.id][user.id]:
-            self.d[server.id][user.id]["toggle"] = False
+        if "muted" not in self.d[str(server.id)][str(user.id)]:
+            self.d[str(server.id)][str(user.id)]["toggle"] = False
             dataIO.save_json(self.file, self.d)
-        if "time" not in self.d[server.id][user.id]:
-            self.d[server.id][user.id]["time"] = None
+        if "time" not in self.d[str(server.id)][str(user.id)]:
+            self.d[str(server.id)][str(user.id)]["time"] = None
             dataIO.save_json(self.file, self.d)
-        if "amount" not in self.d[server.id][user.id]:
-            self.d[server.id][user.id]["amount"] = None
+        if "amount" not in self.d[str(server.id)][str(user.id)]:
+            self.d[str(server.id)][str(user.id)]["amount"] = None
             dataIO.save_json(self.file, self.d)
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         overwrite = discord.PermissionOverwrite()
@@ -1033,19 +1037,19 @@ class mod:
         perms = discord.PermissionOverwrite()
         perms.speak = False
         if not role:
-            role = await self.bot.create_role(server, name="Muted - Sx4")
+            role = await server.create_role(name="Muted - Sx4")
             for channels in [x for x in server.channels if x.type == discord.ChannelType.text]:
-                await self.bot.edit_channel_permissions(channels, role, overwrite)
+                await channels.set_permissions(role, overwrite=overwrite)
             for channels in [x for x in server.channels if x.type == discord.ChannelType.voice]:
-                await self.bot.edit_channel_permissions(channels, role, perms)
+                await channels.set_permissions(role, overwrite=perms)
         await self._create_warn(server, user)
         if reason:
-            if reason not in self.data[server.id]["user"][user.id]["reasons"]:
-                self.data[server.id]["user"][user.id]["reasons"][reason] = {}
-        self.data[server.id]["user"][user.id]["warnings"] = self.data[server.id]["user"][user.id]["warnings"] + 1
+            if reason not in self.data[str(server.id)]["user"][str(user.id)]["reasons"]:
+                self.data[str(server.id)]["user"][str(user.id)]["reasons"][reason] = {}
+        self.data[str(server.id)]["user"][str(user.id)]["warnings"] = self.data[str(server.id)]["user"][str(user.id)]["warnings"] + 1
         dataIO.save_json(self.JSON, self.data)
-        if self.data[server.id]["user"][user.id]["warnings"] == 1:
-            await self.bot.say("**{}** has been warned :warning:".format(user))
+        if self.data[str(server.id)]["user"][str(user.id)]["warnings"] == 1:
+            await ctx.send("**{}** has been warned :warning:".format(user))
             s=discord.Embed(colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name="You have been warned in {}".format(server.name), icon_url=server.icon_url)
             try:
@@ -1059,17 +1063,17 @@ class mod:
                 await self._log(author, server, action, reason, user)
             except:
                 pass
-        if self.data[server.id]["user"][user.id]["warnings"] == 2:
+        if self.data[str(server.id)]["user"][str(user.id)]["warnings"] == 2:
             try:
-                await self.bot.add_roles(user, role)
-                self.d[server.id][user.id]["toggle"] = True
-                self.d[server.id][user.id]["amount"] = 600
-                self.d[server.id][user.id]["time"] = ctx.message.timestamp.timestamp()
+                await user.add_roles(role)
+                self.d[str(server.id)][str(user.id)]["toggle"] = True
+                self.d[str(server.id)][str(user.id)]["amount"] = 600
+                self.d[str(server.id)][str(user.id)]["time"] = ctx.message.created_at.timestamp()
                 dataIO.save_json(self.file, self.d)
             except: 
-                await self.bot.say("I cannot add the mute role to the user :no_entry:")
+                await ctx.send("I cannot add the mute role to the user :no_entry:")
                 return
-            await self.bot.say("**{}** has been muted due to their second warning <:done:403285928233402378>".format(user))
+            await ctx.send("**{}** has been muted due to their second warning <:done:403285928233402378>".format(user))
             s=discord.Embed(colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name="You have been muted in {}".format(server.name), icon_url=server.icon_url)
             try:
@@ -1086,23 +1090,23 @@ class mod:
             await asyncio.sleep(600)
             if role in user.roles:
                 try:
-                    await self.bot.remove_roles(user, role)
+                    await user.remove_roles(role)
                 except:
                     pass
-                self.d[server.id][user.id]["toggle"] = False
+                self.d[str(server.id)][str(user.id)]["toggle"] = False
                 dataIO.save_json(self.file, self.d)
                 action = "Unmute"
                 try:
                     await self._log(author, server, action, reason, user)
                 except:
                     pass
-        if self.data[server.id]["user"][user.id]["warnings"] == 3:
+        if self.data[str(server.id)]["user"][str(user.id)]["warnings"] == 3:
             try:
-                await self.bot.kick(user)
+                await server.kick(user, reason="Kick made by {}".format(author))
             except:
-                await self.bot.say("I'm not able to kick that user :no_entry:")
+                await ctx.send("I'm not able to kick that user :no_entry:")
                 return
-            await self.bot.say("**{}** has been kicked due to their third warning <:done:403285928233402378>".format(user))
+            await ctx.send("**{}** has been kicked due to their third warning <:done:403285928233402378>".format(user))
             s=discord.Embed(colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name="You have been kicked from {}".format(server.name), icon_url=server.icon_url)
             try:
@@ -1116,16 +1120,16 @@ class mod:
                 await self._log(author, server, action, reason, user)
             except:
                 pass
-        if self.data[server.id]["user"][user.id]["warnings"] >= 4:
+        if self.data[str(server.id)]["user"][str(user.id)]["warnings"] >= 4:
             try:
-                await self.bot.ban(user)
+                await server.ban(user, reason="Ban made by {}".format(author))
             except:
-                await self.bot.say("I'm not able to ban that user :no_entry:")
-                del self.data[server.id]["user"][user.id]
+                await ctx.send("I'm not able to ban that user :no_entry:")
+                del self.data[str(server.id)]["user"][str(user.id)]
                 dataIO.save_json(self.JSON, self.data)
                 return
-            await self.bot.say("**{}** has been banned due to their forth warning <:done:403285928233402378>".format(user))
-            await self.bot.ban(user)
+            await ctx.send("**{}** has been banned due to their forth warning <:done:403285928233402378>".format(user))
+            await server.ban(user, reason="Ban made by {}".format(author))
             s=discord.Embed(colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name="You have been banned from {}".format(server.name), icon_url=server.icon_url)
             try:
@@ -1134,7 +1138,7 @@ class mod:
                 s.add_field(name="Reason", value="None Given", inline=False)
             s.add_field(name="Moderator", value=author)
             s.add_field(name="Next Action", value="None")
-            del self.data[server.id]["user"][user.id]
+            del self.data[str(server.id)]["user"][str(user.id)]
             dataIO.save_json(self.JSON, self.data)
             action = "Ban"
             try:
@@ -1142,102 +1146,114 @@ class mod:
             except:
                 pass
         try:
-            await self.bot.send_message(user, embed=s)
+            await user.send(embed=s)
         except:
             pass
             
     @commands.command(pass_context=True)
     async def warnlist(self, ctx, page: int=None):
         """View everyone who has been warned and how many warning they're on"""
-        server = ctx.message.server 
+        server = ctx.message.guild 
         if not page:
             page = 1
         if page < 0:
-            await self.bot.say("Invalid page :no_entry:")
+            await ctx.send("Invalid page :no_entry:")
             return
-        if page > math.ceil(len(self.data[server.id]["user"])/20):
-            await self.bot.say("Invalid page :no_entry:")
+        try:
+            if page >= math.ceil(len(self.data[str(server.id)]["user"])/20):
+                await ctx.send("Invalid page :no_entry:")
+                return
+        except:
+            await ctx.send("No one has been warned in this server :no_entry:")
             return
         s = await self._list_warns(server, page)
         try:
-            await self.bot.say(embed=s)
+            await ctx.send(embed=s)
         except:
-            await self.bot.say("There are no users with warnings in this server :no_entry:")
+            await ctx.send("There are no users with warnings in this server :no_entry:")
         
     @commands.command(pass_context=True)
     async def warnings(self, ctx, user: discord.Member): 
         """Check how many warnings a specific user is on"""
-        server = ctx.message.server
+        server = ctx.message.guild
         try:
-            if self.data[server.id]["user"][user.id]["warnings"] == 1:
+            if self.data[str(server.id)]["user"][str(user.id)]["warnings"] == 1:
                 action = "Mute"
-            if self.data[server.id]["user"][user.id]["warnings"] == 2:
+            if self.data[str(server.id)]["user"][str(user.id)]["warnings"] == 2:
                 action = "Kick"
-            if self.data[server.id]["user"][user.id]["warnings"] >= 3:
+            if self.data[str(server.id)]["user"][str(user.id)]["warnings"] >= 3:
                 action = "Ban"
-            if not self.data[server.id]["user"][user.id]["reasons"]:
+            if not self.data[str(server.id)]["user"][str(user.id)]["reasons"]:
                 reasons = "None"
             else:
-                reasons = ", ".join([x for x in self.data[server.id]["user"][user.id]["reasons"]])
-            if self.data[server.id]["user"][user.id]["warnings"] == 1:
-                await self.bot.say("**{}** is on **1** warning\nNext Action: **Mute**\nReasons: **{}**".format(user, reasons))
+                reasons = ", ".join([x for x in self.data[str(server.id)]["user"][str(user.id)]["reasons"]])
+            if self.data[str(server.id)]["user"][str(user.id)]["warnings"] == 1:
+                s=discord.Embed(description="{} is on 1 warning".format(user), colour=user.colour)
+                s.set_author(name=str(user), icon_url=user.avatar_url)
+                s.add_field(name="Next Action", value=action, inline=False)
+                s.add_field(name="Reasons", value=reasons, inline=False)
+                await ctx.send(embed=s)
             else:
                 try:
-                    await self.bot.say("**{}** is on **{}** warnings\nNext Action: **{}**\nReasons: **{}**".format(user, self.data[server.id]["user"][user.id]["warnings"], action, reasons))
+                    s=discord.Embed(description="{} is on {} warnings".format(user, self.data[str(server.id)]["user"][str(user.id)]["warnings"]), colour=user.colour)
+                    s.set_author(name=str(user), icon_url=user.avatar_url)
+                    s.add_field(name="Next Action", value=action, inline=False)
+                    s.add_field(name="Reasons", value=reasons, inline=False)
+                    await ctx.send(embed=s)
                 except:
-                    await self.bot.say("That user has no warnings")
+                    await ctx.send("That user has no warnings :no_entry:")
         except:
-            await self.bot.say("That user has no warnings")
+            await ctx.send("That user has no warnings :no_entry:")
                 
     @commands.command(pass_context=True)
     @checks.mod_or_permissions(manage_messages=True)
     async def setwarns(self, ctx, user: discord.Member, warnings: int=None):
         """Set the warn amount for a specific user"""
-        server = ctx.message.server
+        server = ctx.message.guild
         await self._create_warn(server, user)
         dataIO.save_json(self.JSON, self.data)
         if not warnings:  
-            del self.data[server.id]["user"][user.id]
+            del self.data[str(server.id)]["user"][str(user.id)]
             dataIO.save_json(self.JSON, self.data)
-            await self.bot.say("**{}'s** warnings have been reset".format(user.name))
+            await ctx.send("**{}'s** warnings have been reset".format(user.name))
             return
         if warnings == 0:
-            del self.data[server.id]["user"][user.id]
+            del self.data[str(server.id)]["user"][str(user.id)]
             dataIO.save_json(self.JSON, self.data)
-            await self.bot.say("**{}'s** warnings have been reset".format(user.name))
+            await ctx.send("**{}'s** warnings have been reset".format(user.name))
             return
         if warnings <= 0:
-            await self.bot.say("You can set warnings to 1-4 only :no_entry:")
+            await ctx.send("You can set warnings to 1-4 only :no_entry:")
             return
         if warnings >= 5:
-            await self.bot.say("You can set warnings to 1-4 only :no_entry:") 
+            await ctx.send("You can set warnings to 1-4 only :no_entry:") 
             return
-        self.data[server.id]["user"][user.id]["warnings"] = warnings    
+        self.data[str(server.id)]["user"][str(user.id)]["warnings"] = warnings    
         dataIO.save_json(self.JSON, self.data)
-        await self.bot.say("**{}'s** warnings have been set to **{}**".format(user.name, warnings))  
+        await ctx.send("**{}'s** warnings have been set to **{}**".format(user.name, warnings))  
 
     async def check_mute(self):
         while not self.bot.is_closed:
             for serverid in list(self.d)[:len(self.d)]:
-                server = self.bot.get_server(serverid)
+                server = self.bot.get_guild(serverid)
                 if server != None:
                     role = discord.utils.get(server.roles, name="Muted - Sx4")
-                    if self.d[server.id] != None:
+                    if self.d[str(server.id)] != None:
                         for userid in self.d[serverid]:
                             user = discord.utils.get(server.members, id=userid)
                             if user != None:
-                                if self.d[server.id][user.id]["toggle"] != False and self.d[server.id][user.id]["time"] != None and self.d[server.id][user.id]["amount"] != None:
-                                    time2 = self.d[server.id][user.id]["time"] - datetime.datetime.now().timestamp() + self.d[server.id][user.id]["amount"]
+                                if self.d[str(server.id)][str(user.id)]["toggle"] != False and self.d[str(server.id)][str(user.id)]["time"] != None and self.d[str(server.id)][str(user.id)]["amount"] != None:
+                                    time2 = self.d[str(server.id)][str(user.id)]["time"] - datetime.datetime.now().timestamp() + self.d[str(server.id)][str(user.id)]["amount"]
                                     if time2 <= 0:
-                                        await self.bot.remove_roles(user, role)
-                                        self.d[server.id][user.id]["time"] = None
-                                        self.d[server.id][user.id]["toggle"] = False
+                                        await user.remove_roles(role)
+                                        self.d[str(server.id)][str(user.id)]["time"] = None
+                                        self.d[str(server.id)][str(user.id)]["toggle"] = False
                                         dataIO.save_json(self.file, self.d)
                                         s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.now())
                                         s.add_field(name="Moderator", value="{} ({})".format(self.bot.user, self.bot.user.id), inline=False)
                                         s.add_field(name="Reason", value="Time Served", inline=False)
                                         try:
-                                            await self.bot.send_message(user, embed=s)
+                                            await user.send(embed=s)
                                         except:
                                             pass
                                         action = "Unmute"
@@ -1249,15 +1265,15 @@ class mod:
                                             pass
                                     else:
                                         await asyncio.sleep(round(time2))
-                                        await self.bot.remove_roles(user, role)
-                                        self.d[server.id][user.id]["time"] = None
-                                        self.d[server.id][user.id]["toggle"] = False
+                                        await user.remove_roles(role)
+                                        self.d[str(server.id)][str(user.id)]["time"] = None
+                                        self.d[str(server.id)][str(user.id)]["toggle"] = False
                                         dataIO.save_json(self.file, self.d)
                                         s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.now())
                                         s.add_field(name="Moderator", value="{} ({})".format(self.bot.user, self.bot.user.id), inline=False)
                                         s.add_field(name="Reason", value="Time Served", inline=False)
                                         try:
-                                            await self.bot.send_message(user, embed=s)
+                                            await user.send(embed=s)
                                         except:
                                             pass
                                         action = "Unmute"
@@ -1273,32 +1289,32 @@ class mod:
         
     async def _create_warn(self, server, user):
         if server.id not in self.data:
-            self.data[server.id] = {}
+            self.data[str(server.id)] = {}
             dataIO.save_json(self.JSON, self.data)
-        if "user" not in self.data[server.id]:
-            self.data[server.id]["user"] = {}
+        if "user" not in self.data[str(server.id)]:
+            self.data[str(server.id)]["user"] = {}
             dataIO.save_json(self.JSON, self.data)
-        if user.id not in self.data[server.id]["user"]:
-            self.data[server.id]["user"][user.id] = {}
+        if str(user.id) not in self.data[str(server.id)]["user"]:
+            self.data[str(server.id)]["user"][str(user.id)] = {}
             dataIO.save_json(self.JSON, self.data)
-        if "warnings" not in self.data[server.id]["user"][user.id]:
-            self.data[server.id]["user"][user.id]["warnings"] = 0
+        if "warnings" not in self.data[str(server.id)]["user"][str(user.id)]:
+            self.data[str(server.id)]["user"][str(user.id)]["warnings"] = 0
             dataIO.save_json(self.JSON, self.data)
-        if "reasons" not in self.data[server.id]["user"][user.id]:
-            self.data[server.id]["user"][user.id]["reasons"] = {}
+        if "reasons" not in self.data[str(server.id)]["user"][str(user.id)]:
+            self.data[str(server.id)]["user"][str(user.id)]["reasons"] = {}
             dataIO.save_json(self.JSON, self.data)
             
     async def _list_warns(self, server, page):
         msg = ""
         s=discord.Embed(colour=0xfff90d)
         s.set_author(name=server.name, icon_url=server.icon_url)
-        sortedwarn = sorted(self.data[server.id]["user"].items(), key=lambda x: x[1]["warnings"], reverse=True)[page*20-20:page*20]
+        sortedwarn = sorted(self.data[str(server.id)]["user"].items(), key=lambda x: x[1]["warnings"], reverse=True)[page*20-20:page*20]
         for x in sortedwarn:
-            users = discord.utils.get(server.members, id=x[0])
-            if users and self.data[server.id]["user"][x[0]]["warnings"] != 0:
-                msg += "\n`{}`: Warning **#{}**".format(users, self.data[server.id]["user"][x[0]]["warnings"])
+            users = discord.utils.get(server.members, id=int(x[0]))
+            if users and self.data[str(server.id)]["user"][x[0]]["warnings"] != 0:
+                msg += "\n`{}`: Warning **#{}**".format(users, self.data[str(server.id)]["user"][x[0]]["warnings"])
         s.add_field(name="Users on Warnings", value=msg)
-        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(self.data[server.id]["user"])/20)))
+        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(self.data[str(server.id)]["user"])/20)))
         return s
     
 def check_folders():

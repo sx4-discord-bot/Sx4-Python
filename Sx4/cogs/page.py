@@ -26,7 +26,7 @@ class page:
 	
 	@commands.command(pass_context=True, no_pm=True, aliases=["sroles", "roles"])
 	async def serverroles(self, ctx):
-		server = ctx.message.server
+		server = ctx.message.guild
 		channel = ctx.message.channel
 		author = ctx.message.author
 
@@ -36,11 +36,11 @@ class page:
 		if channel.id not in PagedResultData.paged_results[server.id]:
 			PagedResultData.paged_results[server.id][channel.id] = dict()
 			
-		paged_result = PagedResult([x for x in ctx.message.server.role_hierarchy], lambda role: role.mention)
+		paged_result = PagedResult([x for x in ctx.message.guild.role_hierarchy], lambda role: role.mention)
 		paged_result.list_indexes = True
 		paged_result.selectable = False
 
-		message = await self.bot.send_message(channel, embed=paged_result.get_current_page_embed())
+		message = await channel.send(embed=paged_result.get_current_page_embed())
 
 		paged_result.message_id = message.id
 
@@ -48,7 +48,7 @@ class page:
 	
 	@commands.command(pass_context=True)
 	async def members(self, ctx):
-		server = ctx.message.server
+		server = ctx.message.guild
 		channel = ctx.message.channel
 		author = ctx.message.author
 		
@@ -58,7 +58,7 @@ class page:
 		if channel.id not in PagedResultData.paged_results[server.id]:
 			PagedResultData.paged_results[server.id][channel.id] = dict()
 		
-		paged_result = PagedResult(list(ctx.message.server.members), lambda member: member.mention)
+		paged_result = PagedResult(list(server.members), lambda member: member.mention)
 		paged_result.list_indexes = True
 		paged_result.selectable = True
 		
@@ -74,15 +74,17 @@ class page:
 			if event.entry.status == discord.Status.offline:
 				status="Offline<:offline:361445086275567626>"
 			description=""
-			if event.entry.game:
-				description="Playing {}".format(event.entry.game)
-				if event.entry.game.url:
-					description="Streaming [{}]({})".format(event.entry.game, event.entry.game.url)
+			if not event.entry.activity:
+				pass
+			elif event.entry.activity:
+				description="{} {}".format(event.entry.activity.type.name.title(), event.entry.activity.name)
+			elif event.entry.activity.url:
+				description="Streaming [{}]({})".format(event.entry.activity.name, event.entry.activity.url)
 			s=discord.Embed(description=description, colour=event.entry.colour, timestamp=__import__('datetime').datetime.utcnow())
 			s.set_author(name=event.entry.name, icon_url=event.entry.avatar_url)
 			s.set_thumbnail(url=event.entry.avatar_url)
 			s.add_field(name="Joined Discord", value=joined_discord)
-			s.add_field(name="Joined {}".format(server.name), value=joined_server)
+			s.add_field(name="Joined {}".format(server .name), value=joined_server)
 			s.add_field(name="Name", value="{}".format(event.entry.name))
 			s.add_field(name="Nickname", value="{}".format(event.entry.nick))
 			s.add_field(name="Discriminator", value="#{}".format(event.entry.discriminator))
@@ -92,11 +94,11 @@ class page:
 			s.set_footer(text="Requested by {}".format(author))
 			s.add_field(name="Highest Role", value=event.entry.top_role)
 			s.add_field(name="Roles", value=len(event.entry.roles)) 
-			await self.bot.send_message(channel, embed=s)
+			await channel.send(embed=s)
 		
 		paged_result.on_select = selected
 
-		message = await self.bot.send_message(channel, embed=paged_result.get_current_page_embed())
+		message = await channel.send(embed=paged_result.get_current_page_embed())
 
 		paged_result.message_id = message.id
 
@@ -104,7 +106,7 @@ class page:
 		
 	async def on_message(self, message):
 		# Not sure how you store the other stuff but I suppose you do something like this
-		server = message.server
+		server = message.guild
 		channel = message.channel
 		author = message.author
 		
@@ -123,56 +125,56 @@ class page:
 		
 		try:
 			# Get message from paged_result.message_id and set message to it
-			page_message = await self.bot.get_message(channel, paged_result.message_id)
+			page_message = await channel.get_message(paged_result.message_id)
 		except TypeError:
 			pass
 		
 		if message.content == "next page":
 			if paged_result.next_page():
-				await self.bot.delete_message(message)
+				await message.delete()
 				if page_message == None:
 					# Send paged_result.get_current_page_embed() and set paged_result.message_id to its id
-					temp_message = await self.bot.send_message(message.channel, embed=paged_result.get_current_page_embed())
+					temp_message = await channel.send(embed=paged_result.get_current_page_embed())
 					paged_result.message_id = temp_message.id
 				else:
 					# Edit the message by paged_result.message_id to paged_result.get_current_page_embed()
-					await self.bot.edit_message(page_message, embed=paged_result.get_current_page_embed())
+					await page_message.edit(embed=paged_result.get_current_page_embed())
 		elif message.content == "previous page":
 			if paged_result.previous_page():
-				await self.bot.delete_message(message)
+				await message.delete()
 				if page_message == None:
 					# Send paged_result.get_current_page_embed() and set paged_result.message_id to its id
-					temp_message = await self.bot.send_message(message.channel, embed=paged_result.get_current_page_embed())
+					temp_message = await channel.send(embed=paged_result.get_current_page_embed())
 					paged_result.message_id = temp_message.id
 				else:
 					# Edit the message by paged_result.message_id to paged_result.get_current_page_embed()
-					await self.bot.edit_message(page_message, embed=paged_result.get_current_page_embed())
+					await page_message.edit(embed=paged_result.get_current_page_embed())
 		elif message.content.startswith("go to page "):
 			number = None
 			try:
 				number = int(message.content[len("go to page "):])
 			except ValueError:
-				await self.bot.send_message(message.channel, "Invalid page number")
+				await channel.send("Invalid page number")
 			
 				return
 				
 			if paged_result.set_page(number):
-				await self.bot.delete_message(message)
+				await message.delete()
 				if page_message == None:
 					# Send paged_result.get_current_page_embed() and set paged_result.message_id to its id
-					temp_message = await self.bot.send_message(message.channel, embed=paged_result.get_current_page_embed())
+					temp_message = await channel.send(embed=paged_result.get_current_page_embed())
 					paged_result.message_id = temp_message.id
 				else:
 					# Edit the message by paged_result.message_id to paged_result.get_current_page_embed()
-					await self.bot.edit_message(page_message, embed=paged_result.get_current_page_embed())
+					await page_message.edit(embed=paged_result.get_current_page_embed())
 			else:
-				await self.bot.send_message(message.channel, "Invalid page number")
+				await channel.send("Invalid page number")
 			return
 		elif message.content == "cancel":
 			if page_message != None:
 				# Delete message by paged_result.message_id
-				await self.bot.delete_message(message)
-				await self.bot.delete_message(page_message)
+				await message.delete()
+				await page_message.delete()
 			
 			del paged_results[server.id][channel.id][author.id]
 		
@@ -186,8 +188,8 @@ class page:
 			if number > 0 and number <= paged_result.entries_per_page:
 				del paged_results[server.id][channel.id][author.id]
 				
-				await self.bot.delete_message(message)
-				await self.bot.delete_message(page_message)
+				await message.delete()
+				await page_message.delete()
 				
 				await paged_result.select(number)
 	

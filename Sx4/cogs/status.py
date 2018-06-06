@@ -12,15 +12,15 @@ class statuses:
         self.bot = bot
 
     async def display_status(self):
-        while self == self.bot.get_cog('statuses'):
+        while not self.bot.is_closed():
             try:
                 statuses = [
-                    '{} servers'.format(len(self.bot.servers)),
+                    '{} servers'.format(len(self.bot.guilds)),
                     '{} users'.format(str(len(set(self.bot.get_all_members()))))
                 ]
                 status = randint(0, len(statuses)-1)
                 new_status = statuses[status]
-                await self.bot.change_presence(game=discord.Game(name=new_status, type=3))
+                await self.bot.change_presence(activity=discord.Game(name=new_status, type=3))
             except:
                 pass
             await asyncio.sleep(30)

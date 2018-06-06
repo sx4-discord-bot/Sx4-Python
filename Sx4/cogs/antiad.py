@@ -19,173 +19,204 @@ class antiad:
         self.file_path = "data/antiad/settings.json"
         self.settings = dataIO.load_json(self.file_path)
 		
-    @commands.group(pass_context=True)
+    @commands.group()
     async def antiinvite(self, ctx):
         """Block out those discord invite advertisers"""
-        server = ctx.message.server
-        if server.id not in self.settings:
-            self.settings[server.id] = {}
+        server = ctx.guild
+        if str(server.id) not in self.settings:
+            self.settings[str(server.id)] = {}
             dataIO.save_json(self.file_path, self.settings)
-        if "toggle" not in self.settings[server.id]:
-            self.settings[server.id]["toggle"] = False
+        if "toggle" not in self.settings[str(server.id)]:
+            self.settings[str(server.id)]["toggle"] = False
             dataIO.save_json(self.file_path, self.settings)
-        if "modtoggle" not in self.settings[server.id]:
-            self.settings[server.id]["modtoggle"] = True
+        if "modtoggle" not in self.settings[str(server.id)]:
+            self.settings[str(server.id)]["modtoggle"] = True
             dataIO.save_json(self.file_path, self.settings)
-        if "admintoggle" not in self.settings[server.id]:
-            self.settings[server.id]["admintoggle"] = False
+        if "admintoggle" not in self.settings[str(server.id)]:
+            self.settings[str(server.id)]["admintoggle"] = False
             dataIO.save_json(self.file_path, self.settings)
-        if "channels" not in self.settings[server.id]:
-            self.settings[server.id]["channels"] = {}
+        if "bottoggle" not in self.settings[str(server.id)]:
+            self.settings[str(server.id)]["bottoggle"] = True
+            dataIO.save_json(self.file_path, self.settings)
+        if "channels" not in self.settings[str(server.id)]:
+            self.settings[str(server.id)]["channels"] = {}
             dataIO.save_json(self.file_path, self.settings)
 		
-    @antiinvite.command(pass_context=True)
+    @antiinvite.command()
     @checks.admin_or_permissions(manage_messages=True)
     async def toggle(self, ctx):
         """Toggle antiinvite on or off"""
-        server = ctx.message.server
-        if self.settings[server.id]["toggle"] == True:
-            self.settings[server.id]["toggle"] = False
-            await self.bot.say("Anti-invite has been **Disabled**")
+        server = ctx.guild
+        if self.settings[str(server.id)]["toggle"] == True:
+            self.settings[str(server.id)]["toggle"] = False
+            await ctx.send("Anti-invite has been **Disabled**")
             dataIO.save_json(self.file_path, self.settings)
             return
-        if self.settings[server.id]["toggle"] == False:
-            self.settings[server.id]["toggle"] = True
-            await self.bot.say("Anti-invite has been **Enabled**")
+        if self.settings[str(server.id)]["toggle"] == False:
+            self.settings[str(server.id)]["toggle"] = True
+            await ctx.send("Anti-invite has been **Enabled**")
             dataIO.save_json(self.file_path, self.settings)
             return
 		
-    @antiinvite.command(pass_context=True) 
+    @antiinvite.command() 
     @checks.admin_or_permissions(manage_server=True)
     async def modtoggle(self, ctx):
         """Choose whether you want your mods to be able to send invites or not (manage_message and above are classed as mods)"""
-        server = ctx.message.server
-        if self.settings[server.id]["modtoggle"] == True:
-            self.settings[server.id]["modtoggle"] = False
-            await self.bot.say("Mods will now not be affected by anti-invite.")
+        server = ctx.guild
+        if self.settings[str(server.id)]["modtoggle"] == True:
+            self.settings[str(server.id)]["modtoggle"] = False
+            await ctx.send("Mods will now not be affected by anti-invite.")
             dataIO.save_json(self.file_path, self.settings)
             return
-        if self.settings[server.id]["modtoggle"] == False:
-            self.settings[server.id]["modtoggle"] = True
-            await self.bot.say("Mods will now be affected by anti-invite.")
+        if self.settings[str(server.id)]["modtoggle"] == False:
+            self.settings[str(server.id)]["modtoggle"] = True
+            await ctx.send("Mods will now be affected by anti-invite.")
             dataIO.save_json(self.file_path, self.settings)
             return
 			
-    @antiinvite.command(pass_context=True) 
+    @antiinvite.command() 
     @checks.admin_or_permissions(manage_server=True)
     async def admintoggle(self, ctx):
         """Choose whether you want your admins to be able to send invites or not (administrator perms are classed as admins)"""
-        server = ctx.message.server
-        if self.settings[server.id]["admintoggle"] == True:
-            self.settings[server.id]["admintoggle"] = False
-            await self.bot.say("Admins will now not be affected by anti-invite.")
+        server = ctx.guild
+        if self.settings[str(server.id)]["admintoggle"] == True:
+            self.settings[str(server.id)]["admintoggle"] = False
+            await ctx.send("Admins will now not be affected by anti-invite.")
             dataIO.save_json(self.file_path, self.settings)
             return
-        if self.settings[server.id]["admintoggle"] == False:
-            self.settings[server.id]["admintoggle"] = True
-            await self.bot.say("Admins will now be affected by anti-invite.")
+        if self.settings[str(server.id)]["admintoggle"] == False:
+            self.settings[str(server.id)]["admintoggle"] = True
+            await ctx.send("Admins will now be affected by anti-invite.")
             dataIO.save_json(self.file_path, self.settings)
             return
 			
-    @antiinvite.command(pass_context=True)
+    @antiinvite.command()
     @checks.admin_or_permissions(manage_server=True)
-    async def togglechannel(self, ctx, channel: discord.Channel=None):
-        """Choose what channels you want to count towards antiinvite"""
-        server = ctx.message.server
-        if not channel:
-           channel = ctx.message.channel 
-        if self.settings[server.id]["channels"] == None:
-            self.settings[server.id]["channels"][channel.id] = {}
-            await self.bot.say("Anti-invite is now disabled in <#{}>".format(channel.id))
+    async def togglebot(self, ctx):
+        """Choose whether bots can send invites or not"""
+        server = ctx.guild
+        if self.settings[str(server.id)]["bottoggle"] == True:
+            self.settings[str(server.id)]["bottoggle"] = False
+            await ctx.send("Bots will now not be affected by anti-invite.")
             dataIO.save_json(self.file_path, self.settings)
             return
-        elif channel.id not in self.settings[server.id]["channels"]:
-            self.settings[server.id]["channels"][channel.id] = {}
-            await self.bot.say("Anti-invite is now disabled in <#{}>".format(channel.id))
+        if self.settings[str(server.id)]["bottoggle"] == False:
+            self.settings[str(server.id)]["bottoggle"] = True
+            await ctx.send("Bots will now be affected by anti-invite.")
+            dataIO.save_json(self.file_path, self.settings)
+            return
+			
+    @antiinvite.command()
+    @checks.admin_or_permissions(manage_server=True)
+    async def togglechannel(self, ctx, channel: discord.TextChannel=None):
+        """Choose what channels you want to count towards antiinvite"""
+        server = ctx.guild
+        if not channel:
+           channel = ctx.channel 
+        if self.settings[str(server.id)]["channels"] == None:
+            self.settings[str(server.id)]["channels"][str(channel.id)] = {}
+            await ctx.send("Anti-invite is now disabled in <#{}>".format(str(channel.id)))
+            dataIO.save_json(self.file_path, self.settings)
+            return
+        elif str(channel.id) not in self.settings[str(server.id)]["channels"]:
+            self.settings[str(server.id)]["channels"][str(channel.id)] = {}
+            await ctx.send("Anti-invite is now disabled in <#{}>".format(str(channel.id)))
             dataIO.save_json(self.file_path, self.settings)
             return
         else: 
-            del self.settings[server.id]["channels"][channel.id]
-            await self.bot.say("Anti-invite is now enabled in <#{}>".format(channel.id))
+            del self.settings[str(server.id)]["channels"][str(channel.id)]
+            await ctx.send("Anti-invite is now enabled in <#{}>".format(str(channel.id)))
             dataIO.save_json(self.file_path, self.settings)
             return
 		 
-    @antiinvite.command(pass_context=True)
+    @antiinvite.command()
     async def stats(self, ctx):  
         """View the settings of the antiinvite in your server"""
-        serverid=ctx.message.server.id
-        server=ctx.message.server
+        serverid=ctx.guild.id
+        server=ctx.guild
         s=discord.Embed(colour=0xfff90d)
         s.set_author(name="Anti-invite Settings", icon_url=self.bot.user.avatar_url)
-        if self.settings[server.id]["toggle"] == True:
+        if self.settings[str(server.id)]["toggle"] == True:
             toggle = "Enabled"
         else:
             toggle = "Disabled"
-        if self.settings[serverid]["modtoggle"] == False:
+        if self.settings[str(serverid)]["modtoggle"] == False:
             mod = "Mods **Can** send links"
         else:
             mod = "Mods **Can't** send links"
-        if self.settings[serverid]["admintoggle"] == False:
+        if self.settings[str(server.id)]["bottoggle"] == False:
+            bottoggle = "Bots **Can** send links"
+        else:
+            bottoggle = "Bots **Can't** send links"
+        if self.settings[str(serverid)]["admintoggle"] == False:
             admin = "Admins **Can** send links"
         else:
             admin = "Admins **Can't** send links"
         s.add_field(name="Status", value=toggle)
         s.add_field(name="Mod Perms", value=mod)
         s.add_field(name="Admin Perms", value=admin)
+        s.add_field(name="Bots", value=bottoggle)
         try:
             msg = ""
-            for channelid in self.settings[server.id]["channels"]:
-                channel = discord.utils.get(server.channels, id=channelid)
+            for channelid in self.settings[str(server.id)]["channels"]:
+                channel = discord.utils.get(server.channels, id=int(channelid))
                 msg += channel.name + "\n"
             if msg == "":
                 s.add_field(name="Disabled Channels", value="None")
-                await self.bot.say(embed=s)
+                await ctx.send(embed=s)
                 return
-            s.add_field(name="Disabled Channels", value=msg)
+            else:
+                s.add_field(name="Disabled Channels", value=msg)
         except:
             s.add_field(name="Disabled Channels", value="None")
-        await self.bot.say(embed=s)
+        await ctx.send(embed=s)
 		
 	
     async def on_message(self, message): 
-        serverid = message.server.id
+        serverid = message.guild.id
         author = message.author
         channel = message.channel
-        if self.settings[serverid]["modtoggle"] == False:
+        if self.settings[str(serverid)]["modtoggle"] == False:
             if channel.permissions_for(author).manage_messages:
                 return
-        if self.settings[serverid]["admintoggle"] == False:
+        if self.settings[str(serverid)]["admintoggle"] == False:
             if channel.permissions_for(author).administrator:
                 return
+        if self.settings[str(serverid)]["bottoggle"] == False:
+            if author.bot:
+                return
         try:
-            if channel.id in self.settings[serverid]["channels"]:
+            if str(channel.id) in self.settings[str(serverid)]["channels"]:
                 return
         except:
             pass
-        if self.settings[serverid]["toggle"] == True:
+        if self.settings[str(serverid)]["toggle"] == True:
             if ("discord.me/" in message.content.lower()) or ("discord.gg/" in message.content.lower()):
-                await self.bot.delete_message(message)
-                await self.bot.send_message(channel, "{}, You are not allowed to send invite links here :no_entry:".format(author.mention))
+                await message.delete()
+                await channel.send("{}, You are not allowed to send invite links here :no_entry:".format(author.mention))
 				
     async def on_message_edit(self, before, after): 
-        serverid = before.server.id
+        serverid = before.guild.id
         author = before.author
         channel = before.channel
-        if self.settings[serverid]["modtoggle"] == False:
+        if self.settings[str(serverid)]["modtoggle"] == False:
             if channel.permissions_for(author).manage_messages:
                 return
-        if self.settings[serverid]["admintoggle"] == False:
+        if self.settings[str(serverid)]["admintoggle"] == False:
             if channel.permissions_for(author).administrator:
                 return
+        if self.settings[str(serverid)]["bottoggle"] == False:
+            if author.bot:
+                return
         try:
-            if channel.id in self.settings[serverid]["channels"]:
+            if str(channel.id) in self.settings[str(serverid)]["channels"]:
                 return
         except:
             pass
-        if self.settings[serverid]["toggle"] == True:
+        if self.settings[str(serverid)]["toggle"] == True:
             if ("discord.me" in after.content.lower()) or ("discord.gg" in after.content.lower()):
-                await self.bot.delete_message(after)
-                await self.bot.send_message(channel, "{}, You are not allowed to send invite links here :no_entry:".format(author.mention))
+                await after.delete()
+                await channel.send("{}, You are not allowed to send invite links here :no_entry:".format(author.mention))
 
 		
 def check_folders():

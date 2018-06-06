@@ -10,11 +10,11 @@ class mention:
 
     async def on_message(self, message):
         bot = "<@!{}>".format(self.bot.user.id)
-        if message.server == "264445053596991498":
+        if message.guild == 264445053596991498:
             return
         if message.content.lower() == self.bot.user.mention:
-            if not message.channel.is_private:
-                await self.bot.send_message(message.channel, "My prefix is `s?`")
+            if not isinstance(message.channel, discord.abc.PrivateChannel):
+                await message.channel.send("My prefix is `s?`")
 
 				
 def setup(bot):
