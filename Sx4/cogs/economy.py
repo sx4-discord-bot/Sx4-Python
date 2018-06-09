@@ -298,7 +298,7 @@ class economy:
         if not self.settingss[str(user.id)]["HEIGHT"]:
             self.settingss[str(user.id)]["HEIGHT"] = "Not set"
         draw = ImageDraw.Draw(img)
-        font = ImageFont.truetype("Modern_Sans_Light.otf", 90)
+        font = ImageFont.truetype("exo.regular.otf", 90)
         if x > 0 or y > 0:
             draw.text((1500, 850), "Badges:", colour, font=font)
         size = 300
@@ -306,7 +306,7 @@ class economy:
         for x in range(len(str(user.name))):
             size -= 8
             number -= 10
-        fontbig = ImageFont.truetype("Modern_Sans_Light.otf", size)
+        fontbig = ImageFont.truetype("exo.regular.otf", size)
         draw.text((200, 0), "{}'s Profile:".format(user.name), colour, font=fontbig)
         n = 0
         m = 55
@@ -801,7 +801,7 @@ class economy:
                     if item2["name"] == item:
                         number += randint(item2["rand_min"], item2["rand_max"])
             if number == 0:
-                await ttx.send("You don't have any factories :no_entry:")
+                await ctx.send("You don't have any factories :no_entry:")
                 return
             self.settings["user"][str(author.id)]["factorytime"] = ctx.message.created_at.timestamp()
             self.settings["user"][str(author.id)]["balance"] += number
@@ -1052,8 +1052,10 @@ class economy:
                     
             for x in range(0, item["amount"]):
                 self.settings["user"][str(author.id)]["items"].append(item["name"].title())
-                    
-            await channel.send("You just bought a `{}` for **${}** :tada:".format(item["name"], item["price"]))
+            try:
+                await channel.send("You just bought `{} {}` for **${}** :tada:".format(item["amount"], item["name"], item["price"]))
+            except:
+                await channel.send("You just bought `1 {}` for **${}** :tada:".format(item["name"], item["price"]))
             try:
                 await owner.send("Your `{}` just got bought on the auction house, it was sold for **${}** :tada:".format(item["name"], item["price"]))
             except:
@@ -1232,18 +1234,31 @@ class economy:
         dataIO.save_json(self.location, self.settings)
         
     @auction.command(aliases=["house"])
-    async def list(self, ctx, page: int=None):  
+    async def list(self, ctx, itemname=None, page: int=None):  
         """See what's in the auction house"""
-        if not page:
+        itemnamesearch = False
+        if not page and not itemname:
             page = 1
+        elif not page and itemname:
+            try:
+                page = int(itemname)
+            except:
+                itemnamesearch = True
+                page = 1
+        elif itemname and page:
+            itemnamesearch = True
+        if itemnamesearch == True:
+            type = sorted(filter(lambda x: x["name"].lower() == itemname.lower(), self._auction["items"]), key=lambda x: x["price"])
+        else:
+            type = sorted(self._auction["items"], key=lambda x: x["price"])
         if page < 1:
             await ctx.send("Invalid Page :no_entry:")
             return
-        if page - 1 > len(self._auction["items"]) / 10:
+        if page - 1 > len(type) / 10:
             await ctx.send("Invalid Page :no_entry:")
             return
         msg = ""
-        for item in sorted(self._auction["items"], key=lambda x: x["price"])[page*10-10:page*10]:
+        for item in type[page*10-10:page*10]:
             owner = discord.utils.get(self.bot.get_all_members(), id=int(item["ownerid"]))
             try:
                 if item["durability"]:
@@ -1267,12 +1282,15 @@ class economy:
                 except:
                     item["amount"] = 1
                     msg += "**__{}__**\nOwner: `{}` ({})\nPrice: ${}\nAmount: {}\n\n".format(item["name"], owner, item["ownerid"], item["price"], item["amount"])
-        if not msg:
-            await ctx.send("There are no items for sale on the auction house :no_entry:")
+        if not msg and itemnamesearch == True:
+            await ctx.send("There are none of that item on the auction house :no_entry:")
+            return
+        if not msg and itemnamesearch == False:
+            await self.bot.say("There are no items for sale on the auction house :no_entry:")
             return
         s = discord.Embed(description=msg, colour=0xfff90d, timestamp=datetime.datetime.utcnow())
         s.set_author(name="Auction House", icon_url=self.bot.user.avatar_url)
-        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(self._auction["items"])/10)))
+        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(type)/10)))
         await ctx.send(embed=s) 
             
     @commands.command()
@@ -1402,17 +1420,12 @@ class economy:
     @commands.command()
     async def items(self, ctx, *, user: discord.Member=None): 
         """View your current items"""
-        msg = ""
         if not user:
             user = ctx.author
-        try:
-            for item in list(set(self.settings["user"][str(user.id)]["items"])):                
-                msg += item + " x" + str(self.settings["user"][str(user.id)]["items"].count(item)) + "\n"
-        except:
-            pass
-        if not msg:
-            msg = "None"
-        s=discord.Embed(description=msg, colour=user.colour)
+        items = "\n".join(["{} x{}".format(x, self.settings["user"][str(user.id)]["items"].count(x)) for x in sorted(set(self.settings["user"][str(user.id)]["items"]), key=lambda x: self.settings["user"][str(user.id)]["items"].count(x))])
+        if items == "":
+            items = "None"
+        s=discord.Embed(description=items, colour=user.colour)
         s.set_author(name=user.name +"'s Items", icon_url=user.avatar_url)
         await ctx.send(embed=s)
             
@@ -1814,7 +1827,7 @@ class economy:
             msg = await self.bot.wait_for("message", check=marry, timeout=1800)
         except asyncio.TimeoutError:
             await ctx.send("{}, You can always try someone else. (Response timed out :stopwatch:)".format(author.mention))
-            if user.id in self.data["user"][str(author.id)]["pending"]:
+            if str(user.id) in self.data["user"][str(author.id)]["pending"]:
                 del self.data["user"][str(author.id)]["pending"][str(user.id)]
                 dataIO.save_json(self.file_path, self.data)
             return
@@ -1822,7 +1835,7 @@ class economy:
             await ctx.send("Congratulations **{}** and **{}** :heart: :tada:".format(author.name, user.name))
             await self._create_marriage_user(ctx, user)
             await self._create_marriage_author(ctx, user)
-            if user.id in self.data["user"][str(author.id)]["pending"]:
+            if str(user.id) in self.data["user"][str(author.id)]["pending"]:
                 del self.data["user"][str(author.id)]["pending"][str(user.id)]
                 dataIO.save_json(self.file_path, self.data)
         else:
@@ -1832,9 +1845,26 @@ class economy:
                 dataIO.save_json(self.file_path, self.data)
             
     @commands.command() 
-    async def divorce(self, ctx, user: discord.Member):
+    async def divorce(self, ctx, user: str):
         """Divorce someone you've married"""
         author = ctx.author
+        if "<" in user and "@" in user:
+            user = user.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
+            user = discord.utils.get(self.bot.get_all_members(), id=int(user))
+        elif "#" in user:
+            number = len([x for x in user if "#" not in x])
+            usernum = number - 4
+            user = discord.utils.get(self.bot.get_all_members(), name=user[:usernum], discriminator=user[usernum + 1:len(user)])
+        else:
+            try:
+                user = discord.utils.get(self.bot.get_all_members(), id=int(user))
+                if not user:
+                    user = await self.bot.get_user_info(int(user))
+            except:
+                user = discord.utils.get(self.bot.get_all_members(), name=user)
+        if not user:
+            await ctx.send("I could not find that user :no_entry:")
+            return
         if str(user.id) in self.data["user"][str(author.id)]["marriedto"]:
             if author == user:
                 del self.data["user"][str(user.id)]["marriedto"][str(author.id)]

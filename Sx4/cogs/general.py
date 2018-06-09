@@ -203,9 +203,6 @@ class general:
             s.add_field(name="Currently Playing", value="Nothing")
         await ctx.send(embed=s)
         
-        
-            
-        
     @commands.command(pass_context=True)
     async def dblowners(self, ctx, *, user: str=None):
         """Look up the developers of a bot on discord bot list"""
@@ -377,82 +374,7 @@ class general:
         s.set_author(name="Bot List")
         s.set_footer(text="Page {}/50".format(page+1))
         await ctx.send(embed=s)
-        
-    @commands.command(pass_context=True)
-    async def catfact(self, ctx):
-        """Learn cat stuff"""
-        url = "https://catfact.ninja/fact"
-        request = Request(url)
-        data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed(description=data["fact"], colour=ctx.message.author.colour)
-        s.set_author(name="Did you know?")
-        s.set_thumbnail(url="https://emojipedia-us.s3.amazonaws.com/thumbs/120/twitter/134/cat-face_1f431.png")
-        await ctx.send(embed=s)
-        
-    @commands.command(pass_context=True)
-    async def dogfact(self, ctx):
-        """Learn dog stuff"""
-        url = "https://fact.birb.pw/api/v1/dog"
-        request = Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0')
-        data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed(description=data["string"], colour=ctx.message.author.colour)
-        s.set_author(name="Did you know?")
-        s.set_thumbnail(url="https://emojipedia-us.s3.amazonaws.com/thumbs/120/twitter/134/dog-face_1f436.png")
-        await ctx.send(embed=s)
-        
-    @commands.command(pass_context=True, aliases=["bird"])
-    async def birb(self, ctx):
-        """Look at a birb"""
-        url = "http://random.birb.pw/tweet.json/"
-        request = Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0')
-        data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed(description=":bird:", colour=ctx.message.author.colour)
-        s.set_image(url="http://random.birb.pw/img/" + data["file"])
-        try:
-            await ctx.send(embed=s)
-        except:
-            await ctx.send("The birb didn't make it, sorry :no_entry:")
-        
-    @commands.command(pass_context=True)
-    async def dog(self, ctx):
-        """Look at a dog"""
-        url = "https://dog.ceo/api/breeds/image/random"
-        request = Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0')
-        data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed(description=":dog:", colour=ctx.message.author.colour)
-        s.set_image(url=data["message"])
-        try:
-            await ctx.send(embed=s)
-        except:
-            await ctx.send("The dog didn't make it, sorry :no_entry:")
-        
-    @commands.command(pass_context=True)
-    async def cat(self, ctx):
-        """Look at a cat"""
-        response = requests.get("http://thecatapi.com/api/images/get?format=src")
-        image = response.url
-        s=discord.Embed(description=":cat:", colour=ctx.message.author.colour)
-        s.set_image(url=image)
-        try:
-            await ctx.send(embed=s)
-        except:
-            await ctx.send("The cat didn't make it, sorry :no_entry:")
-		
-    @commands.command(pass_context=True)
-    async def duck(self, ctx):
-        url = "https://random-d.uk/api/v1/random"
-        request = Request(url)
-        data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed(description=":duck:", colour=ctx.message.author.colour)
-        s.set_image(url=data["url"])
-        try:
-            await ctx.send(embed=s)
-        except:
-            await ctx.send("The duck didn't make it, sorry :no_entry:")
-        
+
     @commands.command(pass_context=True, aliases=["ud"])
     async def urbandictionary(self, ctx, search_term, page: int=None):
         """Look up the definition of a word on the urbandictionary"""
@@ -469,12 +391,12 @@ class general:
         if len(data["list"]) < page + 1:
             await ctx.send("That is not a valid page :no_entry:")
             return
-        if len([x for x in str(data["list"][page]["definition"])]) > 976:
-            definition = str(data["list"][page]["definition"])[:976] + '... [Read more]({})'.format(data["list"][page]["permalink"])
+        if len([x for x in str(data["list"][page]["definition"])]) > 900:
+            definition = str(data["list"][page]["definition"])[:900] + '... [Read more]({})'.format(data["list"][page]["permalink"])
         else:
             definition = str(data["list"][page]["definition"])
-        if len([x for x in str(data["list"][page]["example"])]) > 976:
-            example = str(data["list"][page]["example"])[:976] + '... [Read more]({})'.format(data["list"][page]["permalink"])
+        if len([x for x in str(data["list"][page]["example"])]) > 900:
+            example = str(data["list"][page]["example"])[:900] + '... [Read more]({})'.format(data["list"][page]["permalink"])
         else:
             example = str(data["list"][page]["example"])
         s=discord.Embed(colour=ctx.message.author.colour)
@@ -488,7 +410,7 @@ class general:
     @commands.command(pass_context=True)
     async def ping(self, ctx):
         """Am i alive? (Well if you're reading this, yes)"""
-        await ctx.send('Pong! :ping_pong: **{}ms**'.format(round(self.bot.latency*1000)))
+        await ctx.send('Pong! :ping_pong:\n\n:stopwatch: **{}ms**\n:heartbeat: **{}ms**'.format(round((datetime.utcnow().timestamp() - ctx.message.created_at.timestamp())*1000), round(self.bot.latency*1000)))
         
     @commands.command(pass_context=True)
     async def bots(self, ctx): 
@@ -509,19 +431,19 @@ class general:
         if "@here" in text.lower():
             await ctx.send("@Here. Ha get pranked :middle_finger:")
             return
-        await ctx.send(text.replace("", " "))
+        await ctx.send(text.replace("", " ")[:2000])
          
     @commands.command(pass_context=True)
     async def backwards(self, ctx, *, text: str):
         """Make text go backwards"""
+        text = text[::-1]
         if "@everyone" in text.lower():
             await ctx.send("@Everyone. Ha get pranked :middle_finger:")
             return
         if "@here" in text.lower():
             await ctx.send("@Here. Ha get pranked :middle_finger:")
             return
-        text = text[::-1]
-        await ctx.send(text)
+        await ctx.send(text[:2000])
         
     @commands.command()
     async def randcaps(self, ctx, *, text: str):
@@ -540,7 +462,7 @@ class general:
             else:
                 letter = letter.lower()
             msg += letter
-        await ctx.send(msg)
+        await ctx.send(msg[:2000])
             
     @commands.command(aliases=["altcaps"])
     async def alternatecaps(self, ctx, *, text):
@@ -561,7 +483,7 @@ class general:
                 letter = letter.lower()
                 number = 0
             msg += letter
-        await ctx.send(msg)
+        await ctx.send(msg[:2000])
         
     @commands.command(pass_context=True)
     async def topservers(self, ctx):
@@ -790,12 +712,22 @@ class general:
             msg = "No Permissions"
         else:
             msg = "\n".join([x[0].replace("_", " ").title() for x in filter(lambda p: p[1] == True, perms)])
+        if role.hoist:
+            hoist = "Yes"
+        else:
+            hoist = "No"
+        if role.mentionable:
+            mention = "Yes"
+        else:
+            mention = "No"
         s=discord.Embed(colour=role.colour)
         s.set_author(name="{} Role Info".format(role.name), icon_url=ctx.guild.icon_url)
         s.add_field(name="Role ID", value=role.id)
         s.add_field(name="Role Colour", value=role.colour)
-        s.add_field(name="Role Position", value="{} (Bottom to Top)\n{} (Top to Bottom)".format(role.position, len(server.roles) - (role.position) + 2))
+        s.add_field(name="Role Position", value="{} (Bottom to Top)\n{} (Top to Bottom)".format(role.position, (len(server.roles) - (role.position)) + 1))
         s.add_field(name="Users in Role", value=members)
+        s.add_field(name="Hoisted", value=hoist)
+        s.add_field(name="Mentionable", value=mention)
         s.add_field(name="Role Permissions", value=msg, inline=False)
         await ctx.send(embed=s)
         
@@ -850,13 +782,13 @@ class general:
         if "@here" in text.lower():
             await ctx.send("@Here. Ha get pranked :middle_finger:")
             return
-        await ctx.send(text)
+        await ctx.send(text[:2000])
         
     @commands.command(pass_context=True, aliases=["embed"])
     async def esay(self, ctx, *, text):
         """Say something with the bot in a embed 0w0"""
         author = ctx.message.author
-        s=discord.Embed(description=text, colour=author.colour)
+        s=discord.Embed(description=text[:2000], colour=author.colour)
         s.set_author(name=author.name, icon_url=author.avatar_url)
         await ctx.send(embed=s)
         

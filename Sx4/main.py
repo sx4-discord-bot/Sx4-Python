@@ -6,6 +6,9 @@ import time
 import datetime
 from utils.dataIO import dataIO
 from utils import checks
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+import requests
 import aiohttp
 import json
 import traceback
@@ -19,7 +22,7 @@ dbltoken = ""
 url = "https://discordbots.org/api/bots/440996323156819968/stats"
 headers = {"Authorization" : dbltoken}
 
-modules = ["cogs.antiad", "cogs.antilink", "cogs.autorole", "cogs.economy", "cogs.page", "cogs.general", "cogs.help", "cogs.image", "cogs.mention", "cogs.status", "cogs.joinleave", "cogs.logs", "cogs.mod", "cogs.owner", "cogs.selfroles", "cogs.serverlog"]
+modules = ["cogs.antiad", "cogs.antilink", "cogs.autorole", "cogs.economy", "cogs.page", "cogs.general", "cogs.help", "cogs.image", "cogs.mention", "cogs.status", "cogs.joinleave", "cogs.logs", "cogs.mod", "cogs.owner", "cogs.selfroles", "cogs.serverlog", "cogs.animals"]
 
 @bot.event
 async def on_ready():
@@ -50,7 +53,7 @@ async def on_guild_join(guild):
 async def on_message(message):
     if message.author.bot:
         return
-    if isinstance(message.channel, discord.abc.PrivateChannel):
+    if isinstance(message.channel, discord.abc.PrivateChannel) and message.content.startswith("s?"):
         await message.channel.send("You can't use commands in private messages :no_entry:")
         return
     else:
@@ -62,13 +65,6 @@ async def on_guild_remove(guild):
     payloadshards = {"shard_count"  : bot.shard_count}
     requests.post(url, data=payloadservers, headers=headers)
     requests.post(url, data=payloadshards, headers=headers)
-	
-@bot.event
-async def on_guild_remove(guild):
-    payloadservers = {"server_count"  : len(bot.guilds)}
-    payloadshards = {"shard_count"  : len(bot.shard_count)}
-    Request(url, data=urlencode(payloadservers).encode(), headers=headers)
-    Request(url, data=urlencode(payloadshards).encode(), headers=headers)
 			
 @bot.event
 async def on_command_error(ctx, error, *args, **kwargs):

@@ -91,6 +91,75 @@ class image:
                 pass
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
+
+    @commands.command(aliases=["www"]) 
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def whowouldwin(self, ctx, user_or_imagelink: str, user_or_imagelink2: str):
+        """Who would win out of 2 images"""
+        channel = ctx.message.channel
+        author = ctx.message.author
+        if not user_or_imagelink:
+            url1 = ctx.message.author.avatar_url
+        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
+            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
+            try:
+                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
+            except:
+                await ctx.send("Invalid user :no_entry:")
+                return
+            url1 = user.avatar_url
+        else:
+            try:
+                user = ctx.message.guild.get_member_named(user_or_imagelink)
+                url1 = user.avatar_url
+            except:
+                try:
+                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
+                    url1 = user.avatar_url
+                except:
+                    url1 = user_or_imagelink
+        if not user_or_imagelink2:
+            url2 = ctx.message.author.avatar_url
+        elif "<" in user_or_imagelink2 and "@" in user_or_imagelink2:
+            userid = user_or_imagelink2.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
+            try:
+                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
+            except:
+                await ctx.send("Invalid user :no_entry:")
+                return
+            url2 = user.avatar_url
+        else:
+            try:
+                user = ctx.message.guild.get_member_named(user_or_imagelink2)
+                url2 = user.avatar_url
+            except:
+                try:
+                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink2))
+                    url2 = user.avatar_url
+                except:
+                    url2 = user_or_imagelink2
+        try:
+            with open('image1.jpg', 'wb') as f:
+                f.write(requests.get(url1.replace("gif", "png").replace("webp", "png")).content)
+            with open('image2.jpg', 'wb') as f:
+                f.write(requests.get(url2.replace("gif", "png").replace("webp", "png")).content)
+            img = Image.open("whowouldwin.png").convert("RGBA")
+            img2 = Image.open("image1.jpg").convert("RGBA")
+            img3 = Image.open("image2.jpg").convert("RGBA")
+            img2 = img2.resize((400, 400))
+            img3 = img3.resize((400, 400))
+            img.paste(img2, (30, 180), img2)
+            img.paste(img3, (510, 180), img3)
+            img.save("result.png")
+            await ctx.send(file=discord.File("result.png", "result.png"))
+            try:
+                os.remove("result.png")
+                os.remove("image1.jpg")
+                os.remove("image1.jpg")
+            except:
+                pass
+        except:
+            await ctx.send("Not a valid user or image url :no_entry:")
             
     @commands.command(pass_context=True) 
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -222,8 +291,8 @@ class image:
             f.write(requests.get(u1avatar.replace("gif", "png").replace("webp", "png")).content)
         with open('image2.jpg', 'wb') as f:
             f.write(requests.get(u2avatar.replace("gif", "png").replace("webp", "png")).content)
-        user1 = Image.open("image.jpg") 
-        user2 = Image.open("image2.jpg") 
+        user1 = Image.open("image.jpg").convert("RGBA")
+        user2 = Image.open("image2.jpg").convert("RGBA")
         user1 = user1.resize((280, 280))
         user2 = user2.resize((280, 280))
         heart = Image.open("heart.png")
@@ -257,27 +326,18 @@ class image:
             except:
                 await ctx.send("Invalid user :no_entry:")
                 return
-            if user == self.bot.user:
-                user = author
-                await ctx.send("No u")
             url = user.avatar_url
             if url == "":
                 url = user.default_avatar_url
         else:
             try:
                 user = ctx.message.guild.get_member_named(user_or_imagelink)
-                if user == self.bot.user:
-                    user = author
-                    await ctx.send("No u")
                 url = user.avatar_url
                 if url == "":
                     url = user.default_avatar_url
             except:
                 try:
                     user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    if user == self.bot.user:
-                        user = author
-                        await ctx.send("No u")
                     url = user.avatar_url
                     if url == "":
                         url = user.default_avatar_url
@@ -466,6 +526,51 @@ class image:
             m += 70
         font = ImageFont.truetype("arial.ttf", size)
         draw.text((60, 125), description, (0, 0, 0), font=font)
+        img.save("result.png")
+        await ctx.send(file=discord.File("result.png", "result.png"))
+        try:
+            os.remove("result.png")
+            os.remove("image.jpg")
+        except:
+            pass
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def scroll(self, ctx, *, text: str):
+        """The terrible truth"""
+        channel = ctx.message.channel
+        author = ctx.message.author
+        if len(text) > 80:
+            await ctx.send("No more than 80 characters :no_entry:")
+            return
+        img = Image.open("scroll-meme.png")
+        draw = ImageDraw.Draw(img)
+        n = 0
+        m = 12
+        char = 12
+        number = 0
+        times = 0 
+        size = 20
+        description = ""
+        if (math.ceil(len(str(text))/12)+1) >=6:
+            for x in range((math.ceil(len(str(text))/12)+1) - 6):
+                size -= 3
+                char += 1
+        for x in range(math.ceil(len(str(text))/char)+1):
+            number += 1
+            if [x for x in text if " " in x]:
+                for x in range(len([x for x in text if " " in x])+1):
+                    while text[m-1:m] != " " and m != 0 and m != len(str(text)):
+                        m -= 1
+                    times += char
+                    if m == 0:
+                        n = times - char
+                        m = times
+            description += text[n:m] + "\n"
+            n = m
+            m += char
+        font = ImageFont.truetype("arial.ttf", size)
+        draw.text((95, 285), description, (0, 0, 0), font=font)
         img.save("result.png")
         await ctx.send(file=discord.File("result.png", "result.png"))
         try:

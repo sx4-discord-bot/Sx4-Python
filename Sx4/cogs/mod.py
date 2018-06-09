@@ -56,10 +56,10 @@ class mod:
         author = ctx.author
         server = ctx.guild
         i = 0
-        if len(from_channel.voice_members) == 0:
+        if len(from_channel.members) == 0:
             await ctx.send("There is no one in that voice channel :no_entry:")
             return
-        for user in [x for x in from_channel.voice_members if x not in to_channel.voice_members]:
+        for user in [x for x in from_channel.members if x not in to_channel.members]:
             await user.edit(voice_channel=to_channel, reason="Massmove") 
             i = i + 1
         await ctx.send("Moved **{}** members from `{}` to `{}`".format(i, from_channel.name, to_channel.name))
@@ -533,11 +533,11 @@ class mod:
             await ctx.send("I need the `BAN_MEMBERS` permission :no_entry:")
             return
         ban_list = await server.bans()
-        invite = await channel.create_invite()
+        invite = await channel.create_invite(max_age=86400, max_uses=1)
         s=discord.Embed(title="You have been unbanned from {}".format(server.name), description="Feel free to join back whenever.", colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
         s.set_thumbnail(url=server.icon_url)
         s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)), inline=False)
-        s.add_field(name="Invite", value=invite)
+        s.add_field(name="Invite", value="{} (This will expire in 1 day)".format(str(invite)))
         if user == author:
             await ctx.send("You can't unban yourself :no_entry:")
             return
@@ -836,9 +836,9 @@ class mod:
         perms.speak = False
         if not role:
             role = await server.create_role(name="Muted - Sx4")
-            for channels in [x for x in server.channels if x.type == discord.ChannelType.text]:
+            for channels in ctx.guild.text_channels:
                 await channels.set_permissions(role, overwrite=overwrite)
-            for channels in [x for x in server.channels if x.type == discord.ChannelType.voice]:
+            for channels in ctx.guild.voice_channels:
                 await channels.set_permissions(role, overwrite=perms)
         if role in user.roles:
             await ctx.send("**{}** is already muted :no_entry:".format(user))
@@ -995,9 +995,9 @@ class mod:
         perms.speak = False
         if not role:
             return
-        if channel.type == discord.ChannelType.text:
+        if isinstance(channel, discord.TextChannel):
             await channel.set_permissions(role, overwrite=overwrite)
-        if channel.type == discord.ChannelType.voice:
+        if isinstance(channel, discord.VoiceChannel):
             await channel.set_permissions(role, overwrite=perms)
         
     @commands.command(pass_context=True, no_pm=True)
@@ -1016,7 +1016,7 @@ class mod:
             else:
                 await ctx.send("You can not warn someone higher than your own role :no_entry:")
                 return
-        if server.id not in self.d:
+        if str(server.id) not in self.d:
             self.d[str(server.id)] = {}
             dataIO.save_json(self.file, self.d)
         if str(user.id) not in self.d[str(server.id)]:
@@ -1038,9 +1038,9 @@ class mod:
         perms.speak = False
         if not role:
             role = await server.create_role(name="Muted - Sx4")
-            for channels in [x for x in server.channels if x.type == discord.ChannelType.text]:
+            for channels in server.text_channels:
                 await channels.set_permissions(role, overwrite=overwrite)
-            for channels in [x for x in server.channels if x.type == discord.ChannelType.voice]:
+            for channels in server.voice_channels:
                 await channels.set_permissions(role, overwrite=perms)
         await self._create_warn(server, user)
         if reason:
@@ -1233,7 +1233,7 @@ class mod:
         await ctx.send("**{}'s** warnings have been set to **{}**".format(user.name, warnings))  
 
     async def check_mute(self):
-        while not self.bot.is_closed:
+        while not self.bot.is_closed():
             for serverid in list(self.d)[:len(self.d)]:
                 server = self.bot.get_guild(serverid)
                 if server != None:
@@ -1288,7 +1288,7 @@ class mod:
                     
         
     async def _create_warn(self, server, user):
-        if server.id not in self.data:
+        if str(server.id) not in self.data:
             self.data[str(server.id)] = {}
             dataIO.save_json(self.JSON, self.data)
         if "user" not in self.data[str(server.id)]:

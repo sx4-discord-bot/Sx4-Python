@@ -20,7 +20,7 @@ class statuses:
                 ]
                 status = randint(0, len(statuses)-1)
                 new_status = statuses[status]
-                await self.bot.change_presence(activity=discord.Game(name=new_status, type=3))
+                await self.bot.change_presence(activity=discord.Game(name=new_status, type=discord.ActivityType.watching))
             except:
                 pass
             await asyncio.sleep(30)

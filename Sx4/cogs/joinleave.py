@@ -170,14 +170,15 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         number = str(len(server.members))
         num = len(number) - 2
         num2 = len(number) - 1
-        if int(number[num:]) >= 11 and int(number[num:]) <= 13:
-            prefix = "th"
-        elif int(number[num2:]) == 1:
-            prefix = "st"
-        elif int(number[num2:]) == 2:
-            prefix = "nd"
-        elif int(number[num2:]) == 3:
-            prefix = "rd"
+        if int(number[num:]) < 11 or int(number[num:]) > 13:
+            if int(number[num2:]) == 1:
+                prefix = "st"
+            elif int(number[num2:]) == 2:
+                prefix = "nd"
+            elif int(number[num2:]) == 3:
+                prefix = "rd"
+            else:
+                prefix = "th"
         else:
             prefix = "th"
         return number + prefix
