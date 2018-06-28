@@ -2,6 +2,10 @@
 
 Sx4 is a mutlipurpose bot, this means it can be used for many different purposes making it easier for you to focus your whole server around a few bots. It also has over 100 commands for many different purposes
 
+<u>__Cloning__<u>
+
+Sx4 does not support any sort of cloning, we do not condone nor help anyone trying to clone. Also many files are missing which are required for many commands so even if you try to clone it, the bot will just be an error fest.
+
 <u>__Moderation__</u>
 
 Sx4 includes a variety of different moderation commands so you can organize your server to the best ability, it has things such as antilink, antiinvite, selfroles, autorole, a warning system, basic mod commands (mute, kick, ban etc) and so much more! All these things can also be logged in an optional mod-log to keep track of who's been muted, kicked, banned etc. You can also add reasons after the action has happened to make sure they are valid actions!
