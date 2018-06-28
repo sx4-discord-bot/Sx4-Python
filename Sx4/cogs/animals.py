@@ -10,7 +10,7 @@ class animals:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def catfact(self, ctx):
         """Learn cat stuff"""
         url = "https://catfact.ninja/fact"
@@ -21,7 +21,7 @@ class animals:
         s.set_thumbnail(url="https://emojipedia-us.s3.amazonaws.com/thumbs/120/twitter/134/cat-face_1f431.png")
         await ctx.send(embed=s)
         
-    @commands.command(pass_context=True)
+    @commands.command()
     async def dogfact(self, ctx):
         """Learn dog stuff"""
         url = "https://fact.birb.pw/api/v1/dog"
@@ -33,7 +33,7 @@ class animals:
         s.set_thumbnail(url="https://emojipedia-us.s3.amazonaws.com/thumbs/120/twitter/134/dog-face_1f436.png")
         await ctx.send(embed=s)
         
-    @commands.command(pass_context=True, aliases=["bird"])
+    @commands.command(aliases=["bird"])
     async def birb(self, ctx):
         """Shows a random birb"""
         url = "http://random.birb.pw/tweet.json/"
@@ -47,7 +47,7 @@ class animals:
         except:
             await ctx.send("The birb didn't make it, sorry :no_entry:")
         
-    @commands.command(pass_context=True)
+    @commands.command()
     async def dog(self, ctx):
         """Shows a random dog"""
         url = "https://dog.ceo/api/breeds/image/random"
@@ -61,7 +61,7 @@ class animals:
         except:
             await ctx.send("The dog didn't make it, sorry :no_entry:")
         
-    @commands.command(pass_context=True)
+    @commands.command()
     async def cat(self, ctx):
         """Shows a random cat"""
         response = requests.get("http://thecatapi.com/api/images/get?format=src")
@@ -73,11 +73,12 @@ class animals:
         except:
             await ctx.send("The cat didn't make it, sorry :no_entry:")
 		
-    @commands.command(pass_context=True)
+    @commands.command()
     async def duck(self, ctx):
         "Shows a random duck"
         url = "https://random-d.uk/api/v1/random"
         request = Request(url)
+        request.add_header('User-Agent', 'Mozilla/5.0')
         data = json.loads(urlopen(request).read().decode())
         s=discord.Embed(description=":duck:", colour=ctx.message.author.colour)
         s.set_image(url=data["url"])

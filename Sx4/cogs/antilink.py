@@ -59,7 +59,7 @@ class antilink:
             return
 		
     @antilink.command() 
-    @checks.admin_or_permissions(manage_server=True)
+    @checks.admin_or_permissions(manage_guild=True)
     async def modtoggle(self, ctx):
         """Choose whether you want your mods to be able to send links or not (manage_message and above are classed as mods)"""
         server = ctx.guild
@@ -75,7 +75,7 @@ class antilink:
             return
 			
     @antilink.command() 
-    @checks.admin_or_permissions(manage_server=True)
+    @checks.admin_or_permissions(manage_guild=True)
     async def admintoggle(self, ctx):
         """Choose whether you want your admins to be able to send links or not (administrator perms are classed as admins)"""
         server = ctx.guild
@@ -91,7 +91,7 @@ class antilink:
             return
 			
     @antilink.command()
-    @checks.admin_or_permissions(manage_server=True)
+    @checks.admin_or_permissions(manage_guild=True)
     async def togglebot(self, ctx):
         """Choose whether bots can send links or not"""
         server = ctx.guild
@@ -107,7 +107,7 @@ class antilink:
             return
 			
     @antilink.command()
-    @checks.admin_or_permissions(manage_server=True)
+    @checks.admin_or_permissions(manage_guild=True)
     async def togglechannel(self, ctx, channel: discord.TextChannel=None): 
         """Choose what channels you want to count towards antilink"""
         server = ctx.guild

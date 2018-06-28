@@ -24,7 +24,7 @@ class page:
 	def __init__(self, bot):
 		self.bot = bot
 	
-	@commands.command(pass_context=True, no_pm=True, aliases=["sroles", "roles"])
+	@commands.command(no_pm=True, aliases=["sroles", "roles"])
 	async def serverroles(self, ctx):
 		server = ctx.message.guild
 		channel = ctx.message.channel
@@ -46,7 +46,7 @@ class page:
 
 		PagedResultData.paged_results[server.id][channel.id][author.id] = paged_result
 	
-	@commands.command(pass_context=True)
+	@commands.command()
 	async def members(self, ctx):
 		server = ctx.message.guild
 		channel = ctx.message.channel

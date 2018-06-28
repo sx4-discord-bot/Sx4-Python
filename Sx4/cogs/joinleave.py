@@ -8,13 +8,15 @@ import os
 import re
 import math
 import logging
+import requests
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 import asyncio
 import random
 import time
 from utils.dataIO import fileIO
 
 
-settings = {"toggle": False, "channel": None, "message": "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.", "message-leave": "**{user.name}** has just left **{server}**. Bye **{user.name}**!", "dm": False}
+settings = {"toggle": False, "channel": None, "message": "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.", "message-leave": "**{user.name}** has just left **{server}**. Bye **{user.name}**!", "dm": False, "imgwelcomertog": False, "banner": None, "leavetoggle": True}
 
 class welcomer:
     """Shows when a user joins and leaves a server"""
@@ -24,13 +26,74 @@ class welcomer:
         self.file_path = "data/welcomer/settings.json"
         self.settings = dataIO.load_json(self.file_path)
         self.settings = defaultdict(lambda: settings, self.settings)
+
+    @commands.group()
+    @checks.admin_or_permissions(manage_messages=True)
+    async def imgwelcomer(self, ctx):
+        """Make the bot welcome people for you with an image"""
+        pass
+
+    @imgwelcomer.command(name="toggle")
+    @checks.admin_or_permissions(manage_messages=True)
+    async def _toggle(self, ctx):
+        "toggle image welcomer on or off"
+        server = ctx.guild
+        if self.settings[str(server.id)]["imgwelcomertog"] == True:
+            self.settings[str(server.id)]["imgwelcomertog"] = False
+            await ctx.send("Image Welcomer has been **Disabled**")
+            dataIO.save_json(self.file_path, self.settings)
+            return
+        if self.settings[str(server.id)]["imgwelcomertog"] == False:
+            self.settings[str(server.id)]["imgwelcomertog"] = True
+            await ctx.send("Image Welcomer has been **Enabled**")
+            dataIO.save_json(self.file_path, self.settings)
+            return
+
+    @imgwelcomer.command()
+    @checks.admin_or_permissions(manage_messages=True)
+    async def banner(self, ctx, banner: str=None):
+        """Adds a banner to the image welcomer, when added the image welcomer changes resolution to 2560 x 1440 so a banner that size would be ideal"""
+        if not ctx.author in [x for x in self.bot.get_guild(330399610273136641).members if ctx.author == x and discord.utils.get(self.bot.get_guild(330399610273136641).roles, id=457123569260953600) in x.roles]:
+            if not checks.is_owner_c(ctx.author):
+                await ctx.send("You have to have donated to use this feature :no_entry:")
+                return
+        author = ctx.author
+        server = ctx.guild
+        if not banner:
+            if ctx.message.attachments:
+                try: 
+                    banner = ctx.message.attachments[0].url.replace(".gif", ".png").replace(".webp", ".png")
+                    self.settings[str(server.id)]["banner"] = banner
+                    dataIO.save_json(self.file_path, self.settings)
+                    await ctx.send("Your banner for image welcomer has been set.")
+                    return
+                except:
+                    pass
+            self.settings[str(server.id)]["banner"] = None
+            dataIO.save_json(self.file_path, self.settings)
+            await ctx.send("Your banner for image welcomer has been reset.")
+            return
+        banner = banner.replace(".gif", ".png").replace(".webp", ".png")
+        if "https://" in banner or "http://" in banner:
+            if ".png" in banner or ".jpg" in banner:
+                if "cdn.discordapp.com" in banner or "i.imgur.com" in banner:
+                    self.settings[str(server.id)]["banner"] = banner
+                    dataIO.save_json(self.file_path, self.settings)
+                    await ctx.send("Your banner for image welcomer has been set.")
+                else:
+                    await ctx.send("Invalid image url, has to be an imgur or discord image :no_entry:")
+            else:
+                await ctx.send("Invalid image url, has to be a jpeg or png image :no_entry:")
+        else:
+            await ctx.send("Invalid image url, needs to be an actual link :no_entry:")
+
         
-    @commands.group(pass_context=True)
+    @commands.group()
     async def welcomer(self, ctx):
         """Make the bot welcome people for you"""
         pass
         
-    @welcomer.command(pass_context=True)
+    @welcomer.command()
     @checks.admin_or_permissions(manage_messages=True)
     async def toggle(self, ctx): 
         """Toggle welcomer on or off"""
@@ -46,7 +109,7 @@ class welcomer:
             dataIO.save_json(self.file_path, self.settings)
             return
             
-    @welcomer.command(pass_context=True)
+    @welcomer.command()
     @checks.admin_or_permissions(manage_messages=True)
     async def dmtoggle(self, ctx): 
         """Toggle whether you want the bot to dm the user or not"""
@@ -61,8 +124,24 @@ class welcomer:
             await ctx.send("Welcome messages will now be sent in dms.")
             dataIO.save_json(self.file_path, self.settings)
             return
+
+    @welcomer.command()
+    @checks.admin_or_permissions(manage_messages=True)
+    async def leavetoggle(self, ctx):
+        """Toggle if you want the leave message or not"""
+        server = ctx.guild
+        if self.settings[str(server.id)]["leavetoggle"] == True:
+            self.settings[str(server.id)]["leavetoggle"] = False
+            await ctx.send("Leave messages are now disabled.")
+            dataIO.save_json(self.file_path, self.settings)
+            return
+        if self.settings[str(server.id)]["leavetoggle"] == False:
+            self.settings[str(server.id)]["leavetoggle"] = True
+            await ctx.send("Leave messages are now enabled.")
+            dataIO.save_json(self.file_path, self.settings)
+            return
     
-    @welcomer.command(pass_context=True)
+    @welcomer.command()
     @checks.admin_or_permissions(manage_messages=True)
     async def joinmessage(self, ctx, *, message: str=None):
         """Set the joining message"""
@@ -85,7 +164,7 @@ Example: `s?welcomer message {user.mention}, Welcome to **{server}**. We now hav
         dataIO.save_json(self.file_path, self.settings)
         await ctx.send("Your message has been set <:done:403285928233402378>")
         
-    @welcomer.command(pass_context=True)
+    @welcomer.command()
     @checks.admin_or_permissions(manage_messages=True)
     async def leavemessage(self, ctx, *, message: str=None):
         """Set the leaving message"""
@@ -108,7 +187,7 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         dataIO.save_json(self.file_path, self.settings)
         await ctx.send("Your message has been set <:done:403285928233402378>")
         
-    @welcomer.command(pass_context=True)
+    @welcomer.command()
     async def preview(self, ctx):
         """Look at the preview of your welcomer"""
         server = ctx.guild
@@ -127,10 +206,13 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         message2 = message2.replace("{user}", str(author))
         message2 = message2.replace("{server.members}", str(len(server.members))) 
         message = message.replace("{server.members.prefix}", await self.prefixfy(server)) 
-        await ctx.send(message)
+        if self.settings[str(server.id)]["imgwelcomertog"]:
+            await ctx.send(content=message, file=await self.image_welcomer(author, server))
+        else:
+            await ctx.send(message)
         await ctx.send(message2)
             
-    @welcomer.command(pass_context=True)
+    @welcomer.command()
     @checks.admin_or_permissions(manage_messages=True)
     async def channel(self, ctx, channel: discord.TextChannel):
         """Set the channel of where you want the bot to welcome people"""
@@ -139,12 +221,12 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         dataIO.save_json(self.file_path, self.settings)        
         await ctx.send("<#{}> has been set as the join-leave channel".format(channel.id))
         
-    @welcomer.command(pass_context=True)
+    @welcomer.command()
     async def stats(self, ctx): 
         """Look at the settings of your welcomer"""
         server = ctx.guild
-        message = self.settings[str(server.id)]["message"]
-        message2 = self.settings[str(server.id)]["message-leave"]
+        message = "`" + self.settings[str(server.id)]["message"] + "`"
+        message2 = "`" + self.settings[str(server.id)]["message-leave"] + "`"  
         s=discord.Embed(colour=0xfff90d)
         s.set_author(name="Welcomer Settings", icon_url=self.bot.user.avatar_url)
         if self.settings[str(server.id)]["toggle"] == True:
@@ -155,6 +237,12 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
             msg2 = "Enabled"
         if self.settings[str(server.id)]["dm"] == False:
             msg2 = "Disabled"
+        if self.settings[str(server.id)]["imgwelcomertog"] == True:
+            img = "Enabled"
+        else:
+            img = "Disabled"
+        if self.settings[str(server.id)]["leavetoggle"] == False:
+            message2 = "Disabled"
         s.add_field(name="Welcomer status", value=msg)
         if not self.settings[str(server.id)]["channel"]:
             channel = "Not set"
@@ -162,8 +250,9 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
             channel = "<#{}>".format(self.settings[str(server.id)]["channel"])
         s.add_field(name="Welcomer channel", value=channel)
         s.add_field(name="DM Welcomer", value=msg2)
-        s.add_field(name="Join message", value="`" + message + "`", inline=False)
-        s.add_field(name="Leave message", value= "`" + message2 + "`", inline=False)
+        s.add_field(name="Image Welcomer", value=img)
+        s.add_field(name="Join message", value=message, inline=False)
+        s.add_field(name="Leave message", value=message2, inline=False)
         await ctx.send(embed=s)
         
     async def prefixfy(self, server):
@@ -186,6 +275,7 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         
     async def on_member_join(self, member): 
         server = member.guild
+        author = member
         message = self.settings[str(server.id)]["message"]
         channel = self.settings[str(server.id)]["channel"]
         message = message.replace("{server}", server.name)
@@ -195,7 +285,9 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         message = message.replace("{server.members}", str(len(server.members))) 
         message = message.replace("{server.members.prefix}", await self.prefixfy(server)) 
         if self.settings[str(server.id)]["toggle"] == True:
-            if self.settings[str(server.id)]["dm"] == True:
+            if self.settings[str(server.id)]["imgwelcomertog"] == True:
+                await server.get_channel(int(channel)).send(content=message, file=await self.image_welcomer(author, server))
+            elif self.settings[str(server.id)]["dm"] == True:
                 await member.send(message)
             else:
                 await server.get_channel(int(channel)).send(message)
@@ -205,6 +297,8 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
     async def on_member_remove(self, member):
         server = member.guild
         if self.settings[str(server.id)]["dm"] == True:
+            return
+        if self.settings[str(server.id)]["leavetoggle"] == False:
             return
         channel = self.settings[str(server.id)]["channel"]
         message = self.settings[str(server.id)]["message-leave"]
@@ -218,6 +312,56 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
             await server.get_channel(int(channel)).send(message)
         else:
             pass
+
+    async def image_welcomer(self, author, server):
+        left = 654
+        down = 600
+        fontsize = 170
+        i = 0
+        for x in range(len(str(author.name))):
+            i += 1
+            if i >= 20:
+                fontsize -= 2
+            else:
+                fontsize -= 3
+            left -= 4
+            down += 1
+        with open("image.png", "wb") as f:
+            f.write(requests.get(author.avatar_url).content)
+        im = Image.open('image.png')
+        im = im.resize((500, 500))
+        size = (im.size[0] * 6, im.size[1] * 6)
+        mask = Image.new('L', size, 0)
+        draw = ImageDraw.Draw(mask) 
+        draw.ellipse((0, 0) + size, fill=255)
+        mask = mask.resize(im.size)
+        im.putalpha(mask)
+        output = ImageOps.fit(im, mask.size, centering=(0.5, 0.5))
+        output.putalpha(mask)
+        x = 50
+        if self.settings[str(server.id)]["banner"]:
+            with open("backgroundwelcomer.png", "wb") as f:
+                f.write(requests.get(self.settings[str(server.id)]["banner"]).content)
+            image = Image.open("backgroundwelcomer.png")
+            image = image.resize((2560, 1440))
+            background = Image.new('RGBA', (2560, 600), (0, 0, 0, 100))
+            image.paste(background, (0, 425), background)
+            x += 425
+        else:
+            image = Image.new('RGBA', (2560, 600), (0, 0, 0, 100))
+            down -= 425
+        image.paste(output, (25, x), output)
+        draw2 = ImageDraw.Draw(image)
+        font = ImageFont.truetype("exo.regular.otf", fontsize)
+        draw2.text((left, down), "Welcome {}".format(author), (255, 255, 255), font=font)
+        image.save("output.png")
+        try:
+            os.remove("image.png")
+            os.remove("backgroundwelcomer.png")
+        except:
+            pass
+        file = discord.File("output.png", "output.png")
+        return file
 
 def check_folders():
     if not os.path.exists("data/welcomer"):

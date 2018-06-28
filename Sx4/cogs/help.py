@@ -28,7 +28,7 @@ class help:
     def __init__(self, bot):
         self.bot = bot
         
-    @commands.command(pass_context=True)
+    @commands.command()
     async def help(self, ctx, commandname=None, *, subcommand=None):
         if not commandname and not subcommand:
             s=discord.Embed(colour=0xffff00)
@@ -41,7 +41,7 @@ class help:
                 s.set_author(name="Help ({} Commands)".format(commandsnum), icon_url=self.bot.user.avatar_url)
                 if commands != "" and cog != "music" and cog != "help":
                     s.add_field(name=cog.title() + " [{}]".format(cogsnum), value=commands, inline=False)
-            s.add_field(name="Welcomer [1]", value="`welcomer`", inline=False)
+            s.add_field(name="Welcomer [2]", value="`welcomer`, `imgwelcomer`", inline=False)
             await ctx.send(embed=s)
         elif not subcommand and commandname:
             msg = ""

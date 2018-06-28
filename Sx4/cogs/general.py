@@ -34,7 +34,7 @@ giveaway = {"users": None}
 class general:
     def __init__(self, bot):
         self.bot = bot
-        self.bot.loop.create_task(self.checktime())
+        self._stats_task = bot.loop.create_task(self.checktime())
         self.JSON = 'data/general/rps.json'
         self.settings = dataIO.load_json(self.JSON)
         self.settings = defaultdict(lambda: rps_settings, self.settings)
@@ -44,17 +44,63 @@ class general:
         self._shop = dataIO.load_json(self._shop_file)
         self._stats_file = 'data/general/stats.json'
         self._stats = dataIO.load_json(self._stats_file)
+
+    def __unload(self):
+        self._stats_task.cancel()
+
+    @commands.command()
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def shorten(self, ctx, *, url):
+        url1 = "https://api.rebrandly.com/v1/links"
+        request = requests.post(url1, data=json.dumps({"destination": url}), headers={"Content-Type": "application/json", "apikey": ""})
+        try:
+            request.json()["message"]
+            await ctx.send("Invalid Url :no_entry:")
+        except:
+            await ctx.send("https://" + request.json()["shortUrl"])
+
+    @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.default)
+    async def meme(self, ctx):
+        number = randint(0, 100)
+        url = "https://www.reddit.com/r/meme.json?sort=new&limit=100"
+        url2 = "https://www.reddit.com/r/memeeconomy.json?sort=new&limit=100"
+        url = random.choice([url, url2])
+        request = Request(url)
+        data = json.loads(urlopen(request).read().decode())["data"]["children"][number]["data"]
+        s=discord.Embed()
+        s.set_author(name=data["title"], url="https://www.reddit.com" + data["permalink"])
+        s.set_image(url=data["url"])
+        await ctx.send(embed=s)
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def copyemote(self, ctx, emote: discord.PartialEmoji):
+        with open("image.png", "wb") as f:
+            f.write(requests.get(emote.url).content)
+        with open("image.png", "rb") as f:
+            image = f.read()
+            image = bytearray(image)
+        try:
+            emoji = await ctx.guild.create_custom_emoji(name=emote.name, image=image)
+        except discord.errors.Forbidden:
+            await ctx.send("I do not have the manage emojis permission :no_entry:")
+            return
+        except discord.errors.HTTPException:
+            await ctx.send("I was unable to make the emote this may be because you've hit the emote cap :no_entry:")
+            return
+        await ctx.send("{} has been copied and created".format(emoji))
+        os.remove("image.png")
 		
     @commands.command(pass_context=True, aliases=["emote"])
-    async def emoji(self, ctx, emote: discord.Emoji):
+    async def emoji(self, ctx, emote: discord.PartialEmoji):
         """Find a random emoji the bot can find"""
         s=discord.Embed(colour=ctx.message.author.colour) 
         s.set_author(name=emote.name, url=emote.url)		
         s.set_image(url=emote.url)
-        s.set_footer(text="Emote in {}".format(emote.guild), icon_url=emote.guild.icon_url)
         await ctx.send(embed=s)
 
-    @commands.command(aliases=["semotes", "semojis", "serveremojis"])
+    @commands.command(aliases=["emotes", "emojis", "semotes", "semojis", "serveremojis"])
     async def serveremotes(self, ctx):
         """View all the emotes in a server"""
         msg = ""
@@ -87,12 +133,12 @@ class general:
         request.add_header("Authorization",  "")
         request.add_header('User-Agent', 'Mozilla/5.0')
         data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed(); s.set_image(url=data["url"]); await ctx.send(embed=s)
+        s=discord.Embed(); s.set_image(url=data["url"]); s.set_footer(text="Powered by weeb.sh"); await ctx.send(embed=s)
         
     @commands.command(pass_context=True)
     async def google(self, ctx, *, search): 
         """returns the top 5 results from google of your search query"""
-        url = "https://www.googleapis.com/customsearch/v1?key=&{}".format(urllib.parse.urlencode({"q": search}))
+        url = "https://www.googleapis.com/customsearch/v1?key=&cx=&{}".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
         try:
@@ -107,7 +153,7 @@ class general:
     @commands.command(pass_context=True)
     async def googleimage(self, ctx, *, search): 
         """returns an image based on your search from google"""
-        url = "https://www.googleapis.com/customsearch/v1?key=&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
+        url = "https://www.googleapis.com/customsearch/v1?key=&cx=&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
         s=discord.Embed()
@@ -201,7 +247,7 @@ class general:
             s.add_field(name="Currently Playing", value=data["gameextrainfo"])
         except:
             s.add_field(name="Currently Playing", value="Nothing")
-        await ctx.send(embed=s)
+        await ctx.send(embed=s)         
         
     @commands.command(pass_context=True)
     async def dblowners(self, ctx, *, user: str=None):
@@ -410,17 +456,73 @@ class general:
     @commands.command(pass_context=True)
     async def ping(self, ctx):
         """Am i alive? (Well if you're reading this, yes)"""
-        await ctx.send('Pong! :ping_pong:\n\n:stopwatch: **{}ms**\n:heartbeat: **{}ms**'.format(round((datetime.utcnow().timestamp() - ctx.message.created_at.timestamp())*1000), round(self.bot.latency*1000)))
+        if ctx.message.edited_at:
+            await ctx.send('Pong! :ping_pong:\n\n:stopwatch: **{}ms**\n:heartbeat: **{}ms**'.format(round((datetime.utcnow().timestamp() - ctx.message.edited_at.timestamp())*1000), round(self.bot.latency*1000)))
+        else:
+            await ctx.send('Pong! :ping_pong:\n\n:stopwatch: **{}ms**\n:heartbeat: **{}ms**'.format(round((datetime.utcnow().timestamp() - ctx.message.created_at.timestamp())*1000), round(self.bot.latency*1000)))
         
     @commands.command(pass_context=True)
     async def bots(self, ctx): 
         """Look at all my bot friends in the server"""
         server = ctx.guild
-        bots = list(map(lambda m: m.name, filter(lambda m: m.bot, server.members)))
+        page = 1
+        bots = sorted([str(x) for x in ctx.guild.members if x.bot], key=lambda x: x.lower())[page*20-20:page*20]
+        botnum = len(list(map(lambda m: m.name, filter(lambda m: m.bot, server.members))))
         s=discord.Embed(colour=0xfff90d)
         s.set_author(name=server.name, icon_url=server.icon_url)
-        s.add_field(name="Bot List ({})".format(len(bots)), value=", ".join(bots))
-        await ctx.send(embed=s)
+        s.add_field(name="Bot List ({})".format(botnum), value="\n".join(bots))
+        s.set_footer(text="Page {}/{}".format(page, math.ceil(botnum / 20)))
+        message = await ctx.send(embed=s)
+        await message.add_reaction("◀")
+        await message.add_reaction("▶")
+        def reactioncheck(reaction, user):
+            if user != self.bot.user:
+                if user == ctx.author:
+                    if reaction.message.channel == ctx.channel:
+                        if reaction.emoji == "▶" or reaction.emoji == "◀":
+                            return True
+        page2 = True
+        while page2:
+            try:
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=30, check=reactioncheck)
+                if reaction.emoji == "▶":
+                    if page != math.ceil(botnum / 20):
+                        page += 1
+                        bots = sorted([str(x) for x in ctx.guild.members if x.bot], key=lambda x: x.lower())[page*20-20:page*20]
+                        s=discord.Embed(colour=0xfff90d)
+                        s.set_author(name=server.name, icon_url=server.icon_url)
+                        s.add_field(name="Bot List ({})".format(botnum), value="\n".join(bots))
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(botnum / 20)))
+                        await message.edit(embed=s)
+                    else:
+                        page = 1
+                        bots = sorted([str(x) for x in ctx.guild.members if x.bot], key=lambda x: x.lower())[page*20-20:page*20]
+                        s=discord.Embed(colour=0xfff90d)
+                        s.set_author(name=server.name, icon_url=server.icon_url)
+                        s.add_field(name="Bot List ({})".format(botnum), value="\n".join(bots))
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(botnum / 20)))
+                        await message.edit(embed=s)
+                if reaction.emoji == "◀":
+                    if page != 1:
+                        page -= 1
+                        bots = sorted([str(x) for x in ctx.guild.members if x.bot], key=lambda x: x.lower())[page*20-20:page*20]
+                        s=discord.Embed(colour=0xfff90d)
+                        s.set_author(name=server.name, icon_url=server.icon_url)
+                        s.add_field(name="Bot List ({})".format(botnum), value="\n".join(bots))
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(botnum / 20)))
+                        await message.edit(embed=s)
+                    else:
+                        page = math.ceil(botnum / 20)
+                        bots = sorted([str(x) for x in ctx.guild.members if x.bot], key=lambda x: x.lower())[page*20-20:page*20]
+                        s=discord.Embed(colour=0xfff90d)
+                        s.set_author(name=server.name, icon_url=server.icon_url)
+                        s.add_field(name="Bot List ({})".format(botnum), value="\n".join(bots))
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(botnum / 20)))
+                        await message.edit(embed=s)
+            except asyncio.TimeoutError:
+                await message.remove_reaction("◀", ctx.me)
+                await message.remove_reaction("▶", ctx.me)
+                page2 = False
         
     @commands.command(pass_context=True)
     async def ascend(self, ctx, *, text):
@@ -484,14 +586,6 @@ class general:
                 number = 0
             msg += letter
         await ctx.send(msg[:2000])
-        
-    @commands.command(pass_context=True)
-    async def topservers(self, ctx):
-        """View the top servers i am in (sorted by members)"""
-        servers = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][:10])
-        s=discord.Embed(description=servers, colour=0xfff90d)
-        s.set_author(name="Top 10 Servers", icon_url=self.bot.user.avatar_url)
-        await ctx.send(embed=s)
         
     @commands.command()
     async def donate(self, ctx):
@@ -581,21 +675,61 @@ class general:
         await ctx.send(embed=s)
     
     @commands.command(pass_context=True)
-    async def servers(self, ctx, page: int=None):
+    async def servers(self, ctx):
         """View all the servers i'm in"""
-        if not page:
-            page = 1
-        if page < 1:
-            await ctx.send("Invalid Page :no_entry:")
-            return
-        if page - 1 > len(set(self.bot.guilds)) / 20:
-            await ctx.send("Invalid Page :no_entry:")
-            return
-        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][page*20-20:page*20])
+        page = 1
+        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][0:20])
         s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
         s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
-        await ctx.send(embed=s)
+        message = await ctx.send(embed=s)
+        await message.add_reaction("◀")
+        await message.add_reaction("▶")
+        def reactioncheck(reaction, user):
+            if user != self.bot.user:
+                if user == ctx.author:
+                    if reaction.message.channel == ctx.channel:
+                        if reaction.emoji == "▶" or reaction.emoji == "◀":
+                            return True
+        page2 = True
+        while page2:
+            try:
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=30, check=reactioncheck)
+                if reaction.emoji == "▶":
+                    if page != math.ceil(len(list(set(self.bot.guilds))) / 20):
+                        page += 1
+                        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][page*20-20:page*20])
+                        s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
+                        s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
+                        await message.edit(embed=s)
+                    else:
+                        page = 1
+                        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][page*20-20:page*20])
+                        s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
+                        s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
+                        await message.edit(embed=s)
+                if reaction.emoji == "◀":
+                    if page != 1:
+                        page -= 1
+                        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][page*20-20:page*20])
+                        s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
+                        s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
+                        await message.edit(embed=s)
+                    else:
+                        page = math.ceil(len(list(set(self.bot.guilds)))/ 20)
+                        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][page*20-20:page*20])
+                        s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
+                        s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
+                        await message.edit(embed=s)
+            except asyncio.TimeoutError:
+                await message.remove_reaction("◀", ctx.me)
+                await message.remove_reaction("▶", ctx.me)
+                page2 = False
+        
 
     @commands.command(aliases=["sc", "scount"])
     async def servercount(self, ctx):
@@ -1017,46 +1151,150 @@ class general:
         """Get a channels id"""
         channel = ctx.message.channel
         await ctx.send("<#{}> ID: `{}`".format(channel.id, channel.id))
-        
-    @commands.command(pass_context=True, aliases=["guinfo"])
-    async def globaluserinfo(self, ctx, user_id: int=None):  
-        """Get some info about a user even if they're not in the server"""    
-        try:
-            author = ctx.message.author
-            if user_id is None:
-                user_id = author.id
-            user = await self.bot.get_user_info(user_id)
-        except discord.errors.NotFound:
-            await ctx.send("The user was not found :no_entry:")
-            return
-        except discord.errors.HTTPException:
-            await ctx.send("The ID specified does not exist :no_entry:")
-            return
-        if (".gif" in user.avatar_url.lower()):
-            nitro = "Yes"
-        else:
-            nitro = "No"
-        joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
-        s=discord.Embed(colour=0xfff90d)
-        s.set_author(name=user, icon_url=user.avatar_url)
-        s.set_thumbnail(url=user.avatar_url)
-        s.add_field(name="User ID", value=user.id, inline=False)
-        s.add_field(name="Joined Discord", value=joined_discord, inline=True)
-        s.add_field(name="Nitro Account", value=nitro) 
-        await ctx.send(embed=s)
     
         
     @commands.command(pass_context=True, aliases=["uinfo"])
-    async def userinfo(self, ctx, *, user: discord.Member=None):
+    async def userinfo(self, ctx, *, user_arg: str=None):
         """Get some info on a user in the server"""
         author = ctx.message.author
         server = ctx.guild
-        if not user:
+        if not user_arg:
             user = author
-        if user.avatar_url != "":
-            avatar = user.avatar_url
         else:
-            avatar = user.default_avatar_url
+            if "<" in user_arg and "@" in user_arg:
+                user = user_arg.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
+                user = discord.utils.get(ctx.guild.members, id=int(user))
+            elif "#" in user_arg:
+                number = len([x for x in user_arg if "#" not in x])
+                usernum = number - 4
+                user = discord.utils.get(ctx.guild.members, name=user_arg[:usernum], discriminator=user_arg[usernum + 1:len(user_arg)])
+                if not user:
+                    description = ""
+                    status = None
+                    user = discord.utils.get(self.bot.get_all_members(), name=user_arg[:usernum], discriminator=user_arg[usernum + 1:len(user_arg)])
+                    if user.status == discord.Status.online:
+                        status="Online<:online:361440486998671381>"
+                    if user.status == discord.Status.idle:
+                        status="Idle<:idle:361440487233814528>"
+                    if user.status == discord.Status.do_not_disturb:
+                        status="DND<:dnd:361440487179157505>"
+                    if user.status == discord.Status.offline:
+                        status="Offline<:offline:361445086275567626>"
+                    if not user.activity:
+                        pass
+                    elif isinstance(user.activity, discord.Spotify):
+                        m, s = divmod(user.activity.duration.total_seconds(), 60)
+                        duration = "%d:%02d" % (m, s)
+                        description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
+                    elif user.activity:
+                        description="{} {}".format(user.activity.type.name.title(), user.activity.name)
+                    elif user.activity.url:
+                        description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
+                    if not user:
+                        user = await self.bot.get_user_info(int(user_arg))
+                    if user.bot:
+                        bot = "Yes"
+                    else:
+                        bot = "No"
+                    joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
+                    s=discord.Embed(description=description, timestamp=datetime.utcnow())
+                    s.set_author(name=user, icon_url=user.avatar_url)
+                    s.set_thumbnail(url=user.avatar_url)
+                    s.add_field(name="User ID", value=user.id)
+                    s.add_field(name="Joined Discord", value=joined_discord)
+                    if status:
+                        s.add_field(name="Status", value=status)
+                    s.add_field(name="Bot", value=bot)
+                    await ctx.send(embed=s)
+                    return
+            else:
+                try:
+                    user = discord.utils.get(ctx.guild.members, id=int(user_arg))
+                    if not user:
+                        user = discord.utils.get(self.bot.get_all_members(), id=int(user_arg))
+                        description = ""
+                        status = None
+                        if user:
+                            if user.status == discord.Status.online:
+                                status="Online<:online:361440486998671381>"
+                            if user.status == discord.Status.idle:
+                                status="Idle<:idle:361440487233814528>"
+                            if user.status == discord.Status.do_not_disturb:
+                                status="DND<:dnd:361440487179157505>"
+                            if user.status == discord.Status.offline:
+                                status="Offline<:offline:361445086275567626>"
+                            if not user.activity:
+                                pass
+                            elif isinstance(user.activity, discord.Spotify):
+                                m, s = divmod(user.activity.duration.total_seconds(), 60)
+                                duration = "%d:%02d" % (m, s)
+                                description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
+                            elif user.activity:
+                                description="{} {}".format(user.activity.type.name.title(), user.activity.name)
+                            elif user.activity.url:
+                                description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
+                        if not user:
+                            user = await self.bot.get_user_info(int(user_arg))
+                        if user.bot:
+                            bot = "Yes"
+                        else:
+                            bot = "No"
+                        joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
+                        s=discord.Embed(description=description, timestamp=datetime.utcnow())
+                        s.set_author(name=user, icon_url=user.avatar_url)
+                        s.set_thumbnail(url=user.avatar_url)
+                        s.add_field(name="User ID", value=user.id)
+                        s.add_field(name="Joined Discord", value=joined_discord)
+                        if status:
+                            s.add_field(name="Status", value=status)
+                        s.add_field(name="Bot", value=bot)
+                        await ctx.send(embed=s)
+                        return
+                except:
+                    user = discord.utils.get(ctx.guild.members, name=user_arg)
+                    if not user:
+                        try:
+                            description = ""
+                            status = None
+                            user = discord.utils.get(self.bot.get_all_members(), name=user_arg)
+                            if user.status == discord.Status.online:
+                                status="Online<:online:361440486998671381>"
+                            if user.status == discord.Status.idle:
+                                status="Idle<:idle:361440487233814528>"
+                            if user.status == discord.Status.do_not_disturb:
+                                status="DND<:dnd:361440487179157505>"
+                            if user.status == discord.Status.offline:
+                                status="Offline<:offline:361445086275567626>"
+                            if not user.activity:
+                                pass
+                            elif isinstance(user.activity, discord.Spotify):
+                                m, s = divmod(user.activity.duration.total_seconds(), 60)
+                                duration = "%d:%02d" % (m, s)
+                                description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
+                            elif user.activity:
+                                description="{} {}".format(user.activity.type.name.title(), user.activity.name)
+                            elif user.activity.url:
+                                description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
+                            if user.bot:
+                                bot = "Yes"
+                            else:
+                                bot = "No"
+                            joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
+                            s=discord.Embed(description=description, timestamp=datetime.utcnow())
+                            s.set_author(name=user, icon_url=user.avatar_url)
+                            s.set_thumbnail(url=user.avatar_url)
+                            s.add_field(name="User ID", value=user.id)
+                            s.add_field(name="Joined Discord", value=joined_discord)
+                            if status:
+                                s.add_field(name="Status", value=status)
+                            s.add_field(name="Bot", value=bot)
+                            await ctx.send(embed=s)
+                            return
+                        except: 
+                            pass
+            if not user:
+                await ctx.send("I could not find that user :no_entry:")
+                return
         joined_server = user.joined_at.strftime("%d %b %Y %H:%M")
         joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
         if user.status == discord.Status.online:
@@ -1068,8 +1306,13 @@ class general:
         if user.status == discord.Status.offline:
             status="Offline<:offline:361445086275567626>"
         description=""
+        input = sorted(ctx.guild.members, key=lambda x: x.joined_at).index(user) + 1
         if not user.activity:
             pass
+        elif isinstance(user.activity, discord.Spotify):
+            m, s = divmod(user.activity.duration.total_seconds(), 60)
+            duration = "%d:%02d" % (m, s)
+            description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
         elif user.activity:
             description="{} {}".format(user.activity.type.name.title(), user.activity.name)
         elif user.activity.url:
@@ -1077,8 +1320,8 @@ class general:
         roles=[x.mention for x in user.roles if x.name != "@everyone"][:20]
         roles = sorted(roles, key=[x.mention for x in server.role_hierarchy if x.name != "@everyone"].index)
         s=discord.Embed(description=description, colour=user.colour, timestamp=__import__('datetime').datetime.utcnow())
-        s.set_author(name=user.name, icon_url=avatar)
-        s.set_thumbnail(url=avatar)
+        s.set_author(name=user.name, icon_url=user.avatar_url)
+        s.set_thumbnail(url=user.avatar_url)
         s.add_field(name="Joined Discord", value=joined_discord)
         s.add_field(name="Joined {}".format(server.name), value=joined_server)
         s.add_field(name="Name", value="{}".format(user.name))
@@ -1087,13 +1330,16 @@ class general:
         s.add_field(name="Status", value="{}".format(status))
         s.add_field(name="User's Colour", value="{}".format(user.colour))
         s.add_field(name="User's ID", value="{}".format(user.id))
-        s.set_footer(text="Requested by {}".format(author))
+        s.set_footer(text="Join Position: {} | Requested by {}".format(await self.prefixfy(input), author))
         s.add_field(name="Highest Role", value=user.top_role)
         s.add_field(name="Number of Roles", value=len(user.roles)) 
         if not roles:
             s.add_field(name="Roles", value="None", inline=False) 
         else:
-            s.add_field(name="Roles", value=", ".join(roles), inline=False) 
+            if len(user.roles) - 1 > 20:
+                s.add_field(name="Roles", value="{}... and {} more roles".format(", ".join(roles), (len(user.roles) - 21)), inline=False) 
+            else:
+                s.add_field(name="Roles", value=", ".join(roles), inline=False) 
         await ctx.send(embed=s)
 
     @commands.command(pass_context=True, no_pm=True, aliases=["sinfo"])
@@ -1126,9 +1372,9 @@ class general:
         offline = set(offline)
         users = members - bots             
         total_users = len(server.members)
-        text_channels = len([x for x in self.bot.get_all_channels() if isinstance(x, discord.TextChannel)])
-        voice_channels = len([x for x in self.bot.get_all_channels() if isinstance(x, discord.VoiceChannel)])
-        categorys = len([x for x in self.bot.get_all_channels() if isinstance(x, discord.CategoryChannel)])
+        text_channels = len(ctx.guild.text_channels)
+        voice_channels = len(ctx.guild.voice_channels)
+        categorys = len(ctx.guild.categories)
         s=discord.Embed(description="{} was created on {}".format(server.name, server_created), colour=discord.Colour(value=colour), timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=server.name, icon_url=server.icon_url)
         s.set_thumbnail(url=server.icon_url)
@@ -1227,6 +1473,23 @@ class general:
         s.add_field(name="Servers", value=len(self.bot.guilds))
         s.add_field(name="Users ({} total)".format(len(members)), value="{} Online\n{} Offline".format(online, offline))
         await ctx.send(embed=s)
+        
+    async def prefixfy(self, input):
+        number = str(input)
+        num = len(number) - 2
+        num2 = len(number) - 1
+        if int(number[num:]) < 11 or int(number[num:]) > 13:
+            if int(number[num2:]) == 1:
+                prefix = "st"
+            elif int(number[num2:]) == 2:
+                prefix = "nd"
+            elif int(number[num2:]) == 3:
+                prefix = "rd"
+            else:
+                prefix = "th"
+        else:
+            prefix = "th"
+        return number + prefix
         
     async def on_guild_join(self, guild):
         self._stats["servers"] += 1

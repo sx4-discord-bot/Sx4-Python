@@ -18,11 +18,14 @@ import subprocess
 
 bot = commands.AutoShardedBot(command_prefix=['sx4 ', 's?', 'S?', '<@440996323156819968> ']) 
 wrap = "```py\n{}\n```"
-dbltoken = ""
+dbltoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ0MDk5NjMyMzE1NjgxOTk2OCIsImJvdCI6dHJ1ZSwiaWF0IjoxNTI1NTI4OTg5fQ.HsQ_1NfbJnwy7tHr5zofQHd_79sar_wDRyOa8xT0LbE"
+dbotspwtoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI0MDI1NTc1MTY3MjgzNjkxNTMiLCJyYW5kIjo2ODYsImlhdCI6MTUyMzAxMTE3MX0.ssG4CCask4AJ1aVbixr_Uej4qhuTCsDFCo-9Ekme-0s"
+dbpwurl = "https://bots.discord.pw/api/bots/440996323156819968/stats"
 url = "https://discordbots.org/api/bots/440996323156819968/stats"
 headers = {"Authorization" : dbltoken}
+headersdb = {"Authorization" : dbotspwtoken, "Content-Type" : "application/json"}
 
-modules = ["cogs.antiad", "cogs.antilink", "cogs.autorole", "cogs.economy", "cogs.page", "cogs.general", "cogs.help", "cogs.image", "cogs.mention", "cogs.status", "cogs.joinleave", "cogs.logs", "cogs.mod", "cogs.owner", "cogs.selfroles", "cogs.serverlog", "cogs.animals"]
+modules = ["cogs.antiad", "cogs.antilink", "cogs.autorole", "cogs.economy", "cogs.page", "cogs.general", "cogs.help", "cogs.image", "cogs.worldcup", "cogs.mention", "cogs.status", "cogs.joinleave", "cogs.logs", "cogs.mod", "cogs.owner", "cogs.selfroles", "cogs.serverlog", "cogs.animals", "cogs.giveaway"]
 
 @bot.event
 async def on_ready():
@@ -39,6 +42,7 @@ async def on_ready():
     payloadshards = {"shard_count"  : bot.shard_count}
     requests.post(url, data=payloadservers, headers=headers)
     requests.post(url, data=payloadshards, headers=headers)
+    requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
     if not hasattr(bot, 'uptime'):
         bot.uptime = datetime.datetime.utcnow().timestamp()
 
@@ -48,6 +52,7 @@ async def on_guild_join(guild):
     payloadshards = {"shard_count"  : bot.shard_count}
     requests.post(url, data=payloadservers, headers=headers)
     requests.post(url, data=payloadshards, headers=headers)
+    requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
 		
 @bot.event 
 async def on_message(message):
@@ -58,6 +63,16 @@ async def on_message(message):
         return
     else:
         await bot.process_commands(message)
+
+@bot.event 
+async def on_message_edit(before, after):
+    if after.author.bot:
+        return
+    if isinstance(after.channel, discord.abc.PrivateChannel) and after.content.startswith("s?"):
+        await after.channel.send("You can't use commands in private messages :no_entry:")
+        return
+    else:
+        await bot.process_commands(after)
 		
 @bot.event
 async def on_guild_remove(guild):
@@ -65,6 +80,7 @@ async def on_guild_remove(guild):
     payloadshards = {"shard_count"  : bot.shard_count}
     requests.post(url, data=payloadservers, headers=headers)
     requests.post(url, data=payloadshards, headers=headers)
+    requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
 			
 @bot.event
 async def on_command_error(ctx, error, *args, **kwargs):
@@ -159,6 +175,20 @@ async def unload(ctx, *, module: str):
 @checks.is_owner()
 async def reload(ctx, *, module: str):
     """Reloads a part of the bot."""
+    if module.lower() == "all":
+        i = 0
+        for m in modules:
+            try:
+                bot.unload_extension(m)
+                bot.load_extension(m)
+            except:
+                i += 1
+                await ctx.send("I was not able to load the module `{}` <:crossmark:410105895528300554>".format(str(m)[4:]))
+        if i == 0:
+            await ctx.send("All modules have been reloaded <:done:403285928233402378>")
+        else:
+            await ctx.send("{} modules have been reloaded <:done:403285928233402378>".format(len(modules)-i))
+        return
     m = "cogs." + module
     try:
         if m in modules:

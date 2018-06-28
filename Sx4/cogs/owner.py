@@ -11,7 +11,7 @@ class owner:
     def __init__(self, bot):
         self.bot = bot
 		
-    @commands.command(pass_context=True, hidden=True)
+    @commands.command(hidden=True)
     @checks.is_owner()
     async def updateavatar(self, ctx, *, logoname):
         with open('sx4-{}.png'.format(logoname), 'r') as r:
@@ -19,7 +19,7 @@ class owner:
         await self.bot.user.edit_profile(password=None, avatar=avatar_url)
         await ctx.send("I have changed my profile picture")
 		
-    @commands.command(pass_context=True, hidden=True)
+    @commands.command(hidden=True)
     @checks.is_owner()
     async def httpunban(self, ctx, server_id: str, user_id: str): 
         user = await self.bot.get_user_info(user_id)
@@ -27,13 +27,13 @@ class owner:
         await self.bot.http.unban(user_id, server_id)
         await ctx.send("I have unbanned **{}** from **{}**".format(user, server))
 		
-    @commands.command(pass_context=True, hidden=True) 
+    @commands.command(hidden=True) 
     @checks.is_owner()
     async def msg(self, ctx, channel_id, *, text):
         await ctx.message.delete()
         await self.bot.http.send_message(channel_id, text)
 		
-    @commands.command(pass_context=True, hidden=True)
+    @commands.command(hidden=True)
     @checks.is_owner()
     async def shutdown(self, ctx):
         await ctx.send("Shutting down...")

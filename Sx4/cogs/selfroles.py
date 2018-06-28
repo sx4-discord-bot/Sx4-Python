@@ -7,6 +7,7 @@ import datetime
 import random
 from utils import checks
 import os
+import math
 from random import choice
 from utils.dataIO import dataIO
 from random import randint
@@ -23,7 +24,7 @@ class selfroles:
         self.file_path = 'data/general/selfroles.json'
         self.data = dataIO.load_json(self.file_path)
 	
-    @commands.group(pass_context=True)
+    @commands.group()
     async def selfrole(self, ctx): 
         """Make it so users can self assign roles without perms"""
         server = ctx.message.guild
@@ -34,7 +35,7 @@ class selfroles:
             self.data[str(server.id)]["role"] = {}
             dataIO.save_json(self.file_path, self.data)
 			
-    @selfrole.command(pass_context=True) 
+    @selfrole.command() 
     @checks.admin_or_permissions(manage_roles=True)
     async def add(self, ctx, *, role: discord.Role):
         """Add a role to be self assignable"""
@@ -49,7 +50,7 @@ class selfroles:
         dataIO.save_json(self.file_path, self.data)
         await ctx.send("Added **{}** to the self roles list <:done:403285928233402378>".format(role.name))
 		
-    @selfrole.command(pass_context=True) 
+    @selfrole.command() 
     @checks.admin_or_permissions(manage_roles=True)
     async def remove(self, ctx, *, role: discord.Role): 
         """Remove a role to be self assignable"""
@@ -61,7 +62,7 @@ class selfroles:
         dataIO.save_json(self.file_path, self.data)
         await ctx.send("Removed **{}** from the self roles list <:done:403285928233402378>".format(role.name))
 		
-    @selfrole.command(pass_context=True) 
+    @selfrole.command() 
     @checks.admin_or_permissions(manage_roles=True)
     async def reset(self, ctx):
         """Reset all the selfroles"""
@@ -70,17 +71,73 @@ class selfroles:
         dataIO.save_json(self.file_path, self.data)
         await ctx.send("All self roles have been deleted <:done:403285928233402378>")
 		
-    @selfrole.command(pass_context=True) 
+    @selfrole.command() 
     async def list(self, ctx): 
         """List all the selfroles"""
         server = ctx.message.guild
-        s = await self._list(server)
+        i = 0
+        for roleid in self.data[str(server.id)]["role"]:
+            role = discord.utils.get(server.roles, id=int(roleid))
+            if role:
+                i += 1
+        page = 1
+        s=discord.Embed(colour=0xfff90d)
+        s.set_author(name=server.name, icon_url=server.icon_url)
+        s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
+        s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
         try:
-            await ctx.send(embed=s)
+            message = await ctx.send(embed=s)
+            await message.add_reaction("◀")
+            await message.add_reaction("▶")
+            def reactioncheck(reaction, user):
+                if user != self.bot.user:
+                    if user == ctx.author:
+                        if reaction.message.channel == ctx.channel:
+                            if reaction.emoji == "▶" or reaction.emoji == "◀":
+                                return True
+            page2 = True
+            while page2:
+                try:
+                    reaction, user = await self.bot.wait_for("reaction_add", timeout=30, check=reactioncheck)
+                    if reaction.emoji == "▶":
+                        if page != math.ceil(i / 20):
+                            page += 1
+                            s=discord.Embed(colour=0xfff90d)
+                            s.set_author(name=server.name, icon_url=server.icon_url)
+                            s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
+                            s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
+                            await message.edit(embed=s)
+                        else:
+                            page = 1
+                            s=discord.Embed(colour=0xfff90d)
+                            s.set_author(name=server.name, icon_url=server.icon_url)
+                            s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
+                            s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
+                            await message.edit(embed=s)
+                    if reaction.emoji == "◀":
+                        if page != 1:
+                            page -= 1
+                            s=discord.Embed(colour=0xfff90d)
+                            s.set_author(name=server.name, icon_url=server.icon_url)
+                            s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
+                            s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
+                            await message.edit(embed=s)
+                        else:
+                            page = math.ceil(botnum / 20)
+                            s=discord.Embed(colour=0xfff90d)
+                            s.set_author(name=server.name, icon_url=server.icon_url)
+                            s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
+                            s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
+                            await message.edit(embed=s)
+                except asyncio.TimeoutError:
+                    await message.remove_reaction("◀", ctx.me)
+                    await message.remove_reaction("▶", ctx.me)
+                    page2 = False
         except:
             await ctx.send("This server has no Self Roles :no_entry:")
+        
 			
-    @commands.command(pass_context=True)
+    @commands.command()
     async def role(self, ctx, *, role: discord.Role):
         """Self assign a role in the selfrole list"""
         author = ctx.message.author
@@ -114,21 +171,14 @@ class selfroles:
             self.data[str(server.id)]["role"][str(role.id)] = {}
             dataIO.save_json(self.file_path, self.data)
 			
-    async def _list(self, server):   
-        msg = ""	
-        s=discord.Embed(colour=0xfff90d)
-        s.set_author(name=server.name, icon_url=server.icon_url)
-        i = 0
-        for roleid in self.data[str(server.id)]["role"]:
+    async def _list(self, server, page):   
+        msg = []
+        for roleid in list(self.data[str(server.id)]["role"])[page*20-20:page*20]:
             role = discord.utils.get(server.roles, id=int(roleid))
             if role:
-                i += 1
-            try:
-                msg += "\n{}".format(role.name)
-            except:
-                pass
-        s.add_field(name="Self Roles ({})".format(i), value=msg)
-        return s
+                msg.append(role)
+        msg = "\n".join(sorted([x.name for x in msg], key=[x.name for x in server.role_hierarchy].index))
+        return msg
 		 
     async def on_server_role_delete(self, role):
         server = role.guild

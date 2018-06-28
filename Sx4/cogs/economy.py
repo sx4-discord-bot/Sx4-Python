@@ -152,7 +152,7 @@ class economy:
         await ctx.send(embed=s)
         
 
-    @commands.command(pass_context=True, no_pm=True)
+    @commands.command(no_pm=True)
     async def profile(self, ctx, *, user: discord.Member=None):
         """Lists aspects about you on discord with Sx4. Defaults to author."""
         author = ctx.author
@@ -232,25 +232,25 @@ class economy:
         x = 0
         y = 0
         if [x for x in self.bot.guilds if user == x.owner]:
-            img.paste(serverowner, (1500 + x, 1000 + y), serverowner)
+            img.paste(serverowner, (1500 + x, 1100 + y), serverowner)
             x += 125
             if x >= 450:
                 y += 125
                 x = 0
         if [x for x in self.bot.get_guild(330399610273136641).members if user == x and discord.utils.get(self.bot.get_guild(330399610273136641).roles, id=330400064541425664) in x.roles]:
-            img.paste(developer, (1500 + x, 1000 + y), developer)
+            img.paste(developer, (1500 + x, 1100 + y), developer)
             x += 125
             if x >= 450:
                 y += 125
                 x = 0
-        if user.id == 153286414212005888 or user.id == 285451236952768512 or user.id == 388424304678666240 or user.id == 250815960250974209:
-            img.paste(helper, (1500 + x, 1000 + y), helper)
+        if user.id == 153286414212005888 or user.id == 285451236952768512 or user.id == 388424304678666240 or user.id == 250815960250974209 or user.id == 223424602150273024:
+            img.paste(helper, (1500 + x, 1100 + y), helper)
             x += 125
             if x >= 450:
                 y += 125
                 x = 0
         if [x for x in self.bot.get_guild(330399610273136641).members if user == x and discord.utils.get(self.bot.get_guild(330399610273136641).roles, id=355083059336314881) in x.roles]:
-            img.paste(donator, (1500 + x, 1000 + y), donator)
+            img.paste(donator, (1500 + x, 1100 + y), donator)
             x += 125
             if x >= 450:
                 y += 125
@@ -260,19 +260,19 @@ class economy:
         elif self.settingss[str(user.id)]["BIRTHDAY"] == "Not set" and self.settingss[str(user.id)]["DESCRIPTION"] == "Not set" and self.settingss[str(user.id)]["HEIGHT"] == "Not set":
             pass
         else:
-            img.paste(profileeditor, (1500 + x, 1000 + y), profileeditor)
+            img.paste(profileeditor, (1500 + x, 1100 + y), profileeditor)
             x += 125
             if x >= 450:
                 y += 125
                 x = 0
         if user in self.bot.get_guild(330399610273136641).members:
-            img.paste(insx4, (1500 + x, 1000 + y), insx4)
+            img.paste(insx4, (1500 + x, 1100 + y), insx4)
             x += 125
             if x >= 450:
                 y += 125
                 x = 0
         if msg != "No-one":
-            img.paste(married, (1500 + x, 1000 + y), married)
+            img.paste(married, (1500 + x, 1100 + y), married)
             x += 125
             if x >= 450:
                 y += 125
@@ -280,13 +280,13 @@ class economy:
         if not user.activity:
             pass
         elif user.activity:
-            img.paste(playing, (1500 + x, 1000 + y), playing)
+            img.paste(playing, (1500 + x, 1100 + y), playing)
             x += 125
             if x >= 450:
                 y += 125
                 x = 0
         elif user.activity.url:
-            img.paste(streaming, (1500 + x, 1000 + y), streaming)
+            img.paste(streaming, (1500 + x, 1100 + y), streaming)
             x += 125
             if x >= 450:
                 y += 125
@@ -298,13 +298,13 @@ class economy:
         if not self.settingss[str(user.id)]["HEIGHT"]:
             self.settingss[str(user.id)]["HEIGHT"] = "Not set"
         draw = ImageDraw.Draw(img)
-        font = ImageFont.truetype("exo.regular.otf", 90)
+        font = ImageFont.truetype("exo.regular.otf", 75)
         if x > 0 or y > 0:
-            draw.text((1500, 850), "Badges:", colour, font=font)
+            draw.text((1500, 950), "Badges:", colour, font=font)
         size = 300
         number = 0
         for x in range(len(str(user.name))):
-            size -= 8
+            size -= 10
             number -= 10
         fontbig = ImageFont.truetype("exo.regular.otf", size)
         draw.text((200, 0), "{}'s Profile:".format(user.name), colour, font=fontbig)
@@ -341,7 +341,7 @@ class economy:
             j = s
             s += 50
         draw.text((50, 400 + number), "Description:\n{}".format(description2), colour, font=font)
-        number += math.ceil(len(str(self.settingss[str(user.id)]["DESCRIPTION"]))/55) * 50
+        number += math.ceil(len(str(self.settingss[str(user.id)]["DESCRIPTION"]))/55) * 80
         draw.text((50, 600 + number), "Height: {}".format(self.settingss[str(user.id)]["HEIGHT"]), colour, font=font)
         draw.text((50, 800 + number), "Birthday: {}".format(self.settingss[str(user.id)]["BIRTHDAY"]), colour, font=font)
         draw.text((50, 1000 + number), "Reputation: {}".format(self.settings["user"][str(user.id)]["rep"]), colour, font=font)
@@ -522,8 +522,10 @@ class economy:
         
         for item in self._shop["picitems"]:
             s.add_field(name=item["name"], value="Price: ${}\nDurability: {}".format(item["price"], item["durability"]))
-            
-        s.set_footer(text="Use s?shopbuy <item> to buy an item.")
+        try:    
+            s.set_footer(text="Use s?shopbuy <item> to buy an item. | Your balance: ${}".format(self.settings["user"][str(ctx.author.id)]["balance"]))
+        except:
+            s.set_footer(text="Use s?shopbuy <item> to buy an item. | Your balance: $0")
         
         await ctx.send(embed=s)
         
@@ -577,9 +579,9 @@ class economy:
                                     await msg.delete()
                                     for x in range(calc):
                                         self.settings["user"][str(author.id)]["items"].remove(material)
-                                    self.settings["user"][str(author.id)]["pickdur"] += durability
+                                    self.settings["user"][str(author.id)]["pickdur"] = item["durability"]
                                     dataIO.save_json(self.location, self.settings)
-                                    await ctx.send("You have repaired your pickaxe to full durability. Your `{}` now has **{}** durability <:done:403285928233402378>".format(item["name"], durability))
+                                    await ctx.send("You have repaired your pickaxe to full durability. Your `{}` now has **{}** durability <:done:403285928233402378>".format(item["name"], item["durability"]))
                                 else:
                                     await msg.delete()
                             return
@@ -617,7 +619,7 @@ class economy:
                     await ctx.send("You cannot repair this pickaxe :no_entry:")
                 
         
-    @commands.command(pass_context=True)
+    @commands.command()
     async def give(self, ctx, user: discord.Member, amount: int):
         """Give someone some money"""
         author = ctx.author
@@ -642,7 +644,7 @@ class economy:
         s.set_author(name="{} → {}".format(author.name, user.name), icon_url="https://png.kisspng.com/20171216/8cb/5a355146d99f18.7870744715134436548914.png")
         await ctx.send(embed=s)
 		
-    @commands.command(pass_context=True, aliases=["givemats"])
+    @commands.command(aliases=["givemats"])
     async def givematerials(self, ctx, user: discord.Member, amount: int, *, item: str):
         author = ctx.author
         if user.bot:
@@ -949,7 +951,7 @@ class economy:
 
         PagedResultData.paged_results[server.id][channel.id][author.id] = paged_result
         
-    @auction.command(pass_context=True)
+    @auction.command()
     async def sell(self, ctx, item: str, price: int, amount: int=None):
         """Sell items on the auction house"""
         author = ctx.author
@@ -988,7 +990,7 @@ class economy:
         else:
             await ctx.send("You don't own that item :no_entry:")
             
-    @auction.command(pass_context=True)
+    @auction.command()
     async def buy(self, ctx, *, auction_item: str):
         """Buy items on the auction house"""
         author = ctx.author
@@ -1072,7 +1074,7 @@ class economy:
 
         PagedResultData.paged_results[server.id][channel.id][author.id] = paged_result
           
-    @commands.command(pass_context=True)
+    @commands.command()
     async def fish(self, ctx):
         """Fish for some extra money"""
         author = ctx.author
@@ -1210,7 +1212,7 @@ class economy:
         if slot1 == slot3 and slot2 == slot3:
             for slot in slots:
                 if slot["icon"] == slot1:
-                    winnings = bet * round((100/slot["percentage"]) * 0.4)
+                    winnings = bet * round((100/slot["percentage"]) * 0.5)
                     msg = slots[number1a-1]["icon"] + slots[number2a-1]["icon"] + slots[number3a-1]["icon"] + "\n" + slot1 + slot2 + slot3 + "\n" + slots[number1b-1]["icon"] + slots[number2b-1]["icon"] + slots[number3b-1]["icon"] + "\n\nYou won **${}**!".format(winnings)
                     self.settings["user"][str(author.id)]["balance"] += winnings
                     self.settings["user"][str(author.id)]["winnings"] += winnings
@@ -1218,7 +1220,7 @@ class economy:
                     win["userid"] = str(author.id)
                     win["username"] = author.name + "#" + author.discriminator
                     win["chance"] = str(slot["percentage"]) + "%"
-                    win["multiplier"] = round((100/slot["percentage"]) * 0.4)
+                    win["multiplier"] = round((100/slot["percentage"]) * 0.5)
                     win["bet"] = bet
                     win["icon"] = slot["icon"]
                     win["winnings"] = winnings
@@ -1441,7 +1443,7 @@ class economy:
             dataIO.save_json(self.location, self.settings)
         await ctx.send("Updated data for {}/{} users".format(i, len(self.settings["user"])))
         
-    @commands.command(pass_context=True, hidden=True)
+    @commands.command(hidden=True)
     @checks.is_owner()
     async def deletedata(self, ctx, data, hidden=True):
         i = 0;
@@ -1857,13 +1859,22 @@ class economy:
             user = discord.utils.get(self.bot.get_all_members(), name=user[:usernum], discriminator=user[usernum + 1:len(user)])
         else:
             try:
-                user = discord.utils.get(self.bot.get_all_members(), id=int(user))
-                if not user:
-                    user = await self.bot.get_user_info(int(user))
+                user = await self.bot.get_user_info(int(user))
             except:
                 user = discord.utils.get(self.bot.get_all_members(), name=user)
         if not user:
             await ctx.send("I could not find that user :no_entry:")
+            return
+        try:
+            self.data["user"][str(user.id)]
+            self.data["user"][str(author.id)]
+        except:
+            await ctx.send("I could not find that user :no_entry:")
+            try:
+                del self.data["user"][str(author.id)]["marriedto"][str(user.id)]
+                await ctx.send("The ID was found in your marriage data though, so it has been removed :thumbsup:")
+            except:
+                pass
             return
         if str(user.id) in self.data["user"][str(author.id)]["marriedto"]:
             if author == user:
@@ -1880,16 +1891,18 @@ class economy:
     async def massdivorce(self, ctx):
         """Divorce everyone""" 
         author = ctx.author
-        try:
-            for userid in list(self.data["user"][str(author.id)]["marriedto"])[:len(self.data["user"])]:
-                if str(author.id) == userid:
+        for userid in list(self.data["user"][str(author.id)]["marriedto"])[:len(self.data["user"][str(author.id)]["marriedto"])]:
+            if str(author.id) == userid:
+                del self.data["user"][userid]["marriedto"][str(author.id)]
+            else:
+                try:
                     del self.data["user"][userid]["marriedto"][str(author.id)]
-                else:
-                    del self.data["user"][userid]["marriedto"][str(author.id)]
+                except:
+                    continue
+                try:
                     del self.data["user"][str(author.id)]["marriedto"][userid]
-        except:
-            await ctx.send("You are not married to anyone :no_entry:")
-            return
+                except:
+                    continue
         dataIO.save_json(self.file_path, self.data) 
         await ctx.send("You are now divorced from everyone previously you were married to <:done:403285928233402378>")
             
@@ -1953,7 +1966,7 @@ class economy:
             self.settingss[str(author.id)]["HEIGHT"] = None
             dataIO.save_json(self.JSON, self.settingss)
             
-    @set.command(pass_context=True)
+    @set.command()
     async def height(self, ctx, feet: int, inches: int):
         """set your height on the profile
         example: s?set height 5 4
@@ -1978,7 +1991,7 @@ class economy:
         dataIO.save_json(self.JSON, self.settingss)
         await ctx.send("Your height has been set to {}'{} ({}cm)".format(feet, inches, total))
     
-    @set.command(pass_context=True)
+    @set.command()
     async def birthday(self, ctx, day: int, month: int, year: int=None):
         """set your birthday
         example: s?set birthday 1 7 2002
@@ -2058,7 +2071,7 @@ class economy:
         await ctx.send("Your birthday has been set to the {}".format(self.settingss[str(author.id)]["BIRTHDAY"]))
         dataIO.save_json(self.JSON, self.settingss)
         
-    @set.command(pass_context=True, aliases=["desc"])
+    @set.command(aliases=["desc"])
     async def description(self, ctx, *, description):
         """Set your decription about yourself"""
         author = ctx.author
@@ -2069,7 +2082,7 @@ class economy:
         dataIO.save_json(self.JSON, self.settingss)
         await ctx.send("Your description has been set it'll now be on your profile")
         
-    @set.command(pass_context=True)
+    @set.command()
     async def background(self, ctx, image_url=None): 
         """Set your background on your profile to make it shine a bit more"""
         author = ctx.author
@@ -2077,6 +2090,15 @@ class economy:
             self._background[str(author.id)] = {}
             dataIO.save_json(self._background_file, self._background)
         if not image_url:
+            if ctx.message.attachments:
+                try: 
+                    image_url = ctx.message.attachments[0].url.replace(".gif", ".png").replace(".webp", ".png")
+                    self._background[str(author.id)] = image_url
+                    dataIO.save_json(self._background_file, self._background)
+                    await ctx.send("Your background has been set.")
+                    return
+                except:
+                    pass
             self._background[str(author.id)] = {}
             dataIO.save_json(self._background_file, self._background)
             await ctx.send("Your background has been reset.")
@@ -2095,7 +2117,7 @@ class economy:
         else:
             await ctx.send("Invalid image url, needs to be an actual link :no_entry:")
     
-    @set.command(pass_context=True, aliases=["color"])
+    @set.command(aliases=["color"])
     async def colour(self, ctx, colour: discord.Colour): 
         author = ctx.author
         if str(author.id) not in self._colour:
@@ -2106,7 +2128,10 @@ class economy:
         image = Image.new('RGBA', (273, 10), (colour.r, colour.g, colour.b))
         image.save("result.png")
         await ctx.send(file=discord.File("result.png", "result.png"), content="The text colour on your profile has been set.")
-        os.remove("result.png")
+        try:
+            os.remove("result.png")
+        except:
+            pass
                 
         
 def has_voted(userId):

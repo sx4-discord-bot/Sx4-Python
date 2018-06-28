@@ -23,7 +23,7 @@ class logs:
         self.JSON = "data/logs/settings.json"
         self.data = dataIO.load_json(self.JSON)
 		
-    @commands.group(pass_context=True)
+    @commands.group()
     async def logs(self, ctx):
         """Log actions in your server"""
         server = ctx.message.guild
@@ -37,7 +37,7 @@ class logs:
             self.data[str(server.id)]["toggle"] = False
             dataIO.save_json(self.JSON, self.data)
 		
-    @logs.command(pass_context=True)
+    @logs.command()
     @checks.admin_or_permissions(manage_guild=True) 
     async def channel(self, ctx, channel: discord.TextChannel=None):
         """Set the channel where you want stuff to be logged"""
@@ -48,7 +48,7 @@ class logs:
         dataIO.save_json(self.JSON, self.data)
         await ctx.send("Logs will be recorded in <#{}> if toggled on <:done:403285928233402378>".format(channel.id))
 		
-    @logs.command(pass_context=True)
+    @logs.command()
     @checks.admin_or_permissions(manage_guild=True)  
     async def toggle(self, ctx):
         """Toggle logs on or off"""
@@ -89,54 +89,66 @@ class logs:
 			
     async def on_guild_channel_delete(self, channel):
         server = channel.guild
+        deletedby = "Unknown"
+        for x in await server.audit_logs(limit=1).flatten():
+            if x.action == discord.AuditLogAction.channel_delete:
+                deletedby = x.user
         if isinstance(channel, discord.TextChannel):
-            s=discord.Embed(description="The text channel **{}** has just been deleted".format(channel), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="The text channel **{}** has just been deleted by **{}**".format(channel, deletedby), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
                 await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
         elif isinstance(channel, discord.VoiceChannel):
-            s=discord.Embed(description="The voice channel **{}** has just been deleted".format(channel), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="The voice channel **{}** has just been deleted by **{}**".format(channel, deletedby), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
                 await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
         else:
-            s=discord.Embed(description="The category **{}** has just been deleted".format(channel), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="The category **{}** has just been deleted by **{}**".format(channel, deletedby), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
                 await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
 			
     async def on_guild_channel_create(self, channel):
         server = channel.guild
+        createdby = "Unknown"
+        for x in await server.audit_logs(limit=5).flatten():
+            if x.action == discord.AuditLogAction.channel_create:
+                createdby = x.user
         if isinstance(channel, discord.TextChannel):
-            s=discord.Embed(description="The text channel <#{}> has just been created".format(channel.id), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="The text channel <#{}> has just been created by **{}**".format(channel.id, createdby), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
                 await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
         elif isinstance(channel, discord.VoiceChannel):
-            s=discord.Embed(description="The voice channel **{}** has just been created".format(channel), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="The voice channel **{}** has just been created by **{}**".format(channel, createdby), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
                 await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
         else:
-            s=discord.Embed(description="The category **{}** has just been created".format(channel), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="The category **{}** has just been created by **{}**".format(channel, createdby), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
                 await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
 			
     async def on_guild_channel_update(self, before, after):
         server = before.guild
+        editedby = "Unknown"
+        for x in await server.audit_logs(limit=1).flatten():
+            if x.action == discord.AuditLogAction.channel_update:
+                editedby = x.user
         if isinstance(before, discord.TextChannel):
-            s=discord.Embed(description="The text channel <#{}> has been renamed".format(after.id), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="The text channel <#{}> has been renamed by **{}**".format(after.id, editedby), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             s.add_field(name="Before", value="`{}`".format(before))
             s.add_field(name="After", value="`{}`".format(after))
         elif isinstance(before, discord.VoiceChannel):
-            s=discord.Embed(description="The voice channel **{}** has been renamed".format(after), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="The voice channel **{}** has been renamed by **{}**".format(after, editedby), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             s.add_field(name="Before", value="`{}`".format(before))
             s.add_field(name="After", value="`{}`".format(after))
         else:
-            s=discord.Embed(description="The category **{}** has been renamed".format(after), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="The category **{}** has been renamed by **{}**".format(after, editedby), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             s.add_field(name="Before", value="`{}`".format(before))
             s.add_field(name="After", value="`{}`".format(after))
@@ -162,7 +174,9 @@ class logs:
 			
     async def on_member_ban(self, guild, user):
         server = guild
-        s=discord.Embed(description="**{}** has been banned".format(user.name), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
+        for x in await server.audit_logs(limit=1).flatten():
+            moderator = x.user
+        s=discord.Embed(description="**{}** has been banned by **{}**".format(user.name, moderator), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=user, icon_url=user.avatar_url)
         s.set_footer(text="User ID: {}".format(user.id))
         if self.data[str(server.id)]["toggle"] == True:
@@ -170,7 +184,9 @@ class logs:
 			
     async def on_member_unban(self, guild, user):
         server = guild
-        s=discord.Embed(description="**{}** has been unbanned".format(user.name), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
+        for x in await server.audit_logs(limit=1).flatten():
+            moderator = x.user
+        s=discord.Embed(description="**{}** has been unbanned by **{}**".format(user.name, moderator), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=user, icon_url=user.avatar_url)
         s.set_footer(text="User ID: {}".format(user.id))
         if self.data[str(server.id)]["toggle"] == True:
@@ -178,21 +194,31 @@ class logs:
 			
     async def on_guild_role_create(self, role): 
         server = role.guild
-        s=discord.Embed(description="The role **{}** has been created".format(role.name), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
+        for x in await server.audit_logs(limit=1).flatten():
+            if x.action == discord.AuditLogAction.role_create:
+                user = x.user
+        s=discord.Embed(description="The role **{}** has been created by **{}**".format(role.name, user), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=server, icon_url=server.icon_url)
         if self.data[str(server.id)]["toggle"] == True:
             await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
 			 
     async def on_guild_role_delete(self, role):
         server = role.guild
-        s=discord.Embed(description="The role **{}** has been deleted".format(role.name), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
+        for x in await server.audit_logs(limit=1).flatten():
+            if x.action == discord.AuditLogAction.role_delete:
+                user = x.user
+        s=discord.Embed(description="The role **{}** has been deleted by **{}**".format(role.name, user), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=server, icon_url=server.icon_url)
         if self.data[str(server.id)]["toggle"] == True:
             await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
 			
     async def on_guild_role_update(self, before, after):
         server = before.guild
-        s=discord.Embed(description="The role **{}** has been renamed".format(before.name), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
+        user = "Unknown"
+        for x in await server.audit_logs(limit=1).flatten():
+            if x.action == discord.AuditLogAction.role_update:
+                user = x.user
+        s=discord.Embed(description="The role **{}** has been renamed by **{}**".format(before.name, user), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=server, icon_url=server.icon_url)
         s.add_field(name="Before", value=before)
         s.add_field(name="After", value=after)
@@ -202,6 +228,14 @@ class logs:
 				
     async def on_voice_state_update(self, member, before, after):
         server = member.guild
+        for x in await server.audit_logs(limit=1).flatten():
+            if x.action == discord.AuditLogAction.member_update:
+                if x.before.mute:
+                    unmutedby = x.user
+        for x in await server.audit_logs(limit=1).flatten():
+            if x.action == discord.AuditLogAction.member_update:
+                if x.after.mute:
+                    mutedby = x.user
         if before.channel != after.channel:
             s=discord.Embed(description="**{}** just changed voice channels".format(member.name), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=member, icon_url=member.avatar_url)
@@ -213,26 +247,44 @@ class logs:
         if before.channel == None:
             s=discord.Embed(description="**{}** just joined the voice channel `{}`".format(member.name, after.channel), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=member, icon_url=member.avatar_url)
+        if before.mute and not after.mute:
+            s=discord.Embed(description="**{}** has been unmuted by **{}**".format(member.name, unmutedby), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
+            s.set_author(name=member, icon_url=member.avatar_url)
+        if not before.mute and after.mute:
+            s=discord.Embed(description="**{}** has been muted by **{}**".format(member.name, mutedby), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
+            s.set_author(name=member, icon_url=member.avatar_url)
         if self.data[str(server.id)]["toggle"] == True:
             await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
 			
     async def on_member_update(self, before, after):
         server = before.guild
+        user1 = "Unknown"
+        user2 = "Unknown"
         if before.roles != after.roles:
+            for x in await server.audit_logs(limit=1).flatten():
+                if x.action == discord.AuditLogAction.member_role_update:
+                    if len(x.before.roles) > len(x.after.roles):
+                        user1 = x.user
+                    else:
+                        user2 = x.user
             for role in [x for x in before.roles if x not in after.roles]:
-                s=discord.Embed(description="The role `{}` has been removed from **{}**".format(role, after.name), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
+                s=discord.Embed(description="The role `{}` has been removed from **{}** by **{}**".format(role, after.name, user1), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
                 s.set_author(name=after, icon_url=before.avatar_url)
             for role in [x for x in after.roles if x not in before.roles]:
-                s=discord.Embed(description="The role `{}` has been added to **{}**".format(role, after.name), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
+                s=discord.Embed(description="The role `{}` has been added to **{}** by **{}**".format(role, after.name, user2), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
                 s.set_author(name=after, icon_url=before.avatar_url)
             if self.data[str(server.id)]["toggle"] == True:
                 await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
         if before.nick != after.nick:
+            for x in await server.audit_logs(limit=1).flatten():
+                if x.action == discord.AuditLogAction.member_update:
+                    if before.nick or after.nick:
+                        user = x.user
             if not before.nick:
                 before.nick = after.name
             if not after.nick:
                 after.nick = after.name
-            s=discord.Embed(description="**{}** has has had their nickname changed".format(after.name), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="**{}** has has had their nickname changed by **{}**".format(after.name, user), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=after, icon_url=after.avatar_url)
             s.add_field(name="Before", value=before.nick, inline=False)
             s.add_field(name="After", value=after.nick)

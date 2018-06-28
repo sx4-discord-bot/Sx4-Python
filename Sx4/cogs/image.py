@@ -30,17 +30,20 @@ class image:
       
     def __init__(self, bot):  
         self.bot = bot
+        self.colours_file = "data/colours/colournames.json"
+        self.colours = dataIO.load_json(self.colours_file)
         
-    @commands.command(pass_context=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def trash(self, ctx, user_or_imagelink: str=None):
         """Make someone look like trash"""
         channel = ctx.message.channel
         author = ctx.message.author
         if not user_or_imagelink:
-            url = ctx.message.author.avatar_url
-            if url == "":
-                url = author.default_avatar_url
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+            else:
+                url = ctx.message.author.avatar_url
         elif "<" in user_or_imagelink and "@" in user_or_imagelink:
             userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
             try:
@@ -76,7 +79,7 @@ class image:
                     url = user_or_imagelink
         try:
             with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png")).content)
+                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             img = Image.open("trash-meme.jpg")
             img2 = Image.open("image.jpg")
             img2 = img2.resize((385, 384))
@@ -140,9 +143,9 @@ class image:
                     url2 = user_or_imagelink2
         try:
             with open('image1.jpg', 'wb') as f:
-                f.write(requests.get(url1.replace("gif", "png").replace("webp", "png")).content)
+                f.write(requests.get(url1.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             with open('image2.jpg', 'wb') as f:
-                f.write(requests.get(url2.replace("gif", "png").replace("webp", "png")).content)
+                f.write(requests.get(url2.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             img = Image.open("whowouldwin.png").convert("RGBA")
             img2 = Image.open("image1.jpg").convert("RGBA")
             img3 = Image.open("image2.jpg").convert("RGBA")
@@ -161,16 +164,17 @@ class image:
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
             
-    @commands.command(pass_context=True) 
+    @commands.command() 
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def fear(self, ctx, user_or_imagelink: str=None):
         """Make someone look feared of"""
         channel = ctx.message.channel
         author = ctx.message.author
         if not user_or_imagelink:
-            url = ctx.message.author.avatar_url
-            if url == "":
-                url = author.default_avatar_url
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+            else:
+                url = ctx.message.author.avatar_url
         elif "<" in user_or_imagelink and "@" in user_or_imagelink:
             userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
             try:
@@ -197,7 +201,7 @@ class image:
                     url = user_or_imagelink
         try:
             with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png")).content)
+                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             img = Image.open("image.jpg")
             img2 = Image.open("fear-meme.png")
             img = img.resize((251, 251))
@@ -212,16 +216,17 @@ class image:
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
         
-    @commands.command(pass_context=True) 
+    @commands.command() 
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def emboss(self, ctx, user_or_imagelink: str=None):
         """Make a profile picture emboss"""
         channel = ctx.message.channel
         author = ctx.message.author
         if not user_or_imagelink:
-            url = ctx.message.author.avatar_url
-            if url == "":
-                url = author.default_avatar_url
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+            else:
+                url = ctx.message.author.avatar_url
         elif "<" in user_or_imagelink and "@" in user_or_imagelink:
             userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
             try:
@@ -257,7 +262,7 @@ class image:
                     url = user_or_imagelink
         try:
             with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png")).content)
+                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             im = Image.open("image.jpg")
             image = im.filter(ImageFilter.EMBOSS) 
             image = ImageEnhance.Contrast(image).enhance(4.0)
@@ -272,13 +277,18 @@ class image:
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
             
-    @commands.command(pass_context=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def ship(self, ctx, user1: discord.Member, user2: discord.Member=None):
         """Ship 2 users"""
         if not user2:
             user2 = user1
             user1 = ctx.message.author
+        shipname = str(user1.name[:math.ceil(len(user1.name)/2)]) + str(user2.name[math.ceil(len(user2.name)/2):])
+        state = random.getstate()
+        random.seed(user2.id + user1.id)
+        number = randint(0, 100)
+        random.setstate(state)
         if user1.avatar_url != "":
             u1avatar = user1.avatar_url
         else:
@@ -301,7 +311,7 @@ class image:
         image.paste(heart, (280, 0))
         image.paste(user2, (600, 0))
         image.save("result.png")
-        await ctx.send(file=discord.File("result.png", "result.png"))
+        await ctx.send(content="Ship Name: **{}**\nLove Percentage: **{}%**".format(shipname, number), file=discord.File("result.png", "result.png"))
         try:
             os.remove("result.png")
             os.remove("image.jpg")
@@ -309,16 +319,17 @@ class image:
         except:
             pass        
 
-    @commands.command(pass_context=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def vr(self, ctx, user_or_imagelink: str=None):
         """Make someone feel emotional in vr"""	
         channel = ctx.message.channel
         author = ctx.message.author
         if not user_or_imagelink:
-            url = ctx.message.author.avatar_url
-            if url == "":
-                url = author.default_avatar_url
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+            else:
+                url = ctx.message.author.avatar_url
         elif "<" in user_or_imagelink and "@" in user_or_imagelink:
             userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
             try:
@@ -345,7 +356,7 @@ class image:
                     url = user_or_imagelink
         try:
             with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png")).content)
+                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             img = Image.open("vr.png").convert("RGBA")
             img2 = Image.open("image.jpg").convert("RGBA")
             image = Image.new('RGBA', (493, 511), (255, 255, 255, 0))
@@ -364,16 +375,17 @@ class image:
             await ctx.send("Not a valid user or image url :no_entry:")
 					
             
-    @commands.command(pass_context=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def shit(self, ctx, user_or_imagelink: str=None):
         """Choose who you want to be shit"""
         channel = ctx.message.channel
         author = ctx.message.author
         if not user_or_imagelink:
-            url = ctx.message.author.avatar_url
-            if url == "":
-                url = author.default_avatar_url
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+            else:
+                url = ctx.message.author.avatar_url
         elif "<" in user_or_imagelink and "@" in user_or_imagelink:
             userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
             try:
@@ -409,7 +421,7 @@ class image:
                     url = user_or_imagelink
         try:
             with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png")).content)
+                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             img = Image.open("shit-meme.png").convert("RGBA")
             img2 = Image.open("image.jpg").convert("RGBA")
             image = Image.new('RGBA', (763, 1080), (255, 255, 255, 0))
@@ -427,16 +439,63 @@ class image:
                 pass
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
+
+    @commands.command()
+    async def beautiful(self, ctx, user_or_imagelink: str=None):
+        """Turn something to a masterpiece"""
+        channel = ctx.message.channel
+        author = ctx.message.author
+        if not user_or_imagelink:
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+            else:
+                url = ctx.message.author.avatar_url
+        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
+            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
+            try:
+                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
+            except:
+                await ctx.send("Invalid user :no_entry:")
+                return
+            url = user.avatar_url
+        else:
+            try:
+                user = ctx.message.guild.get_member_named(user_or_imagelink)
+            except:
+                try:
+                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
+                except:
+                    url = user_or_imagelink
+        try:
+            with open('image.jpg', 'wb') as f:
+                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
+            img = Image.open("beautiful.png").convert("RGBA")
+            img2 = Image.open("image.jpg").convert("RGBA")
+            img2 = img2.resize((90, 104))
+            img2 = img2.rotate(1, expand=True)
+            img2.convert('RGBA')
+            img.paste(img2, (253, 25), img2)
+            img.paste(img2, (256, 222), img2)
+            img.save("result.png")
+            await ctx.send(file=discord.File("result.png", "result.png"))
+            try:
+                os.remove("result.png")
+                os.remove("image.jpg")
+            except:
+                pass
+        except:
+            await ctx.send("Not a valid user or image url :no_entry:")
             
-    @commands.command(pass_context=True)
+    @commands.command()
     async def gay(self, ctx, user_or_imagelink: str=None):
         """Turn someone or yourself gay"""
         channel = ctx.message.channel
         author = ctx.message.author
         if not user_or_imagelink:
-            url = ctx.message.author.avatar_url
-            if url == "":
-                url = author.default_avatar_url
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+            else:
+                url = ctx.message.author.avatar_url
         elif "<" in user_or_imagelink and "@" in user_or_imagelink:
             userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
             try:
@@ -472,7 +531,7 @@ class image:
                     url = user_or_imagelink
         try:
             with open("image.jpg", "wb") as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png")).content)
+                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             img = Image.open("image.jpg").convert("RGBA")
             img = img.resize((600, 600))
             red = Image.new("RGBA", (600, 100), (255, 0, 0, 100))
@@ -494,7 +553,7 @@ class image:
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
             
-    @commands.command(pass_context=True, aliases=["tweet"])
+    @commands.command(aliases=["tweet"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def trumptweet(self, ctx, *, text: str):
         """Make trump say something on twitter"""
@@ -579,22 +638,29 @@ class image:
         except:
             pass
             
-    @commands.command(pass_context=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def colour(self, ctx, colour: discord.Colour=None):
         """View a colours hex code and RGB and a image with the colour, if a colour is not specified it will get a random one"""
         if not colour:
             colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
             colour = discord.Colour(int(colour, 16))
+        colourname = str(colour)
+        for x in self.colours:
+            if str(colour) == self.colours[x]:
+                colourname = x.title()
         image = Image.new('RGBA', (100, 100), (colour.r, colour.g, colour.b))
         image.save("result.png")
-        await ctx.send(file=discord.File("result.png", "result.png"), content="Hex: {}\nRGB: ({}, {}, {})".format(str(colour), colour.r, colour.g, colour.b))
+        s=discord.Embed(colour=colour, description="Hex: {}\nRGB: ({}, {}, {})".format(str(colour), colour.r, colour.g, colour.b))
+        s.set_image(url="attachment://result.png")
+        s.set_author(name=colourname, icon_url="attachment://result.png")
+        await ctx.send(file=discord.File("result.png", "result.png"), embed=s)
         try:
             os.remove("result.png")
         except:
             pass
          
-    @commands.command(pass_context=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def drift(self, ctx, user: discord.Member, textleft: str, textright: str=None):
         """Drift away from something, any words over 10 characters will be ignored"""

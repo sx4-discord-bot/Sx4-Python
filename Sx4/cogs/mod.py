@@ -6,8 +6,11 @@ import datetime
 from collections import deque, defaultdict
 import os
 import re
+import requests
 import logging
 import asyncio
+from urllib.request import Request, urlopen
+import json
 from threading import Timer
 import random
 import time
@@ -32,8 +35,51 @@ class mod:
         self.d = dataIO.load_json(self.file)
         self._logs_file = "data/mod/logs.json"
         self._logs = dataIO.load_json(self._logs_file)
+        self._time_file = "data/mod/time.json"
+        self._time = dataIO.load_json(self._time_file)
+
+    @commands.command()
+    async def checkbans(self, ctx, *, user_arg: str=None):
+        author = ctx.message.author
+        server = ctx.guild
+        if not user_arg:
+            user = author
+        else:
+            if "<" in user_arg and "@" in user_arg:
+                user = user_arg.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
+                user = discord.utils.get(self.bot.get_all_members(), id=int(user))
+            elif "#" in user_arg:
+                number = len([x for x in user_arg if "#" not in x])
+                usernum = number - 4
+                user = discord.utils.get(self.bot.get_all_members(), name=user_arg[:usernum], discriminator=user_arg[usernum + 1:len(user_arg)])
+            else:
+                try:
+                    user = discord.utils.get(self.bot.get_all_members(), id=int(user_arg))
+                    if not user:
+                        user = await self.bot.get_user_info(int(user_arg))
+                except:
+                    user = discord.utils.get(self.bot.get_all_members(), name=user_arg)
+            if not user:
+                await ctx.send("I could not find that user :no_entry:")
+                return
+        url = "https://bans.discordlist.net/api"
+        urlds = "https://discord.services/api/ban/{}".format(user.id)
+        headers = {"token" : "H5sqJpBmow", "userid" : str(user.id)}
+        request = requests.post(url, data=headers)
+        requestds = json.loads(urlopen(Request(urlds)).read().decode())
+        description = ""
+        if request.text == True:
+            description += "**{}** is banned on [DiscordList](https://bans.discordlist.net/)\n\n".format(user)
+        try:
+            requestds["msg"]
+        except:
+            description += "**{}** is banned on [Discord Services](https://discord.services/bans) for [{}]({})".format(user, requestds["ban"]["reason"], requestds["ban"]["proof"])
+        if description == "":
+            description = "There were no bans found for **{}**".format(user)
+        await ctx.send(embed=discord.Embed(description=description))
+
 		
-    @commands.command(pass_context=True)
+    @commands.command()
     @checks.mod_or_permissions(manage_roles=True)
     async def announce(self, ctx, role: discord.Role, *, text: str):
         """Send an announcement in the channel you want by using the command in the channel you want choose a role you want to use and some text and the rest the bot will do"""
@@ -49,7 +95,7 @@ class mod:
         await ctx.send(role.mention + ", " + text + " - " + str(ctx.message.author))
         await role.edit(mentionable=False)
     
-    @commands.command(pass_context=True, aliases=["mm"])
+    @commands.command(aliases=["mm"])
     @checks.mod_or_permissions(move_members=True)
     async def massmove(self, ctx, from_channel: discord.VoiceChannel, to_channel: discord.VoiceChannel):
         """Mass move users from one channel to another"""
@@ -64,7 +110,7 @@ class mod:
             i = i + 1
         await ctx.send("Moved **{}** members from `{}` to `{}`".format(i, from_channel.name, to_channel.name))
         
-    @commands.command(pass_context=True)
+    @commands.command()
     @checks.mod_or_permissions(move_members=True)
     async def move(self, ctx, user: discord.Member, to_channel: discord.VoiceChannel=None):
         """Move a user to your channel or a chosen channel"""
@@ -86,7 +132,7 @@ class mod:
         await ctx.send("Moved **{}** to `{}`".format(user, channel.name))
         
         
-    @commands.command(pass_context=True)
+    @commands.command()
     @checks.admin_or_permissions(manage_nicknames=True)
     async def rename(self, ctx, user: discord.Member, *, nickname=None): 
         """Rename a user"""
@@ -100,7 +146,7 @@ class mod:
             return
         await ctx.send("I have changed **{}'s** name to **{}** <:done:403285928233402378>:ok_hand:".format(user.name, nickname))
         
-    @commands.command(pass_context=True, aliases=["c"])
+    @commands.command(aliases=["c"])
     @checks.mod_or_permissions(manage_messages=True) 
     async def clear(self, ctx, user: discord.Member, amount: int=None):
         """Clear a users messages"""
@@ -108,7 +154,7 @@ class mod:
         server = ctx.guild
         has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await ctx.send("I do not have the `MANAGE_MESSAGES` permission**")
+            await ctx.send("I do not have the `MANAGE_MESSAGES` permission")
             return
         if amount is None:
             amount = 100
@@ -130,7 +176,7 @@ class mod:
         except discord.HTTPException:
             pass
         
-    @commands.command(pass_context=True, aliases=["bc"])
+    @commands.command(aliases=["bc"])
     @checks.mod_or_permissions(manage_messages=True)
     async def botclean(self, ctx, limit: int=None):
         """Clears all bot messages"""
@@ -138,7 +184,7 @@ class mod:
         server = ctx.guild
         has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await ctx.send("I do not have the `MANAGE_MESSAGES` permission**")
+            await ctx.send("I do not have the `MANAGE_MESSAGES` permission")
             return
         if limit is None:
             limit = 100
@@ -160,7 +206,7 @@ class mod:
         except discord.HTTPException:
             pass
         
-    @commands.command(pass_context=True, aliases=["prune"])
+    @commands.command(aliases=["prune"])
     @checks.mod_or_permissions(manage_messages=True)
     async def purge(self, ctx, limit: int=None):
         """Purges a certain amount of messages"""
@@ -168,7 +214,7 @@ class mod:
         server = ctx.guild
         has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await ctx.send("I do not have the `MANAGE_MESSAGES` permission**")
+            await ctx.send("I do not have the `MANAGE_MESSAGES` permission")
             return
         if limit is None:
             limit = 100
@@ -190,7 +236,7 @@ class mod:
         except discord.HTTPException:
             pass
             
-    @commands.group(pass_context=True)
+    @commands.group()
     async def modlog(self, ctx):
         """Have logs for all mod actions"""
         server = ctx.guild
@@ -211,7 +257,7 @@ class mod:
             dataIO.save_json(self._logs_file, self._logs)
         
             
-    @modlog.command(pass_context=True)
+    @modlog.command()
     @checks.admin_or_permissions(manage_roles=True)
     async def toggle(self, ctx):
         """Toggle modlogs on or off"""
@@ -227,7 +273,7 @@ class mod:
             await ctx.send("Modlogs are now enabled.")
             return
             
-    @modlog.command(pass_context=True) 
+    @modlog.command() 
     @checks.admin_or_permissions(manage_roles=True)
     async def channel(self, ctx, channel: discord.TextChannel):
         """Set the channel where you want modlogs to be posted"""
@@ -236,12 +282,17 @@ class mod:
         dataIO.save_json(self._logs_file, self._logs)    
         await ctx.send("<#{}> has been set as the modlog channel".format(str(channel.id)))
         
-    @modlog.command(pass_context=True)
+    @modlog.command()
     @checks.admin_or_permissions(manage_messages=True)
     async def case(self, ctx, case_number, *, reason):
         """Edit a modlog case"""
         author = ctx.author
         server = ctx.guild
+        try:
+            self._logs[str(server.id)]["case"][case_number]
+        except:
+            await ctx.send("Invalid case number :no_entry:")
+            return
         if self._logs[str(server.id)]["case"][case_number]["mod"] is not None and self._logs[str(server.id)]["case"][case_number]["mod"] != str(author.id):
             await ctx.send("You do not have ownership of that log :no_entry:")
             return
@@ -268,26 +319,29 @@ class mod:
         except: 
             await ctx.send("I am unable to edit that case or it doesn't exist :no_entry:")
             
-    @modlog.command(pass_context=True)
+    @modlog.command()
     @checks.admin_or_permissions(manage_messages=True)
     async def viewcase(self, ctx, case_number):
         """Someone delete their modlog case in your modlog channel, i store all of them so use this command to see the deleted case"""
         server = ctx.guild
-        if self._logs[str(server.id)]["case"][case_number]["reason"] is None:
-            reason = "None (Update using `s?modlog case {} <reason>`)".format(case_number)
-        else:
-            reason = self._logs[str(server.id)]["case"][case_number]["reason"]
-        if self._logs[str(server.id)]["case"][case_number]["mod"] is None:
-            author = "Unknown"
-        else:
-            author = await self.bot.get_user_info(self._logs[str(server.id)]["case"][case_number]["mod"])
-        s=discord.Embed(title="Case {} | {}".format(case_number, self._logs[str(server.id)]["case"][case_number]["action"]))
-        s.add_field(name="User", value=await self.bot.get_user_info(int(self._logs[str(server.id)]["case"][case_number]["user"])))
-        s.add_field(name="Moderator", value=author, inline=False)
-        s.add_field(name="Reason", value=reason)
-        await ctx.send(embed=s)
+        try:
+            if self._logs[str(server.id)]["case"][case_number]["reason"] is None:
+                reason = "None (Update using `s?modlog case {} <reason>`)".format(case_number)
+            else:
+                reason = self._logs[str(server.id)]["case"][case_number]["reason"]
+            if self._logs[str(server.id)]["case"][case_number]["mod"] is None:
+                author = "Unknown"
+            else:
+                author = await self.bot.get_user_info(self._logs[str(server.id)]["case"][case_number]["mod"])
+            s=discord.Embed(title="Case {} | {}".format(case_number, self._logs[str(server.id)]["case"][case_number]["action"]))
+            s.add_field(name="User", value=await self.bot.get_user_info(int(self._logs[str(server.id)]["case"][case_number]["user"])))
+            s.add_field(name="Moderator", value=author, inline=False)
+            s.add_field(name="Reason", value=reason)
+            await ctx.send(embed=s)
+        except:
+            await ctx.send("Invalid case number :no_entry:")
             
-    @modlog.command(pass_context=True)
+    @modlog.command()
     @checks.admin_or_permissions(manage_roles=True)
     async def resetcases(self, ctx):
         """Reset all the cases in the modlog"""
@@ -334,7 +388,7 @@ class mod:
                 self._logs[str(server.id)]["case"][number]["message"] = str(message.id)
                 dataIO.save_json(self._logs_file, self._logs)    
         
-    @commands.command(pass_context=True, aliases=["cr"])
+    @commands.command(aliases=["cr"])
     @checks.admin_or_permissions(manage_roles=True)
     async def createrole(self, ctx, rolename, colour_hex: discord.Colour=None):
         """Create a role in the server"""
@@ -342,12 +396,15 @@ class mod:
             await ctx.send("I need the `MANGE_ROLES` Permission :no_entry:")
             return
         try:
-            await ctx.guild.create_role(name=rolename, colour=colour_hex)
+            if colour_hex:
+                await ctx.guild.create_role(name=rolename, colour=colour_hex)
+            else:
+                await ctx.guild.create_role(name=rolename)
             await ctx.send("I have created the role **{}** <:done:403285928233402378>:ok_hand:".format(rolename)) 
         except:
             await ctx.send("I was not able to create the role :no_entry:")
             
-    @commands.command(pass_context=True, aliases=["dr"])
+    @commands.command(aliases=["dr"])
     @checks.admin_or_permissions(manage_roles=True)
     async def deleterole(self, ctx, *, role: discord.Role):
         """Delete a role in the server"""
@@ -360,7 +417,7 @@ class mod:
         except:
             await ctx.send("I was not able to delete the role or the role doesn't exist :no_entry:")
         
-    @commands.command(pass_context=True, aliases=["ar"]) 
+    @commands.command(aliases=["ar"]) 
     @checks.admin_or_permissions(manage_roles=True)
     async def addrole(self, ctx, role: discord.Role, *, user: discord.Member=None):
         """Add a role to a user"""
@@ -383,7 +440,7 @@ class mod:
         except discord.errors.Forbidden:
             await ctx.send("I'm not able to add the role to the user :no_entry:")
         
-    @commands.command(pass_context=True, aliases=["rr"]) 
+    @commands.command(aliases=["rr"]) 
     @checks.admin_or_permissions(manage_roles=True)
     async def removerole(self, ctx, role: discord.Role, *, user: discord.Member=None):
         """Remove a role from a user"""
@@ -406,13 +463,13 @@ class mod:
         except discord.errors.Forbidden:
             await ctx.send("I'm not able to remove the role from the user :no_entry:")
             
-    @commands.command(pass_context=True) 
+    @commands.command() 
     @checks.admin_or_permissions(ban_members=True)
     async def Ban(self, ctx, user: discord.Member):
         """This is a fake bean don't exp0se"""
         await ctx.send("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
             
-    @commands.command(no_pm=True, pass_context=True)
+    @commands.command(no_pm=True, )
     @checks.admin_or_permissions(kick_members=True)
     async def kick(self, ctx, user: discord.Member, *, reason: str = None):
         """Kicks a user."""
@@ -462,7 +519,7 @@ class mod:
         except Exception as e:
             print(e)
             
-    @commands.command(no_pm=True, pass_context=True)
+    @commands.command(no_pm=True, )
     @checks.admin_or_permissions(ban_members=True)
     async def ban(self, ctx, user: discord.Member, *, reason: str = None):
         """Bans a user."""
@@ -472,6 +529,12 @@ class mod:
         action = "Ban"
         destination = user
         can_ban = channel.permissions_for(ctx.me).ban_members
+        if str(server.id) not in self._time:
+            self._time[str(server.id)] = {}
+            dataIO.save_json(self._time_file, self._time)
+        if "bantime" not in self._time[str(server.id)]:
+            self._time[str(server.id)]["bantime"] = 0
+            dataIO.save_json(self._time_file, self._time)
         if not can_ban:
             await ctx.send("I need the `BAN_MEMBERS` permission :no_entry:")
             return
@@ -489,6 +552,8 @@ class mod:
                 return
         try: 
             await server.ban(user, reason="Ban made by {}".format(author))
+            self._time[str(server.id)]["bantime"] = datetime.datetime.utcnow().timestamp()
+            dataIO.save_json(self._time_file, self._time)
             await ctx.send("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
             try:
                 await self._log(author, server, action, reason, user)
@@ -511,8 +576,10 @@ class mod:
                 pass
         except Exception as e:
             print(e)
+
+        
             
-    @commands.command(pass_context=True, no_pm=True) 
+    @commands.command(no_pm=True) 
     @checks.admin_or_permissions(ban_members=True)
     async def unban(self, ctx, user_id: int, *, reason: str=None):
         """unbans a user by ID and will notify them about the unbanning in pm"""
@@ -520,6 +587,12 @@ class mod:
         server = ctx.message.guild
         channel = ctx.message.channel
         action = "Unban"
+        if str(server.id) not in self._time:
+            self._time[str(server.id)] = {}
+            dataIO.save_json(self._time_file, self._time)
+        if "unbantime" not in self._time[str(server.id)]:
+            self._time[str(server.id)]["unbantime"] = 0
+            dataIO.save_json(self._time_file, self._time)
         try:
             user = await self.bot.get_user_info(user_id)
         except discord.errors.NotFound:
@@ -553,6 +626,8 @@ class mod:
             return
         try:
             await server.unban(user, reason="Unban made by {}".format(author))
+            self._time[str(server.id)]["unbantime"] = datetime.datetime.utcnow().timestamp()
+            dataIO.save_json(self._time_file, self._time)
         except discord.errors.Forbidden:
             await ctx.send("I need the **Ban Members** permission to unban :no_entry:")
             return
@@ -566,30 +641,39 @@ class mod:
         except:
             pass
             
-    #async def on_member_ban(self, member):
-        #action = "Ban"
-        #author = None
-        #user = member
-        #server = member.guild
-        #reason = None
-        #if not self.temp_cache.check(user, server, action):   
-            #try:
-                #await self._log(author, server, action, reason, user)
-            #except:
-                #pass
+    async def on_member_ban(self, guild, user):
+        await asyncio.sleep(2)
+        if datetime.datetime.utcnow().timestamp() - self._time[str(guild.id)]["bantime"] > 3.5:
+            for x in await guild.audit_logs(limit=1).flatten():
+                author = x.user
+                if x.reason != "":
+                    reason = x.reason
+                else:
+                    reason = None
+            action = "Ban"
+            server = guild
+            try:
+                await self._log(author, server, action, reason, user)
+            except:
+                pass
                 
-    #async def on_member_unban(self, server, member):
-        #action = "Unban"
-        #author = None
-        #user = member
-        #reason = None
-        #if not self.temp_cache.check(user, server, action):   
-            #try:
-                #await self._log(author, server, action, reason, user)
-            #except:
-                #pass
+    async def on_member_unban(self, guild, user):
+        await asyncio.sleep(2)
+        if datetime.datetime.utcnow().timestamp() - self._time[str(guild.id)]["unbantime"] > 3.5:
+            for x in await guild.audit_logs(limit=1).flatten():
+                author = x.user
+                if x.reason != "":
+                    reason = x.reason
+                else:
+                    reason = None
+            action = "Unban"
+            server = guild
+            try:
+                await self._log(author, server, action, reason, user)
+            except:
+                pass
             
-    @commands.command(pass_context=True, no_pm=True, aliases=["hb"]) 
+    @commands.command(no_pm=True, aliases=["hb"]) 
     @checks.mod_or_permissions(ban_members=True)
     async def hackban(self, ctx, user_id: int, *, reason: str=None):
         """Ban a user before they even join the server, make sure you provide a user id"""
@@ -597,6 +681,12 @@ class mod:
         server = ctx.message.guild
         channel = ctx.message.channel
         action = "Ban"
+        if str(server.id) not in self._time:
+            self._time[str(server.id)] = {}
+            dataIO.save_json(self._time_file, self._time)
+        if "bantime" not in self._time[str(server.id)]:
+            self._time[str(server.id)]["bantime"] = 0
+            dataIO.save_json(self._time_file, self._time)
         try:
             user = await self.bot.get_user_info(user_id)
         except discord.errors.NotFound:
@@ -623,7 +713,9 @@ class mod:
             await ctx.send("That user is already banned :no_entry:") 
             return
         try:
-            await self.bot.http.ban(user_id, server.id, 0)
+            await self.bot.http.ban(user_id, server.id, reason="Ban made by {}".format(author))
+            self._time[str(server.id)]["bantime"] = datetime.datetime.utcnow().timestamp()
+            dataIO.save_json(self._time_file, self._time)
         except:
             await ctx.send("I'm not able to ban that user :no_entry:")
             return
@@ -633,7 +725,7 @@ class mod:
         except:
             pass
         
-    @commands.command(pass_context=True)
+    @commands.command()
     @checks.mod_or_permissions(manage_messages=True)
     async def cmute(self, ctx, user: discord.Member, *, reason=None):
         """Mute someone in the channel"""
@@ -691,7 +783,7 @@ class mod:
         except:
             pass
         
-    @commands.command(pass_context=True)
+    @commands.command()
     @checks.mod_or_permissions(manage_messages=True)
     async def cunmute(self, ctx, user: discord.Member, *, reason: str=None):
         """Unmute a muted user in the current channel"""
@@ -728,14 +820,14 @@ class mod:
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         overwrite = discord.PermissionOverwrite()
         overwrite.send_messages = False
-        if self.d[str(server.id)][member.id]["toggle"] == True:
-            await member.add_roles(role)
+        if self.d[str(server.id)][str(member.id)]["toggle"] == True:
+            await member.add_roles(role, reason="Mute evasion")
         for channelid in self.d[str(server.id)]["channel"]:
             channel = discord.utils.get(server.channels, id=int(channelid))
-            if member.id in self.d[str(server.id)]["channel"][channelid]["user"]:
+            if str(member.id) in self.d[str(server.id)]["channel"][channelid]["user"]:
                 await channel.set_permissions(member, overwrite=overwrite)
         
-    @commands.command(pass_context=True)
+    @commands.command()
     @checks.mod_or_permissions(manage_messages=True)
     async def mute(self, ctx, user: discord.Member, time_and_unit=None, *, reason: str=None):
         """Mute a user for a certain amount of time
@@ -889,7 +981,7 @@ class mod:
                 pass
             
             
-    @commands.command(pass_context=True)
+    @commands.command()
     @checks.mod_or_permissions(manage_messages=True)
     async def unmute(self, ctx, user: discord.Member, *, reason: str=None):
         """Unmute a user who is muted"""
@@ -925,7 +1017,7 @@ class mod:
             pass
             
             
-    @commands.command(pass_context=True) 
+    @commands.command() 
     async def mutedlist(self, ctx):
         """Check who is muted in the server and for how long"""
         server = ctx.message.guild
@@ -986,7 +1078,7 @@ class mod:
                 dataIO.save_json(self.file, self.d)
                 return
             
-    async def on_channel_create(self, channel):
+    async def on_guild_channel_create(self, channel):
         server = channel.guild
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         overwrite = discord.PermissionOverwrite()
@@ -1000,7 +1092,7 @@ class mod:
         if isinstance(channel, discord.VoiceChannel):
             await channel.set_permissions(role, overwrite=perms)
         
-    @commands.command(pass_context=True, no_pm=True)
+    @commands.command(no_pm=True)
     @checks.mod_or_permissions(manage_messages=True)
     async def warn(self, ctx, user: discord.Member, *, reason: str=None):
         """Warns a user in pm, a reason is also optional."""
@@ -1150,7 +1242,7 @@ class mod:
         except:
             pass
             
-    @commands.command(pass_context=True)
+    @commands.command()
     async def warnlist(self, ctx, page: int=None):
         """View everyone who has been warned and how many warning they're on"""
         server = ctx.message.guild 
@@ -1160,7 +1252,7 @@ class mod:
             await ctx.send("Invalid page :no_entry:")
             return
         try:
-            if page >= math.ceil(len(self.data[str(server.id)]["user"])/20):
+            if page > math.ceil(len(self.data[str(server.id)]["user"])/20):
                 await ctx.send("Invalid page :no_entry:")
                 return
         except:
@@ -1172,7 +1264,7 @@ class mod:
         except:
             await ctx.send("There are no users with warnings in this server :no_entry:")
         
-    @commands.command(pass_context=True)
+    @commands.command()
     async def warnings(self, ctx, user: discord.Member): 
         """Check how many warnings a specific user is on"""
         server = ctx.message.guild
@@ -1205,7 +1297,7 @@ class mod:
         except:
             await ctx.send("That user has no warnings :no_entry:")
                 
-    @commands.command(pass_context=True)
+    @commands.command()
     @checks.mod_or_permissions(manage_messages=True)
     async def setwarns(self, ctx, user: discord.Member, warnings: int=None):
         """Set the warn amount for a specific user"""
@@ -1339,6 +1431,10 @@ def check_files():
     f = "data/mod/logs.json"
     if not dataIO.is_valid_json(f):
         print("Creating default mod's logs.json...")
+        dataIO.save_json(f, {})
+    f = "data/mod/time.json"
+    if not dataIO.is_valid_json(f):
+        print("Creating default mod's time.json...")
         dataIO.save_json(f, {})
         
 def setup(bot): 
