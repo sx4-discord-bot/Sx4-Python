@@ -18,8 +18,8 @@ import subprocess
 
 bot = commands.AutoShardedBot(command_prefix=['sx4 ', 's?', 'S?', '<@440996323156819968> ']) 
 wrap = "```py\n{}\n```"
-dbltoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ0MDk5NjMyMzE1NjgxOTk2OCIsImJvdCI6dHJ1ZSwiaWF0IjoxNTI1NTI4OTg5fQ.HsQ_1NfbJnwy7tHr5zofQHd_79sar_wDRyOa8xT0LbE"
-dbotspwtoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI0MDI1NTc1MTY3MjgzNjkxNTMiLCJyYW5kIjo2ODYsImlhdCI6MTUyMzAxMTE3MX0.ssG4CCask4AJ1aVbixr_Uej4qhuTCsDFCo-9Ekme-0s"
+dbltoken = ""
+dbotspwtoken = ""
 dbpwurl = "https://bots.discord.pw/api/bots/440996323156819968/stats"
 url = "https://discordbots.org/api/bots/440996323156819968/stats"
 headers = {"Authorization" : dbltoken}
