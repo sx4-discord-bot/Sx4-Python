@@ -6,6 +6,7 @@ import time
 import datetime
 import random
 from utils import checks
+from utils import arghelp
 import os
 import math
 from random import choice
@@ -28,15 +29,18 @@ class selfroles:
     async def selfrole(self, ctx): 
         """Make it so users can self assign roles without perms"""
         server = ctx.message.guild
-        if str(server.id) not in self.data:
-            self.data[str(server.id)] = {}
-            dataIO.save_json(self.file_path, self.data)
-        if "role" not in self.data[str(server.id)]:
-            self.data[str(server.id)]["role"] = {}
-            dataIO.save_json(self.file_path, self.data)
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            if str(server.id) not in self.data:
+                self.data[str(server.id)] = {}
+                dataIO.save_json(self.file_path, self.data)
+            if "role" not in self.data[str(server.id)]:
+                self.data[str(server.id)]["role"] = {}
+                dataIO.save_json(self.file_path, self.data)
 			
     @selfrole.command() 
-    @checks.admin_or_permissions(manage_roles=True)
+    @checks.has_permissions("manage_roles")
     async def add(self, ctx, *, role: discord.Role):
         """Add a role to be self assignable"""
         server = ctx.message.guild
@@ -51,7 +55,7 @@ class selfroles:
         await ctx.send("Added **{}** to the self roles list <:done:403285928233402378>".format(role.name))
 		
     @selfrole.command() 
-    @checks.admin_or_permissions(manage_roles=True)
+    @checks.has_permissions("manage_roles")
     async def remove(self, ctx, *, role: discord.Role): 
         """Remove a role to be self assignable"""
         server = ctx.message.guild
@@ -63,7 +67,7 @@ class selfroles:
         await ctx.send("Removed **{}** from the self roles list <:done:403285928233402378>".format(role.name))
 		
     @selfrole.command() 
-    @checks.admin_or_permissions(manage_roles=True)
+    @checks.has_permissions("manage_roles")
     async def reset(self, ctx):
         """Reset all the selfroles"""
         server = ctx.message.guild

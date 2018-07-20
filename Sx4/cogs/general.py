@@ -7,6 +7,7 @@ import datetime
 import html
 import random
 import math
+from utils import arghelp
 from PIL import Image, ImageFilter, ImageEnhance
 import psutil
 from datetime import datetime, timedelta
@@ -35,6 +36,7 @@ class general:
     def __init__(self, bot):
         self.bot = bot
         self._stats_task = bot.loop.create_task(self.checktime())
+        self._wait_task = bot.loop.create_task(self._status_check())
         self.JSON = 'data/general/rps.json'
         self.settings = dataIO.load_json(self.JSON)
         self.settings = defaultdict(lambda: rps_settings, self.settings)
@@ -44,15 +46,144 @@ class general:
         self._shop = dataIO.load_json(self._shop_file)
         self._stats_file = 'data/general/stats.json'
         self._stats = dataIO.load_json(self._stats_file)
+        self._status_file = 'data/general/statuscheck.json'
+        self._status = dataIO.load_json(self._status_file)
 
     def __unload(self):
         self._stats_task.cancel()
+        self._wait_task.cancel()
+
+    @commands.command()
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def reaction(self, ctx):
+        """Test your reaction time"""
+        interval1 = time.perf_counter()
+        await ctx.channel.trigger_typing()
+        interval2 = time.perf_counter()
+        ping = interval2-interval1
+        await ctx.send("In the next 2-10 seconds i'm going to send a message this is when you type whatever you want in the chat from there i will work out the time between me sending the message and you sending your message and that'll be your reaction time :stopwatch:")
+        await asyncio.sleep(randint(2, 10))
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+        try:
+            message = await ctx.send("**GO!**")
+            response = await self.bot.wait_for("message", check=check, timeout=60)
+        except asyncio.TimeoutError:
+            await ctx.send("Either you have a really poor reaction speed or you're afk (Timed out) :stopwatch:")
+            return
+        if response:
+            responsetime = response.created_at.timestamp()
+        await ctx.send("Your reaction speed was **{}ms** (Discord API ping and Message ping have been excluded)".format(round(((responsetime - message.created_at.timestamp()) - self.bot.latency - ping)*1000)))
+
+    @commands.command(aliases=["yt"])
+    async def youtube(self, ctx, *, search: str):
+        url = "https://www.googleapis.com/youtube/v3/search?key=AIzaSyA6ec19uw3cjWKOvysqeetDaOKx-d-RKls&part=snippet&safeSearch=none&{}".format(urllib.parse.urlencode({"q": search}))
+        request = requests.get(url)
+        try:
+            await ctx.send("https://www.youtube.com/watch?v={}".format(request.json()["items"][0]["id"]["videoId"]))
+        except:
+            await ctx.send("No results :no_entry:")
+
+    @commands.command()
+    async def invites(self, ctx, user: discord.Member=None):
+        if not user:
+            user = ctx.author
+        amount = 0
+        total = 0
+        entries = {}
+        for x in await ctx.guild.invites():
+            if user == x.inviter:
+                amount += x.uses
+            total += x.uses
+        for x in await ctx.guild.invites():
+            if x.uses > 0:
+                if "user" not in entries:
+                    entries["user"] = {}
+                if str(x.inviter.id) not in entries["user"]:
+                    entries["user"][str(x.inviter.id)] = {}
+                if "uses" not in entries["user"][str(x.inviter.id)]:
+                    entries["user"][str(x.inviter.id)]["uses"] = 0
+                entries["user"][str(x.inviter.id)]["uses"] += x.uses
+        if str(user.id) not in entries["user"]:
+            await ctx.send("{} has no invites :no_entry:".format(user))
+            return
+        sorted_invites = sorted(entries["user"].items(), key=lambda x: x[1]["uses"], reverse=True)
+        place = 0
+        percent = (amount/total)*100
+        if percent < 1:
+            percent = "<1"
+        else:
+            percent = round(percent)
+        for x in sorted_invites:
+            place += 1
+            if x[0] == str(user.id):
+                break 
+        await ctx.send("{} has **{}** invites which means they have the **{}** most invites. They have invited **{}%** of all users.".format(user, amount, await self.prefixfy(place), percent))
+        del entries
+
+    @commands.command(name="await")
+    async def _await(self, ctx, *users: discord.Member):
+        """The bot will notify you when a certain user or users come online"""
+        author = ctx.author
+        if not users:
+            await ctx.send("At least one user is required as an argument :no_entry:")
+            return
+        userlist = [x for x in users if x.status == discord.Status.offline and x != author]
+        if userlist == [] and len(users) > 1:
+            await ctx.send("All those users are already online :no_entry:")
+            return
+        if userlist == [] and len(users) == 1:
+            await ctx.send("That user is already online :no_entry:")
+            return
+        if str(author.id) not in self._status:
+            self._status[str(author.id)] = {}
+        if "users" not in self._status[str(author.id)]:
+            self._status[str(author.id)]["users"] = {}
+        for user in userlist:
+            if str(user.id) not in self._status[str(author.id)]["users"]:
+                self._status[str(author.id)]["users"][str(user.id)] = {}
+        dataIO.save_json(self._status_file, self._status)
+        await ctx.send("You will be notified when {} comes online.".format(", ".join(["`" + str(x) + "`" for x in userlist])))
+
+
+    @commands.command()
+    async def joinposition(self, ctx, user_or_number=None):
+        author = ctx.author
+        if not user_or_number:
+            user = author
+        elif "<" in user_or_number and "@" in user_or_number:
+            user_or_number = user_or_number.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
+            user = discord.utils.get(ctx.guild.members, id=int(user_or_number))
+        elif "#" in user_or_number:
+            number = len([x for x in user_or_number if "#" not in x])
+            usernum = number - 4
+            user = discord.utils.get(ctx.guild.members, name=user_or_number[:usernum], discriminator=user_or_number[usernum + 1:len(user_or_number)])
+        else:
+            try:
+                user = discord.utils.get(ctx.guild.members, id=int(user_or_number))
+            except:
+                user = discord.utils.get(ctx.guild.members, name=user_or_number)
+        if not user:
+            try:
+                number = int(user_or_number)
+                user = "".join([str(x) for x in sorted(ctx.guild.members, key=lambda x: x.joined_at)[number-1:number]])
+                if user == "":
+                    await ctx.send("Invalid join position :no_entry:")
+                    return
+                input = number
+                await ctx.send("**{}** was the {} user to join {}".format(user, await self.prefixfy(input), ctx.guild.name))
+            except:
+                await ctx.send("You have not given a valid number or user :no_entry:")
+                return
+        else:
+            input = sorted(ctx.guild.members, key=lambda x: x.joined_at).index(user) + 1
+            await ctx.send("{} was the **{}** user to join {}".format(user, await self.prefixfy(input), ctx.guild.name))            
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def shorten(self, ctx, *, url):
         url1 = "https://api.rebrandly.com/v1/links"
-        request = requests.post(url1, data=json.dumps({"destination": url}), headers={"Content-Type": "application/json", "apikey": ""})
+        request = requests.post(url1, data=json.dumps({"destination": url}), headers={"Content-Type": "application/json", "apikey": "apikey"})
         try:
             request.json()["message"]
             await ctx.send("Invalid Url :no_entry:")
@@ -75,25 +206,90 @@ class general:
 
     @commands.command(hidden=True)
     @checks.is_owner()
-    async def copyemote(self, ctx, emote: discord.PartialEmoji):
+    async def createemote(self, ctx, emote: str=None):
+        if not emote:
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+                split1 = url.split("/")
+                split2 = split1[6].split(".")
+                emotename = split2[0].replace("-", "_")
+            else:
+                await ctx.send("An image, url or emote is a required argument :no_entry:")
+                return
+        elif "https://" in emote or "http://" in emote:
+            url = emote
+            if "https://cdn.discordapp.com/attachments/" in url:
+                split1 = url.split("/")
+                split2 = split1[6].split(".")
+                emotename = split2[0].replace("-", "_")
+            else:
+                await ctx.send("Because you're uploading an image and i'm not able to grab the name, the emote needs a name respond with one below. (Respond Below)")
+                try:
+                    def check(m):
+                        return m.author == ctx.author and m.channel == ctx.channel
+                    response = await self.bot.wait_for("message", check=check, timeout=30)
+                    emotename = response.content.replace(" ", "_").replace("-", "_")
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out :stopwatch:")
+                    return
+        else:
+            try:
+                emote1 = self.bot.get_emoji(int(emote))
+                if not emote1:
+                    request = requests.get("https://cdn.discordapp.com/emojis/" + emote + ".gif")
+                    if request.text == "":
+                        url = "https://cdn.discordapp.com/emojis/" + emote + ".png"
+                    else:
+                        url = "https://cdn.discordapp.com/emojis/" + emote + ".gif"
+                    await ctx.send("I was unable to find this emote in any servers i am in so please provide a name for it below. (Respond Below)")
+                    try:
+                        def check(m):
+                            return m.author == ctx.author and m.channel == ctx.channel
+                        response = await self.bot.wait_for("message", check=check, timeout=30)
+                        emotename = response.content.replace(" ", "_").replace("-", "_")
+                    except asyncio.TimeoutError:
+                        await ctx.send("Timed out :stopwatch:")
+                        return
+                else:
+                    emotename = emote1.name
+                    url = emote1.url
+            except:
+                try:
+                    if emote.startswith("<a:"):
+                        splitemote = emote.split(":")
+                        emotename = splitemote[1]
+                        emoteid = str(splitemote[2])[:-1]
+                        extend = ".gif"
+                    else:
+                        splitemote = emote.split(":")
+                        emotename = splitemote[1]
+                        emoteid = str(splitemote[2])[:-1]
+                        extend = ".png"
+                except:
+                    await ctx.send("Invalid emoji :no_entry:")
+                    return
+                url = "https://cdn.discordapp.com/emojis/" + emoteid + extend
         with open("image.png", "wb") as f:
-            f.write(requests.get(emote.url).content)
+            f.write(requests.get(url).content)
         with open("image.png", "rb") as f:
             image = f.read()
             image = bytearray(image)
         try:
-            emoji = await ctx.guild.create_custom_emoji(name=emote.name, image=image)
+            emoji = await ctx.guild.create_custom_emoji(name=emotename, image=image)
         except discord.errors.Forbidden:
             await ctx.send("I do not have the manage emojis permission :no_entry:")
             return
         except discord.errors.HTTPException:
             await ctx.send("I was unable to make the emote this may be because you've hit the emote cap :no_entry:")
             return
+        except:
+            await ctx.send("Invalid emoji/url (Check if it's been deleted or you've made a typo) :no_entry:")
+            return
         await ctx.send("{} has been copied and created".format(emoji))
         os.remove("image.png")
 		
     @commands.command(pass_context=True, aliases=["emote"])
-    async def emoji(self, ctx, emote: discord.PartialEmoji):
+    async def emoji(self, ctx, emote: discord.Emoji):
         """Find a random emoji the bot can find"""
         s=discord.Embed(colour=ctx.message.author.colour) 
         s.set_author(name=emote.name, url=emote.url)		
@@ -130,7 +326,7 @@ class general:
         """Have a discord meme"""
         url = "https://api.weeb.sh/images/random?type=discord_memes"
         request = Request(url)
-        request.add_header("Authorization",  "")
+        request.add_header("Authorization",  "Wolke token")
         request.add_header('User-Agent', 'Mozilla/5.0')
         data = json.loads(urlopen(request).read().decode())
         s=discord.Embed(); s.set_image(url=data["url"]); s.set_footer(text="Powered by weeb.sh"); await ctx.send(embed=s)
@@ -138,7 +334,7 @@ class general:
     @commands.command(pass_context=True)
     async def google(self, ctx, *, search): 
         """returns the top 5 results from google of your search query"""
-        url = "https://www.googleapis.com/customsearch/v1?key=&cx=&{}".format(urllib.parse.urlencode({"q": search}))
+        url = "https://www.googleapis.com/customsearch/v1?key=key&cx=notouchy&{}".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
         try:
@@ -153,7 +349,7 @@ class general:
     @commands.command(pass_context=True)
     async def googleimage(self, ctx, *, search): 
         """returns an image based on your search from google"""
-        url = "https://www.googleapis.com/customsearch/v1?key=&cx=&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
+        url = "https://www.googleapis.com/customsearch/v1?key=notouchy&cx=same&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
         s=discord.Embed()
@@ -171,8 +367,8 @@ class general:
         url = "https://od-api.oxforddictionaries.com:443/api/v1/entries/en/{}".format(word)
         request = Request(url)
         request.add_header("Accept", "application/json")
-        request.add_header("app_id", "")
-        request.add_header("app_key", "")
+        request.add_header("app_id", "no")
+        request.add_header("app_key", "no")
         try:
             data = json.loads(urlopen(request).read().decode())
         except:
@@ -189,13 +385,13 @@ class general:
     @commands.command(pass_context=True)
     async def steam(self, ctx, *, profile_url: str):
         """To get a steam profile you need to click on the users profile and get the vanityurl which is the name after /id/{} <--- The name should be there""" 
-        idurl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=&{}".format(urllib.parse.urlencode({"vanityurl": profile_url.replace("https://steamcommunity.com/id/", "")}))
+        idurl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=no&{}".format(urllib.parse.urlencode({"vanityurl": profile_url.replace("https://steamcommunity.com/id/", "")}))
         idrequest = Request(idurl)
         try:
             id = json.loads(urlopen(idrequest).read().decode())["response"]["steamid"]
         except:
             id = profile_url.replace("https://steamcommunity.com/id/", "")
-        url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=&steamids={}".format(id)
+        url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=no&steamids={}".format(id)
         request = Request(url)
         try:
             data = json.loads(urlopen(request).read().decode())["response"]["players"][0]
@@ -590,14 +786,14 @@ class general:
     @commands.command()
     async def donate(self, ctx):
         """Get my donation link"""
-        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
+        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://paypal.me/pools/c/85Se5w2mRH)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
         s.set_author(name="Donate!", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=s)
         
     @commands.command()
     async def invite(self, ctx):
         """Get my invite link"""
-        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
+        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://paypal.me/pools/c/85Se5w2mRH)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
         s.set_author(name="Invite!", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=s)
         
@@ -660,6 +856,7 @@ class general:
             await user.send(embed=s)
         except:
             await ctx.send("I am unable to send a message to that user :no_entry:")
+            ctx.command.reset_cooldown(ctx)
             return
         await ctx.send("I have sent a message to **{}** <:done:403285928233402378>".format(user))
         
@@ -771,7 +968,7 @@ class general:
         if page < 1:
             await ctx.send("Invalid Page :no_entry:")
             return
-        users = "\n".join([str(x) for x in role.members])
+        users = "\n".join([x.mention for x in role.members])
         s=discord.Embed(description=users, colour=0xfff90d)
         s.set_author(name="Users in " + role.name + " ({})".format(number), icon_url=server.icon_url)
         s.set_footer(text="Page {}/{}".format(page, math.ceil(number / 20)))
@@ -892,7 +1089,7 @@ class general:
         if not user:
             user = author
         s=discord.Embed(colour=user.colour)
-        s.set_author(name="{}'s Avatar".format(user.name), icon_url=user.avatar_url, url=user.avatar_url.replace("webp", "png"))
+        s.set_author(name="{}'s Avatar".format(user.name), icon_url=user.avatar_url, url=user.avatar_url_as(size=1024))
         s.set_image(url=user.avatar_url.replace("webp", "png"))
         await ctx.send(embed=s)
         
@@ -903,7 +1100,7 @@ class general:
         colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
         colour = int(colour, 16)
         s=discord.Embed(colour=discord.Colour(value=colour))
-        s.set_author(name="{}'s Icon".format(server.name), icon_url=server.icon_url, url=server.icon_url.replace("webp", "png"))
+        s.set_author(name="{}'s Icon".format(server.name), icon_url=server.icon_url, url=server.icon_url_as(format="png", size=1024))
         s.set_image(url=server.icon_url.replace("webp", "png"))
         await ctx.send(embed=s)
         
@@ -930,19 +1127,22 @@ class general:
     async def trigger(self, ctx): 
         """Make the bot say something after a certain word is said"""
         server = ctx.guild 
-        if str(server.id) not in self.d:
-            self.d[str(server.id)] = {}
-            dataIO.save_json(self.file, self.d)
-        if "case" not in self.d[str(server.id)]:
-            self.d[str(server.id)]["case"] = True
-            dataIO.save_json(self.file, self.d)
-        if "toggle" not in self.d[str(server.id)]:
-            self.d[str(server.id)]["toggle"] = True
-            dataIO.save_json(self.file, self.d)
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            if str(server.id) not in self.d:
+                self.d[str(server.id)] = {}
+                dataIO.save_json(self.file, self.d)
+            if "case" not in self.d[str(server.id)]:
+                self.d[str(server.id)]["case"] = True
+                dataIO.save_json(self.file, self.d)
+            if "toggle" not in self.d[str(server.id)]:
+                self.d[str(server.id)]["toggle"] = True
+                dataIO.save_json(self.file, self.d)
         
         
     @trigger.command(pass_context=True)
-    @checks.admin_or_permissions(manage_guild=True)
+    @checks.has_permissions("manage_guild")
     async def toggle(self, ctx):
         """Toggle triggers on or off"""
         server = ctx.guild 
@@ -1004,7 +1204,7 @@ class general:
     
 
     @trigger.command(pass_context=True)
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def add(self, ctx, trigger, *, response):
         """Add a trigger to the server"""
         server = ctx.guild
@@ -1032,7 +1232,7 @@ class general:
         await ctx.send("The trigger **{}** has been created <:done:403285928233402378>".format(trigger))
         
     @trigger.command(pass_context=True)  
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def remove(self, ctx, *, trigger):
         """Remove a trigger to the server"""
         server = ctx.guild
@@ -1046,6 +1246,8 @@ class general:
         
     async def on_message(self, message):
         server = message.guild
+        if message.author == self.bot.user:
+            self._stats["messages"] += 1
         if str(server.id) not in self._stats:
             self._stats[str(server.id)] = {}
         if "messages" not in self._stats[str(server.id)]:
@@ -1319,7 +1521,7 @@ class general:
             description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
         roles=[x.mention for x in user.roles if x.name != "@everyone"][:20]
         roles = sorted(roles, key=[x.mention for x in server.role_hierarchy if x.name != "@everyone"].index)
-        s=discord.Embed(description=description, colour=user.colour, timestamp=__import__('datetime').datetime.utcnow())
+        s=discord.Embed(description=description, colour=user.colour, timestamp=datetime.utcnow())
         s.set_author(name=user.name, icon_url=user.avatar_url)
         s.set_thumbnail(url=user.avatar_url)
         s.add_field(name="Joined Discord", value=joined_discord)
@@ -1427,6 +1629,9 @@ class general:
         if "commands" not in self._stats:
             self._stats["commands"] = 0
             dataIO.save_json(self._stats_file, self._stats)
+        if "messages" not in self._stats:
+            self._stats["messages"] = 0
+            dataIO.save_json(self._stats_file, self._stats)
         m, s = divmod(ctx.message.created_at.timestamp() - self.bot.uptime, 60)
         h, m = divmod(m, 60)
         d, h = divmod(h, 24)
@@ -1470,6 +1675,7 @@ class general:
         s.add_field(name="Voice Channels", value=len([x for x in self.bot.get_all_channels() if isinstance(x, discord.VoiceChannel)]))
         s.add_field(name="Servers Joined Today", value=self._stats["servers"])
         s.add_field(name="Commands Used Today", value=self._stats["commands"])
+        s.add_field(name="Messages Sent Today", value=self._stats["messages"])
         s.add_field(name="Servers", value=len(self.bot.guilds))
         s.add_field(name="Users ({} total)".format(len(members)), value="{} Online\n{} Offline".format(online, offline))
         await ctx.send(embed=s)
@@ -1524,7 +1730,7 @@ class general:
     async def checktime(self):
         while not self.bot.is_closed():
             if datetime.utcnow().strftime("%H") == "23":
-                s=discord.Embed(colour=0xffff00, timestamp=datetime.now())
+                s=discord.Embed(colour=0xffff00, timestamp=datetime.utcnow())
                 s.set_author(name="Bot Logs", icon_url=self.bot.user.avatar_url)
                 if 86400/self._stats["commands"] >= 1:
                     s.add_field(name="Average Command Usage", value="1 every {}s".format(round(86400/self._stats["commands"])))
@@ -1535,11 +1741,29 @@ class general:
                 await self.bot.get_channel(445982429522690051).send(embed=s)
                 self._stats["servers"] = 0
                 self._stats["commands"] = 0
-                for serverid in [x for x in self._stats if x != "commands" and x != "servers"]:
+                self._stats["messages"] = 0
+                for serverid in [x for x in self._stats if x != "commands" and x != "servers" and x != "messages"]:
                     self._stats[serverid]["members"] = 0
                     self._stats[serverid]["messages"] = 0
                 dataIO.save_json(self._stats_file, self._stats) 
             await asyncio.sleep(3540)
+        
+    async def _status_check(self):
+        while not self.bot.is_closed():
+            for authorid in list(self._status)[:len(self._status)]:
+                author = discord.utils.get(self.bot.get_all_members(), id=int(authorid))
+                if author != None:
+                    for users in list(self._status[str(author.id)]["users"])[:len(self._status[str(author.id)]["users"])]:
+                        user = discord.utils.get(self.bot.get_all_members(), id=int(users))
+                        if user != None:
+                            if user.status != discord.Status.offline:
+                                try:
+                                    await author.send("**{}** is now online<:online:361440486998671381>".format(str(user)))
+                                    del self._status[str(author.id)]["users"][str(user.id)]
+                                    dataIO.save_json(self._status_file, self._status)
+                                except:
+                                    pass
+            await asyncio.sleep(5)
         
 def check_folders():
     if not os.path.exists("data/general"):
@@ -1560,6 +1784,10 @@ def check_files():
     if not dataIO.is_valid_json(f):
         dataIO.save_json(f, {})
         print('Creating default stats.json...')
+    f = 'data/general/statuscheck.json'
+    if not dataIO.is_valid_json(f):
+        dataIO.save_json(f, {})
+        print('Creating default statuscheck.json...')
         
 def setup(bot):
     check_folders()

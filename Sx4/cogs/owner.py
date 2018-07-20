@@ -3,6 +3,7 @@ import asyncio
 from discord.ext import commands
 from random import choice as randchoice
 import time
+import requests
 import datetime
 from utils import checks
 import os
@@ -13,11 +14,23 @@ class owner:
 		
     @commands.command(hidden=True)
     @checks.is_owner()
-    async def updateavatar(self, ctx, *, logoname):
-        with open('sx4-{}.png'.format(logoname), 'r') as r:
-            avatar_url = r.read()
-        await self.bot.user.edit_profile(password=None, avatar=avatar_url)
+    async def updateavatar(self, ctx, *, url=None):
+        if not url:
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+            else:
+                await ctx.send("Provide a valid image :no_entry:")
+                return
+        with open("logo.png", 'wb') as f:
+            f.write(requests.get(url).content)
+        with open("logo.png", "rb") as f:
+            avatar = f.read()
+        try:
+            await self.bot.user.edit(password=None, avatar=avatar)
+        except:
+            await ctx.send("Clap you've changed my profile picture to many times")
         await ctx.send("I have changed my profile picture")
+        os.remove("logo.png")
 		
     @commands.command(hidden=True)
     @checks.is_owner()

@@ -5,6 +5,7 @@ from utils import checks
 from datetime import datetime
 from collections import deque, defaultdict
 import os
+from utils import arghelp
 import re
 import logging
 import asyncio
@@ -23,27 +24,30 @@ class antilink:
     async def antilink(self, ctx):
         """Block out those advertisers"""
         server = ctx.guild
-        if str(server.id) not in self.settings:
-            self.settings[str(server.id)] = {}
-            dataIO.save_json(self.file_path, self.settings)
-        if "toggle" not in self.settings[str(server.id)]:
-            self.settings[str(server.id)]["toggle"] = False
-            dataIO.save_json(self.file_path, self.settings)
-        if "modtoggle" not in self.settings[str(server.id)]:
-            self.settings[str(server.id)]["modtoggle"] = True
-            dataIO.save_json(self.file_path, self.settings)
-        if "admintoggle" not in self.settings[str(server.id)]:
-            self.settings[str(server.id)]["admintoggle"] = False
-            dataIO.save_json(self.file_path, self.settings)
-        if "bottoggle" not in self.settings[str(server.id)]:
-            self.settings[str(server.id)]["bottoggle"] = True
-            dataIO.save_json(self.file_path, self.settings)
-        if "channels" not in self.settings[str(server.id)]:
-            self.settings[str(server.id)]["channels"] = {}
-            dataIO.save_json(self.file_path, self.settings)
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            if str(server.id) not in self.settings:
+                self.settings[str(server.id)] = {}
+                dataIO.save_json(self.file_path, self.settings)
+            if "toggle" not in self.settings[str(server.id)]:
+                self.settings[str(server.id)]["toggle"] = False
+                dataIO.save_json(self.file_path, self.settings)
+            if "modtoggle" not in self.settings[str(server.id)]:
+                self.settings[str(server.id)]["modtoggle"] = True
+                dataIO.save_json(self.file_path, self.settings)
+            if "admintoggle" not in self.settings[str(server.id)]:
+                self.settings[str(server.id)]["admintoggle"] = False
+                dataIO.save_json(self.file_path, self.settings)
+            if "bottoggle" not in self.settings[str(server.id)]:
+                self.settings[str(server.id)]["bottoggle"] = True
+                dataIO.save_json(self.file_path, self.settings)
+            if "channels" not in self.settings[str(server.id)]:
+                self.settings[str(server.id)]["channels"] = {}
+                dataIO.save_json(self.file_path, self.settings)
 		
     @antilink.command()
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def toggle(self, ctx):
         """Toggle antilink on or off"""
         server = ctx.guild
@@ -59,7 +63,7 @@ class antilink:
             return
 		
     @antilink.command() 
-    @checks.admin_or_permissions(manage_guild=True)
+    @checks.has_permissions("manage_guild")
     async def modtoggle(self, ctx):
         """Choose whether you want your mods to be able to send links or not (manage_message and above are classed as mods)"""
         server = ctx.guild
@@ -75,7 +79,7 @@ class antilink:
             return
 			
     @antilink.command() 
-    @checks.admin_or_permissions(manage_guild=True)
+    @checks.has_permissions("manage_guild")
     async def admintoggle(self, ctx):
         """Choose whether you want your admins to be able to send links or not (administrator perms are classed as admins)"""
         server = ctx.guild
@@ -91,7 +95,7 @@ class antilink:
             return
 			
     @antilink.command()
-    @checks.admin_or_permissions(manage_guild=True)
+    @checks.has_permissions("manage_guild")
     async def togglebot(self, ctx):
         """Choose whether bots can send links or not"""
         server = ctx.guild
@@ -107,7 +111,7 @@ class antilink:
             return
 			
     @antilink.command()
-    @checks.admin_or_permissions(manage_guild=True)
+    @checks.has_permissions("manage_guild")
     async def togglechannel(self, ctx, channel: discord.TextChannel=None): 
         """Choose what channels you want to count towards antilink"""
         server = ctx.guild

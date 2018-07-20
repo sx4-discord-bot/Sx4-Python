@@ -358,12 +358,13 @@ class image:
             with open('image.jpg', 'wb') as f:
                 f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             img = Image.open("vr.png").convert("RGBA")
+            img = img.resize((493, 511))
             img2 = Image.open("image.jpg").convert("RGBA")
             image = Image.new('RGBA', (493, 511), (255, 255, 255, 0))
             img2 = img2.resize((225, 150))
             img2.convert('RGBA')
-            image.paste(img2, (-2, 295), img2)
-            image.paste(img, (-7, 0), img)
+            image.paste(img2, (15, 310), img2)
+            image.paste(img, (0, 0), img)
             image.save("result.png")
             await ctx.send(file=discord.File("result.png", "result.png"))
             try:
@@ -503,30 +504,15 @@ class image:
             except:
                 await ctx.send("Invalid user :no_entry:")
                 return
-            if user == self.bot.user:
-                user = author
-                await ctx.send("No u")
             url = user.avatar_url
-            if url == "":
-                url = user.default_avatar_url
         else:
             try:
                 user = ctx.message.guild.get_member_named(user_or_imagelink)
-                if user == self.bot.user:
-                    user = author
-                    await ctx.send("No u")
                 url = user.avatar_url
-                if url == "":
-                    url = user.default_avatar_url
             except:
                 try:
                     user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    if user == self.bot.user:
-                        user = author
-                        await ctx.send("No u")
                     url = user.avatar_url
-                    if url == "":
-                        url = user.default_avatar_url
                 except:
                     url = user_or_imagelink
         try:
@@ -534,12 +520,12 @@ class image:
                 f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
             img = Image.open("image.jpg").convert("RGBA")
             img = img.resize((600, 600))
-            red = Image.new("RGBA", (600, 100), (255, 0, 0, 100))
-            orange = Image.new("RGBA", (600, 100), (255, 69, 0, 100))
-            yellow = Image.new("RGBA", (600, 100), (255, 220, 0, 100))
-            green = Image.new("RGBA", (600, 100), (0, 100, 0, 100))
-            blue = Image.new("RGBA", (600, 100), (0, 0, 220, 100))
-            purple = Image.new("RGBA", (600, 100), (138, 43, 226, 100))
+            red = Image.new("RGBA", (600, 100), (255, 0, 0, 125))
+            orange = Image.new("RGBA", (600, 100), (255, 69, 0, 125))
+            yellow = Image.new("RGBA", (600, 100), (255, 220, 0, 125))
+            green = Image.new("RGBA", (600, 100), (0, 100, 0, 125))
+            blue = Image.new("RGBA", (600, 100), (0, 0, 220, 125))
+            purple = Image.new("RGBA", (600, 100), (138, 43, 226, 125))
             img.paste(red, (0, 0), red)
             img.paste(orange, (0, 100), orange)
             img.paste(yellow, (0, 200), yellow)

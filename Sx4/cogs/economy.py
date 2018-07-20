@@ -7,6 +7,7 @@ from collections import namedtuple, defaultdict, deque
 from datetime import datetime
 from random import choice as randchoice
 from random import randint
+from utils import arghelp
 from copy import deepcopy
 from utils import checks
 from enum import Enum
@@ -24,10 +25,11 @@ import random
 from random import choice
 import asyncio
 from difflib import get_close_matches
+import requests
 
 
 endpoint = "https://discordbots.org/api/bots/440996323156819968/check?userId={userId}"
-token = ""
+token = "token"
                     
 
 class economy:
@@ -121,7 +123,7 @@ class economy:
         """Get some extra credits by simply upvoting the bot on dbl"""
         author = ctx.author
         try:
-            m, s = divmod(self.settings["user"][str(author.id)]["votetime"] - ctx.message.created_at.timestamp() + 86400, 60)
+            m, s = divmod(self.settings["user"][str(author.id)]["votetime"] - ctx.message.created_at.timestamp() + 43200, 60)
             h, m = divmod(m, 60)
             if h == 0:
                 time = "%d minutes %d seconds" % (m, s)
@@ -129,14 +131,19 @@ class economy:
                 time = "%d seconds" % (s)
             else:
                 time = "%d hours %d minutes %d seconds" % (h, m, s)
-            if ctx.message.created_at.timestamp() - self.settings["user"][str(author.id)]["votetime"] <= 86400:
+            if ctx.message.created_at.timestamp() - self.settings["user"][str(author.id)]["votetime"] <= 43200:
                 await ctx.send("You are too early, come collect your vote bonus again in {}".format(time))
                 return
         except:
             pass
-        if has_voted(author.id):
+        if has_voted(author.id) and requests.get("https://discordbots.org/api/weekend").json()["is_weekend"] == False:
             self.settings["user"][str(author.id)]["balance"] += 250
-            await ctx.send("Thanks for voting! Here's **$250**. Come back and vote in 24 hours for another **$250**!")
+            await ctx.send("Thanks for voting! Here's **$250**. Come back and vote in 12 hours for another **$250**!")
+            self.settings["user"][str(author.id)]["votetime"] = ctx.message.created_at.timestamp()
+            dataIO.save_json(self.location, self.settings)
+        elif has_voted(author.id) and requests.get("https://discordbots.org/api/weekend").json()["is_weekend"] == True:
+            self.settings["user"][str(author.id)]["balance"] += 500
+            await ctx.send("Thanks for voting! As it's double vote weekend here's **$500**. Come back and vote in 12 hours for another **$500**!")
             self.settings["user"][str(author.id)]["votetime"] = ctx.message.created_at.timestamp()
             dataIO.save_json(self.location, self.settings)
         else:
@@ -303,11 +310,18 @@ class economy:
             draw.text((1500, 950), "Badges:", colour, font=font)
         size = 300
         number = 0
+        left = 300
+        i = 0
         for x in range(len(str(user.name))):
-            size -= 10
+            i += 1
             number -= 10
+            left -= 17
+            if i >= 12:
+                size -= 5
+            else:
+                size -= 9    
         fontbig = ImageFont.truetype("exo.regular.otf", size)
-        draw.text((200, 0), "{}'s Profile:".format(user.name), colour, font=fontbig)
+        draw.text((left, 0), "{}'s Profile:".format(user.name), colour, font=fontbig)
         n = 0
         m = 55
         j = 0
@@ -456,7 +470,7 @@ class economy:
         """Check how much money you have"""
         colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
         colour = int(colour, 16)
-        if not user:
+        if not user or user == ctx.author:
             user = ctx.author
             await self._set_bank_user(user)
             try:
@@ -471,6 +485,46 @@ class economy:
                 s=discord.Embed(description="Their balance: **${}**".format(self.settings["user"][str(user.id)]["balance"]), colour=colour)
             except:
                 s=discord.Embed(description="Their balance: **$0**", colour=colour)
+            s.set_author(name=user.name, icon_url=user.avatar_url)
+            await ctx.send(embed=s)
+
+    @commands.command(name="networth")
+    async def _networth(self, ctx, *, user: discord.Member=None):
+        check = False
+        if not user:
+            user = ctx.author
+            check = True
+        colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
+        colour = int(colour, 16)
+        all_items = self._shop["picitems"] + self._shop["items"] + self._mine["items"]
+        if str(user.id) in self.settings["user"]:
+            user_data = self.settings["user"][str(user.id)] 
+            worth = 0
+            items = [item for item in all_items if item["name"] in user_data["items"]]
+            for item in items:
+                if "durability" in item and user_data["pickdur"] is not None:
+                    worth += round((item["price"]/item["durability"]) * user_data["pickdur"])
+                else:
+                    worth += item["price"] * user_data["items"].count(item["name"])
+            for item2 in [item for item in self._factories["factory"] if item["name"] in user_data["items"]]:
+                for item3 in self._mine["items"]:
+                    if item3["name"] == item2["item"]:
+                        worth += item2["price"]*item3["price"]
+            worth += user_data["balance"]
+        if check is True or user == ctx.author:
+            await self._set_bank_user(user)
+            try:
+                s=discord.Embed(description="Your networth: **${}**".format(worth), colour=colour)
+            except:
+                s=discord.Embed(description="Your networth: **$0**", colour=colour)
+            s.set_author(name=user.name, icon_url=user.avatar_url)
+            await ctx.send(embed=s)
+        else:
+            await self._set_bank_user(user)
+            try:
+                s=discord.Embed(description="Their networth: **${}**".format(worth), colour=colour)
+            except:
+                s=discord.Embed(description="Their networth: **$0**", colour=colour)
             s.set_author(name=user.name, icon_url=user.avatar_url)
             await ctx.send(embed=s)
             
@@ -575,6 +629,7 @@ class economy:
                                     response = await self.bot.wait_for("message", timeout=60, check=repair)
                                 except asyncio.TimeoutError:
                                     await msg.delete()
+                                    return
                                 if response.content.lower() == "yes": 
                                     await msg.delete()
                                     for x in range(calc):
@@ -606,6 +661,7 @@ class economy:
                                     response = await self.bot.wait_for("message", timeout=60, check=repair2)
                                 except asyncio.TimeoutError:
                                     await msg.delete()
+                                    return
                                 if response.content.lower() == "yes": 
                                     await msg.delete()
                                     for x in range(calc):
@@ -637,11 +693,12 @@ class economy:
         if amount < 1:
             await ctx.send("You can't give them less than a dollar, too mean :no_entry:")
             return
-        self.settings["user"][str(user.id)]["balance"] += amount
+        self.settings["user"][str(user.id)]["balance"] += round(amount * 0.9)
         self.settings["user"][str(author.id)]["balance"] -= amount
         dataIO.save_json(self.location, self.settings)
-        s=discord.Embed(description="You have gifted **${}** to **{}**\n\n{}'s new balance: **${}**\n{}'s new balance: **${}**".format(amount, user.name, author.name, self.settings["user"][str(author.id)]["balance"], user.name, self.settings["user"][str(user.id)]["balance"]), colour=author.colour)
+        s=discord.Embed(description="You have gifted **${}** to **{}**\n\n{}'s new balance: **${}**\n{}'s new balance: **${}**".format(round(amount*0.9), user.name, author.name, self.settings["user"][str(author.id)]["balance"], user.name, self.settings["user"][str(user.id)]["balance"]), colour=author.colour)
         s.set_author(name="{} → {}".format(author.name, user.name), icon_url="https://png.kisspng.com/20171216/8cb/5a355146d99f18.7870744715134436548914.png")
+        s.set_footer(text="10% Tax is taken per transaction")
         await ctx.send(embed=s)
 		
     @commands.command(aliases=["givemats"])
@@ -716,7 +773,10 @@ class economy:
     @commands.group()
     async def factory(self, ctx):
         """Factorys you can buy with recourses"""
-        await self._set_bank(ctx.author)
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            await self._set_bank(ctx.author)
 
     @factory.command(aliases=["buy"])
     async def purchase(self, ctx, *, factory_name):
@@ -883,7 +943,10 @@ class economy:
     @commands.group()
     async def auction(self, ctx):
         """The Sx4 Auction house"""
-        pass
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            pass
         
     @auction.command()
     async def refund(self, ctx):
@@ -1359,7 +1422,7 @@ class economy:
                         chance = randint(0, number)
                         if chance == 0:
                             author_data["items"].append(item2["name"])
-                            materials += item2["name"] + ", "
+                            materials += item2["name"] + item2["emote"] + ", "
                     materials = materials[:-2]
                     if materials == "":
                         materials = "Absolutely nothing"
@@ -1554,14 +1617,17 @@ class economy:
     @commands.group(aliases=["lb"])  
     async def leaderboard(self, ctx):
         """See where you're ranked"""
-        pass
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            pass
         
     @leaderboard.command(aliases=["rep"])
     async def reputation(self, ctx, page: int=None):
         """Leaderboard for most reputation"""
         if not page:
             page = 1
-        if page - 1 > len(self.settings["user"]) / 10: 
+        if page - 1 > len([x for x in self.settings["user"].items() if x[1]["rep"] != 0]) / 10: 
             await ctx.send("Invalid page :no_entry:") 
             return    
         if page <= 0: 
@@ -1571,7 +1637,7 @@ class economy:
         i = page*10-10;
         n = 0;
         sortedrep2 = sorted(self.settings["user"].items(), key=lambda x: x[1]["rep"], reverse=True)
-        sortedrep = sorted(self.settings["user"].items(), key=lambda x: x[1]["rep"], reverse=True)[page*10-10:page*10]
+        sortedrep = sorted([x for x in self.settings["user"].items() if x[1]["rep"] != 0], key=lambda x: x[1]["rep"], reverse=True)[page*10-10:page*10]
         for x in sortedrep2:
             n = n + 1
             if str(ctx.author.id) == x[0]:
@@ -1583,7 +1649,7 @@ class economy:
                 user = "Unknown User"
             msg+= "{}. `{}` - {} reputation\n".format(i, user, x[1]["rep"])
         s=discord.Embed(title="Reputation Leaderboard", description=msg, colour=0xfff90d)
-        s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.author.name, n, page, math.ceil(len(self.settings["user"])/10)), icon_url=ctx.author.avatar_url)
+        s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.author.name, n, page, math.ceil(len([x for x in self.settings["user"].items() if x[1]["rep"] != 0])/10)), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=s)
         
     @leaderboard.command()
@@ -1880,8 +1946,14 @@ class economy:
             if author == user:
                 del self.data["user"][str(user.id)]["marriedto"][str(author.id)]
             else:
-                del self.data["user"][str(user.id)]["marriedto"][str(author.id)]
-                del self.data["user"][str(author.id)]["marriedto"][str(user.id)]
+                try:
+                    del self.data["user"][str(user.id)]["marriedto"][str(author.id)]
+                except:
+                    pass
+                try:
+                    del self.data["user"][str(author.id)]["marriedto"][str(user.id)]
+                except: 
+                    pass
             dataIO.save_json(self.file_path, self.data)
             await ctx.send("Feels bad **{}**, Argument?".format(user.name))
         else:
@@ -1953,18 +2025,21 @@ class economy:
     async def set(self, ctx):
         """Set aspects about yourself"""
         author = ctx.author
-        if str(author.id) not in self.settingss:
-            self.settingss[str(author.id)] = {}
-            dataIO.save_json(self.JSON, self.settingss)
-        if "BIRTHDAY" not in self.settingss[str(author.id)]:
-            self.settingss[str(author.id)]["BIRTHDAY"] = None
-            dataIO.save_json(self.JSON, self.settingss)
-        if "DESCRIPTION" not in self.settingss[str(author.id)]:
-            self.settingss[str(author.id)]["DESCRIPTION"] = None
-            dataIO.save_json(self.JSON, self.settingss)
-        if "HEIGHT" not in self.settingss[str(author.id)]:
-            self.settingss[str(author.id)]["HEIGHT"] = None
-            dataIO.save_json(self.JSON, self.settingss)
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            if str(author.id) not in self.settingss:
+                self.settingss[str(author.id)] = {}
+                dataIO.save_json(self.JSON, self.settingss)
+            if "BIRTHDAY" not in self.settingss[str(author.id)]:
+                self.settingss[str(author.id)]["BIRTHDAY"] = None
+                dataIO.save_json(self.JSON, self.settingss)
+            if "DESCRIPTION" not in self.settingss[str(author.id)]:
+                self.settingss[str(author.id)]["DESCRIPTION"] = None
+                dataIO.save_json(self.JSON, self.settingss)
+            if "HEIGHT" not in self.settingss[str(author.id)]:
+                self.settingss[str(author.id)]["HEIGHT"] = None
+                dataIO.save_json(self.JSON, self.settingss)
             
     @set.command()
     async def height(self, ctx, feet: int, inches: int):

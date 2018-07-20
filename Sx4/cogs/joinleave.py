@@ -6,6 +6,7 @@ from datetime import datetime
 from collections import deque, defaultdict
 import os
 import re
+from utils import arghelp
 import math
 import logging
 import requests
@@ -28,13 +29,16 @@ class welcomer:
         self.settings = defaultdict(lambda: settings, self.settings)
 
     @commands.group()
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def imgwelcomer(self, ctx):
         """Make the bot welcome people for you with an image"""
-        pass
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            pass
 
     @imgwelcomer.command(name="toggle")
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def _toggle(self, ctx):
         "toggle image welcomer on or off"
         server = ctx.guild
@@ -50,10 +54,10 @@ class welcomer:
             return
 
     @imgwelcomer.command()
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def banner(self, ctx, banner: str=None):
         """Adds a banner to the image welcomer, when added the image welcomer changes resolution to 2560 x 1440 so a banner that size would be ideal"""
-        if not ctx.author in [x for x in self.bot.get_guild(330399610273136641).members if ctx.author == x and discord.utils.get(self.bot.get_guild(330399610273136641).roles, id=457123569260953600) in x.roles]:
+        if not ctx.author in [x for x in self.bot.get_guild(330399610273136641).members if ctx.author == x and discord.utils.get(self.bot.get_guild(330399610273136641).roles, id=355083059336314881) in x.roles]:
             if not checks.is_owner_c(ctx.author):
                 await ctx.send("You have to have donated to use this feature :no_entry:")
                 return
@@ -91,10 +95,13 @@ class welcomer:
     @commands.group()
     async def welcomer(self, ctx):
         """Make the bot welcome people for you"""
-        pass
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            pass
         
     @welcomer.command()
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def toggle(self, ctx): 
         """Toggle welcomer on or off"""
         server = ctx.guild
@@ -110,7 +117,7 @@ class welcomer:
             return
             
     @welcomer.command()
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def dmtoggle(self, ctx): 
         """Toggle whether you want the bot to dm the user or not"""
         server = ctx.guild
@@ -126,7 +133,7 @@ class welcomer:
             return
 
     @welcomer.command()
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def leavetoggle(self, ctx):
         """Toggle if you want the leave message or not"""
         server = ctx.guild
@@ -142,7 +149,7 @@ class welcomer:
             return
     
     @welcomer.command()
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def joinmessage(self, ctx, *, message: str=None):
         """Set the joining message"""
         server = ctx.guild
@@ -165,7 +172,7 @@ Example: `s?welcomer message {user.mention}, Welcome to **{server}**. We now hav
         await ctx.send("Your message has been set <:done:403285928233402378>")
         
     @welcomer.command()
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def leavemessage(self, ctx, *, message: str=None):
         """Set the leaving message"""
         server = ctx.guild
@@ -213,7 +220,7 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         await ctx.send(message2)
             
     @welcomer.command()
-    @checks.admin_or_permissions(manage_messages=True)
+    @checks.has_permissions("manage_messages")
     async def channel(self, ctx, channel: discord.TextChannel):
         """Set the channel of where you want the bot to welcome people"""
         server = ctx.guild
@@ -285,10 +292,12 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         message = message.replace("{server.members}", str(len(server.members))) 
         message = message.replace("{server.members.prefix}", await self.prefixfy(server)) 
         if self.settings[str(server.id)]["toggle"] == True:
-            if self.settings[str(server.id)]["imgwelcomertog"] == True:
+            if self.settings[str(server.id)]["dm"] == True and self.settings[str(server.id)]["imgwelcomertog"] == True:
+                await member.send(content=message, file=await self.image_welcomer(author, server))
+            elif self.settings[str(server.id)]["dm"] == True and self.settings[str(server.id)]["imgwelcomertog"] == False:
+                await member.send(content=message)
+            elif self.settings[str(server.id)]["imgwelcomertog"] == True and self.settings[str(server.id)]["dm"] == False:
                 await server.get_channel(int(channel)).send(content=message, file=await self.image_welcomer(author, server))
-            elif self.settings[str(server.id)]["dm"] == True:
-                await member.send(message)
             else:
                 await server.get_channel(int(channel)).send(message)
         else:

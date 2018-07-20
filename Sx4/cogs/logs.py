@@ -9,6 +9,7 @@ import re
 import logging
 import asyncio
 import random
+from utils import arghelp
 import time
 import discord
 from discord.ext import commands
@@ -27,18 +28,21 @@ class logs:
     async def logs(self, ctx):
         """Log actions in your server"""
         server = ctx.message.guild
-        if str(server.id) not in self.data:
-            self.data[str(server.id)] = {}
-            dataIO.save_json(self.JSON, self.data)
-        if "channel" not in self.data[str(server.id)]:
-            self.data[str(server.id)]["channel"] = {}
-            dataIO.save_json(self.JSON, self.data)
-        if "toggle" not in self.data[str(server.id)]:
-            self.data[str(server.id)]["toggle"] = False
-            dataIO.save_json(self.JSON, self.data)
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            if str(server.id) not in self.data:
+                self.data[str(server.id)] = {}
+                dataIO.save_json(self.JSON, self.data)
+            if "channel" not in self.data[str(server.id)]:
+                self.data[str(server.id)]["channel"] = {}
+                dataIO.save_json(self.JSON, self.data)
+            if "toggle" not in self.data[str(server.id)]:
+                self.data[str(server.id)]["toggle"] = False
+                dataIO.save_json(self.JSON, self.data)
 		
     @logs.command()
-    @checks.admin_or_permissions(manage_guild=True) 
+    @checks.has_permissions("manage_guild")
     async def channel(self, ctx, channel: discord.TextChannel=None):
         """Set the channel where you want stuff to be logged"""
         server = ctx.message.guild
@@ -49,7 +53,7 @@ class logs:
         await ctx.send("Logs will be recorded in <#{}> if toggled on <:done:403285928233402378>".format(channel.id))
 		
     @logs.command()
-    @checks.admin_or_permissions(manage_guild=True)  
+    @checks.has_permissions("manage_guild")
     async def toggle(self, ctx):
         """Toggle logs on or off"""
         server = ctx.message.guild
@@ -174,8 +178,10 @@ class logs:
 			
     async def on_member_ban(self, guild, user):
         server = guild
+        moderator = "Unknown"
         for x in await server.audit_logs(limit=1).flatten():
-            moderator = x.user
+            if x.action == discord.AuditLogAction.ban:
+                moderator = x.user
         s=discord.Embed(description="**{}** has been banned by **{}**".format(user.name, moderator), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=user, icon_url=user.avatar_url)
         s.set_footer(text="User ID: {}".format(user.id))
@@ -184,8 +190,10 @@ class logs:
 			
     async def on_member_unban(self, guild, user):
         server = guild
+        moderator = "Unknown"
         for x in await server.audit_logs(limit=1).flatten():
-            moderator = x.user
+            if x.action == discord.AuditLogAction.unban:
+                moderator = x.user
         s=discord.Embed(description="**{}** has been unbanned by **{}**".format(user.name, moderator), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=user, icon_url=user.avatar_url)
         s.set_footer(text="User ID: {}".format(user.id))

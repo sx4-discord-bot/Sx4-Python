@@ -11,6 +11,7 @@ from PIL import Image, ImageFilter, ImageEnhance
 import psutil
 from datetime import datetime, timedelta
 from utils import checks
+from utils import arghelp
 from urllib.request import Request, urlopen
 import json
 import urllib
@@ -36,19 +37,28 @@ class worldcup:
     @commands.group()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def worldcup(self, ctx):
-        pass
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            pass
 
     @worldcup.command()
     async def today(self, ctx):
         url = "http://worldcup.sfg.io/matches/today"
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
+        if data == []:
+            await ctx.send("There are no world cup fixtures today :no_entry:")
+            return
         s=discord.Embed(title="World Cup Fixtures Today")
         for x in data:
             if x["status"] == "future":
-                s.add_field(name="{} vs {}".format(x["home_team"]["country"], x["away_team"]["country"]), value="Kick off: {}".format((datetime.strptime(x["datetime"], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)).strftime("%H:%M BST")))
+                s.add_field(name="{} vs {} ({})".format(x["home_team"]["country"], x["away_team"]["country"], x["stage_name"]), value="Kick off: {}".format((datetime.strptime(x["datetime"], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)).strftime("%H:%M BST")), inline=False)
             else:
-                s.add_field(name="{} vs {}".format(x["home_team"]["country"], x["away_team"]["country"]), value="{} - {}\nTime: {}".format(x["home_team"]["goals"], x["away_team"]["goals"], x["time"]))
+                if x["home_team"]["penalties"] != 0 and x["away_team"]["penalties"]:
+                    s.add_field(name="{} vs {} ({})".format(x["home_team"]["country"], x["away_team"]["country"], x["stage_name"]), value="{} - {} ({} - {} pen)\nTime: {}".format(x["home_team"]["goals"], x["away_team"]["goals"], x["home_team"]["penalties"], x["away_team"]["penalties"], x["time"]), inline=False)
+                else:
+                    s.add_field(name="{} vs {} ({})".format(x["home_team"]["country"], x["away_team"]["country"], x["stage_name"]), value="{} - {}\nTime: {}".format(x["home_team"]["goals"], x["away_team"]["goals"], x["time"]), inline=False)
         await ctx.send(embed=s)
 
     @worldcup.command()
@@ -120,14 +130,16 @@ class worldcup:
             s.add_field(name="Goal Conceded", value=x["goals_against"])
             s.add_field(name="Goal Difference", value=x["goal_differential"])
         upcoming = "\n".join(["{} vs {}".format(x["home_team"]["country"], x["away_team"]["country"]) for x in matches if x["status"] == "future"])
-        finished = "\n".join(["{} vs {} ({} - {})".format(x["home_team"]["country"], x["away_team"]["country"], x["home_team"]["goals"], x["away_team"]["goals"]) for x in matches if x["status"] == "completed"])
-        current = "\n".join(["{} vs {} ({} - {})\nTime: {}".format(x["home_team"]["country"], x["away_team"]["country"], x["home_team"]["goals"], x["away_team"]["goals"], x["time"]) for x in matches if x["status"] == "in progress"])
+        finished = "\n".join(["{} vs {} | {} - {} ({} - {} pen)".format(x["home_team"]["country"], x["away_team"]["country"], x["home_team"]["goals"], x["away_team"]["goals"], x["home_team"]["penalties"], x["away_team"]["penalties"]) for x in matches if x["status"] == "completed" and x["home_team"]["penalties"] != 0 and x["away_team"]["penalties"] != 0])
+        finished1 = "\n".join(["{} vs {} | {} - {}".format(x["home_team"]["country"], x["away_team"]["country"], x["home_team"]["goals"], x["away_team"]["goals"]) for x in matches if x["status"] == "completed" and x["home_team"]["penalties"] == 0 and x["away_team"]["penalties"] == 0])
+        current1 = "\n".join(["{} vs {} | {} - {} ({} - {} pen)\nTime: {}".format(x["home_team"]["country"], x["away_team"]["country"], x["home_team"]["goals"], x["away_team"]["goals"], x["home_team"]["penalties"], x["away_team"]["penalties"], x["time"]) for x in matches if x["status"] == "in progress" and x["home_team"]["penalties"] != 0 and x["away_team"]["penalties"] != 0])
+        current = "\n".join(["{} vs {} | {} - {}\nTime: {}".format(x["home_team"]["country"], x["away_team"]["country"], x["home_team"]["goals"], x["away_team"]["goals"], x["time"]) for x in matches if x["status"] == "in progress" and x["home_team"]["penalties"] == 0 and x["away_team"]["penalties"] == 0])
         if upcoming != "":
             s.add_field(name="Upcoming Matches", value=upcoming)
         if finished != "":
-            s.add_field(name="Matches Played", value=finished)
+            s.add_field(name="Matches Played", value=finished + "\n" + finished1)
         if current != "":
-            s.add_field(name="Currently Playing", value=current)
+            s.add_field(name="Currently Playing", value=current + "\n" + current1)
         await ctx.send(embed=s)
 
 

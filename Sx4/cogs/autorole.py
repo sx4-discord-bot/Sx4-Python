@@ -10,6 +10,7 @@ import logging
 import asyncio
 import random
 import time
+from utils import arghelp
 import discord
 from discord.ext import commands
 from random import randint
@@ -28,18 +29,21 @@ class autorole:
     async def autorole(self, ctx):
         """Allows a role to be added to a user when they join the server"""
         server = ctx.guild
-        if str(server.id) not in self.data:
-            self.data[str(server.id)] = {}
-            dataIO.save_json(self.JSON, self.data)
-        if "role" not in self.data[str(server.id)]:
-            self.data[str(server.id)]["role"] = {}
-            dataIO.save_json(self.JSON, self.data)
-        if "toggle" not in self.data[str(server.id)]:
-            self.data[str(server.id)]["toggle"] = False
-            dataIO.save_json(self.JSON, self.data)
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            if str(server.id) not in self.data:
+                self.data[str(server.id)] = {}
+                dataIO.save_json(self.JSON, self.data)
+            if "role" not in self.data[str(server.id)]:
+                self.data[str(server.id)]["role"] = {}
+                dataIO.save_json(self.JSON, self.data)
+            if "toggle" not in self.data[str(server.id)]:
+               self.data[str(server.id)]["toggle"] = False
+               dataIO.save_json(self.JSON, self.data)
 
     @autorole.command() 
-    @checks.admin_or_permissions(manage_roles=True)
+    @checks.has_permissions("manage_roles")
     async def role(self, ctx, *, role: discord.Role):
         """Set the role to be added to a user whne they join"""
         server = ctx.guild
@@ -48,7 +52,7 @@ class autorole:
         await ctx.send("The autorole role is now **{}** <:done:403285928233402378>".format(role.name))
 		
     @autorole.command()
-    @checks.admin_or_permissions(manage_roles=True)
+    @checks.has_permissions("manage_roles")
     async def fix(self, ctx):
         """Has the bot been offline and missed a few users? Use this to add the role to everyone who doesn't have it"""
         server = ctx.guild
@@ -63,7 +67,7 @@ class autorole:
             
         
     @autorole.command()
-    @checks.admin_or_permissions(manage_roles=True)
+    @checks.has_permissions("manage_roles")
     async def toggle(self, ctx):
         """Toggle autorole on or off"""
         server = ctx.guild

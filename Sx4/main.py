@@ -9,6 +9,7 @@ from utils import checks
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 import requests
+from cogs.mod import Prefix
 import aiohttp
 import json
 import traceback
@@ -16,16 +17,31 @@ import sys
 import os
 import subprocess
 
-bot = commands.AutoShardedBot(command_prefix=['sx4 ', 's?', 'S?', '<@440996323156819968> ']) 
+
+async def prefix_function(bot, message):
+    try:
+        return [x.encode().decode() for x in Prefix._prefixes["userprefix"][str(message.author.id)]] + ['<@440996323156819968> ']
+    except:
+        pass
+    try:
+        return [x.encode().decode() for x in Prefix._prefixes["serverprefix"][str(message.guild.id)]] + ['<@440996323156819968> ']
+    except:
+        pass
+    return ['sx4 ', 's?', 'S?', '<@440996323156819968> ']
+   
+bot = commands.AutoShardedBot(command_prefix=prefix_function)
 wrap = "```py\n{}\n```"
-dbltoken = ""
-dbotspwtoken = ""
+dbltoken = "token"
+dbotspwtoken = "token was not found"
+botspacetoken = "token.exe has stopped working"
 dbpwurl = "https://bots.discord.pw/api/bots/440996323156819968/stats"
 url = "https://discordbots.org/api/bots/440996323156819968/stats"
-headers = {"Authorization" : dbltoken}
+botspaceurl = "https://botlist.space/api/bots/440996323156819968/"
+headers = {"Authorization" : dbltoken, "Content-Type" : "application/json"}
 headersdb = {"Authorization" : dbotspwtoken, "Content-Type" : "application/json"}
+headersbs = {"Authorization" : botspacetoken, "Content-Type" : "application/json"}
 
-modules = ["cogs.antiad", "cogs.antilink", "cogs.autorole", "cogs.economy", "cogs.page", "cogs.general", "cogs.help", "cogs.image", "cogs.worldcup", "cogs.mention", "cogs.status", "cogs.joinleave", "cogs.logs", "cogs.mod", "cogs.owner", "cogs.selfroles", "cogs.serverlog", "cogs.animals", "cogs.giveaway"]
+modules = ["cogs." + x.replace(".py", "") for x in os.listdir("cogs") if ".py" in x]
 
 @bot.event
 async def on_ready():
@@ -43,6 +59,7 @@ async def on_ready():
     requests.post(url, data=payloadservers, headers=headers)
     requests.post(url, data=payloadshards, headers=headers)
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
+    requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
     if not hasattr(bot, 'uptime'):
         bot.uptime = datetime.datetime.utcnow().timestamp()
 
@@ -52,6 +69,7 @@ async def on_guild_join(guild):
     payloadshards = {"shard_count"  : bot.shard_count}
     requests.post(url, data=payloadservers, headers=headers)
     requests.post(url, data=payloadshards, headers=headers)
+    requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
 		
 @bot.event 
@@ -68,7 +86,9 @@ async def on_message(message):
 async def on_message_edit(before, after):
     if after.author.bot:
         return
-    if isinstance(after.channel, discord.abc.PrivateChannel) and after.content.startswith("s?"):
+    elif before.content == after.content:
+        return
+    elif isinstance(after.channel, discord.abc.PrivateChannel) and after.content.startswith("s?"):
         await after.channel.send("You can't use commands in private messages :no_entry:")
         return
     else:
@@ -80,6 +100,7 @@ async def on_guild_remove(guild):
     payloadshards = {"shard_count"  : bot.shard_count}
     requests.post(url, data=payloadservers, headers=headers)
     requests.post(url, data=payloadshards, headers=headers)
+    requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
 			
 @bot.event
@@ -111,7 +132,15 @@ async def on_command_error(ctx, error, *args, **kwargs):
                         msg += "[{}] ".format(x)
                     else:
                         msg += "<{}> ".format(x)
-        msg = "Usage: {}{} {}\nCommand description: {}".format(ctx.prefix, ctx.command, msg, ctx.command.help)
+        if not ctx.command.aliases:
+            aliases = "None"
+        else:
+            aliases = ", ".join([x for x in ctx.command.aliases])
+        msg = "Usage: {}{} {}\nCommand aliases: {}\nCommand description: {}".format(ctx.prefix, ctx.command, msg, aliases, ctx.command.help)
+        try:
+            msg += "\n\nSub commands: {}".format(", ".join([x for x in ctx.command.all_commands if x not in ctx.command.all_commands[x].aliases]))
+        except:
+            pass
         s=discord.Embed(description=msg)
         s.set_author(name=ctx.command, icon_url=bot.user.avatar_url)
         return await channel.send(embed=s)
@@ -204,5 +233,5 @@ async def reload(ctx, *, module: str):
 		
 bot.add_cog(Main(bot))
 
-bot.run('')
+bot.run('customstokensareathing')
 

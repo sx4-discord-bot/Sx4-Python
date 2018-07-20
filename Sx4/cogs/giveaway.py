@@ -7,6 +7,7 @@ import datetime
 import html
 import random
 import math
+from utils import arghelp
 from PIL import Image, ImageFilter, ImageEnhance
 import psutil
 from datetime import datetime, timedelta
@@ -41,18 +42,21 @@ class giveaway:
     @commands.group()
     async def giveaway(self, ctx):
         server = ctx.guild
-        if str(server.id) not in self._giveaway:
-            self._giveaway[str(server.id)] = {}
-            dataIO.save_json(self._giveaway_file, self._giveaway)
-        if "giveaway#" not in self._giveaway[str(server.id)]:
-            self._giveaway[str(server.id)]["giveaway#"] = 0
-            dataIO.save_json(self._giveaway_file, self._giveaway)
-        if "giveaways" not in self._giveaway[str(server.id)]:
-            self._giveaway[str(server.id)]["giveaways"] = {}
-            dataIO.save_json(self._giveaway_file, self._giveaway)
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            if str(server.id) not in self._giveaway:
+                self._giveaway[str(server.id)] = {}
+                dataIO.save_json(self._giveaway_file, self._giveaway)
+            if "giveaway#" not in self._giveaway[str(server.id)]:
+                self._giveaway[str(server.id)]["giveaway#"] = 0
+                dataIO.save_json(self._giveaway_file, self._giveaway)
+            if "giveaways" not in self._giveaway[str(server.id)]:
+                self._giveaway[str(server.id)]["giveaways"] = {}
+                dataIO.save_json(self._giveaway_file, self._giveaway)
 
     @giveaway.command()
-    @checks.mod_or_permissions(manage_roles=True)
+    @checks.has_permissions("manage_roles")
     async def delete(self, ctx, id: str):
         try:
             message = await self.bot.get_channel(int(self._giveaway[str(ctx.guild.id)]["giveaways"][id][0]["channel"])).get_message(int(self._giveaway[str(ctx.guild.id)]["giveaways"][id][0]["message"]))
@@ -68,7 +72,7 @@ class giveaway:
         await ctx.send("That giveaway has been cancelled and deleted.")
 
     @giveaway.command()
-    @checks.mod_or_permissions(manage_roles=True)
+    @checks.has_permissions("manage_roles")
     async def setup(self, ctx):
         giveaway = {}
         server = ctx.guild
