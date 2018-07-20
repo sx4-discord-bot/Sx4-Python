@@ -77,7 +77,7 @@ class general:
 
     @commands.command(aliases=["yt"])
     async def youtube(self, ctx, *, search: str):
-        url = "https://www.googleapis.com/youtube/v3/search?key=AIzaSyA6ec19uw3cjWKOvysqeetDaOKx-d-RKls&part=snippet&safeSearch=none&{}".format(urllib.parse.urlencode({"q": search}))
+        url = "https://www.googleapis.com/youtube/v3/search?key=key&part=snippet&safeSearch=none&{}".format(urllib.parse.urlencode({"q": search}))
         request = requests.get(url)
         try:
             await ctx.send("https://www.youtube.com/watch?v={}".format(request.json()["items"][0]["id"]["videoId"]))
