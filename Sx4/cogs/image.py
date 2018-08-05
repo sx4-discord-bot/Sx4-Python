@@ -32,6 +32,31 @@ class image:
         self.bot = bot
         self.colours_file = "data/colours/colournames.json"
         self.colours = dataIO.load_json(self.colours_file)
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def rip(self, ctx, user: discord.Member=None):
+        if not user:
+            user = ctx.author
+        with open("avatar.png", "wb") as f:
+            f.write(requests.get(user.avatar_url).content)
+        image = Image.open("rip.jpg").convert("RGBA")
+        avatar = Image.open("avatar.png").convert("RGBA")
+        avatar = avatar.resize((260, 260))
+        draw = ImageDraw.Draw(image)
+        font = ImageFont.truetype("arial.ttf", 30)
+        left = 355
+        for x in range(len(user.name)):
+            left -= 8
+        draw.text((left, 410), "Here lies {}".format(user.name), (0, 0, 0), font=font)
+        image.paste(avatar, (285, 145), avatar)
+        image.save("image.png")
+        await ctx.send(file=discord.File("image.png", "image.png"))
+        try:
+            os.remove("avatar.png")
+            os.remove("image.png")
+        except:
+            pass
         
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -51,30 +76,15 @@ class image:
             except:
                 await ctx.send("Invalid user :no_entry:")
                 return
-            if user == self.bot.user:
-                user = author
-                await ctx.send("No u")
             url = user.avatar_url
-            if url == "":
-                url = user.default_avatar_url
         else:
             try:
                 user = ctx.message.guild.get_member_named(user_or_imagelink)
-                if user == self.bot.user:
-                    user = author
-                    await ctx.send("No u")
                 url = user.avatar_url
-                if url == "":
-                    url = user.default_avatar_url
             except:
                 try:
                     user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    if user == self.bot.user:
-                        user = author
-                        await ctx.send("No u")
                     url = user.avatar_url
-                    if url == "":
-                        url = user.default_avatar_url
                 except:
                     url = user_or_imagelink
         try:
@@ -183,20 +193,14 @@ class image:
                 await ctx.send("Invalid user :no_entry:")
                 return
             url = user.avatar_url
-            if url == "":
-                url = user.default_avatar_url
         else:
             try:
                 user = ctx.message.guild.get_member_named(user_or_imagelink)
                 url = user.avatar_url
-                if url == "":
-                    url = user.default_avatar_url
             except:
                 try:
                     user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
                     url = user.avatar_url
-                    if url == "":
-                        url = user.default_avatar_url
                 except:
                     url = user_or_imagelink
         try:
@@ -234,30 +238,15 @@ class image:
             except:
                 await ctx.send("Invalid user :no_entry:")
                 return
-            if user == self.bot.user:
-                user = author
-                await ctx.send("No u")
             url = user.avatar_url
-            if url == "":
-                url = user.default_avatar_url
         else:
             try:
                 user = ctx.message.guild.get_member_named(user_or_imagelink)
-                if user == self.bot.user:
-                    user = author
-                    await ctx.send("No u")
                 url = user.avatar_url
-                if url == "":
-                    url = user.default_avatar_url
             except:
                 try:
                     user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    if user == self.bot.user:
-                        user = author
-                        await ctx.send("No u")
                     url = user.avatar_url
-                    if url == "":
-                        url = user.default_avatar_url
                 except:
                     url = user_or_imagelink
         try:
@@ -289,14 +278,10 @@ class image:
         random.seed(user2.id + user1.id)
         number = randint(0, 100)
         random.setstate(state)
-        if user1.avatar_url != "":
-            u1avatar = user1.avatar_url
-        else:
-            u1avatar = user1.default_avatar_url
-        if user2.avatar_url != "":
-            u2avatar = user2.avatar_url
-        else:
-            u2avatar = user2.default_avatar_url
+        if user1.id + user2.id == 581253343411044352:
+            number = 100
+        u1avatar = user1.avatar_url
+        u2avatar = user2.avatar_url
         with open('image.jpg', 'wb') as f:
             f.write(requests.get(u1avatar.replace("gif", "png").replace("webp", "png")).content)
         with open('image2.jpg', 'wb') as f:
@@ -338,20 +323,14 @@ class image:
                 await ctx.send("Invalid user :no_entry:")
                 return
             url = user.avatar_url
-            if url == "":
-                url = user.default_avatar_url
         else:
             try:
                 user = ctx.message.guild.get_member_named(user_or_imagelink)
                 url = user.avatar_url
-                if url == "":
-                    url = user.default_avatar_url
             except:
                 try:
                     user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
                     url = user.avatar_url
-                    if url == "":
-                        url = user.default_avatar_url
                 except:
                     url = user_or_imagelink
         try:
@@ -394,30 +373,15 @@ class image:
             except:
                 await ctx.send("Invalid user :no_entry:")
                 return
-            if user == self.bot.user:
-                user = author
-                await ctx.send("No u")
             url = user.avatar_url
-            if url == "":
-                url = user.default_avatar_url
         else:
             try:
                 user = ctx.message.guild.get_member_named(user_or_imagelink)
-                if user == self.bot.user:
-                    user = author
-                    await ctx.send("No u")
                 url = user.avatar_url
-                if url == "":
-                    url = user.default_avatar_url
             except:
                 try:
                     user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    if user == self.bot.user:
-                        user = author
-                        await ctx.send("No u")
                     url = user.avatar_url
-                    if url == "":
-                        url = user.default_avatar_url
                 except:
                     url = user_or_imagelink
         try:
@@ -462,9 +426,11 @@ class image:
         else:
             try:
                 user = ctx.message.guild.get_member_named(user_or_imagelink)
+                url = user.avatar_url
             except:
                 try:
                     user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
+                    url = user.avatar_url
                 except:
                     url = user_or_imagelink
         try:

@@ -40,10 +40,18 @@ class mod:
         self.d = dataIO.load_json(self.file)
         self._logs_file = "data/mod/logs.json"
         self._logs = dataIO.load_json(self._logs_file)
-        
 
     def __unload(self):
         self._task.cancel()
+
+    @commands.command(aliases=["colorrole"])
+    @checks.has_permissions("manage_roles")
+    async def colourrole(self, ctx, role: discord.Role, colour: discord.Colour):
+        try:
+            await role.edit(colour=colour)
+        except:
+            return await ctx.send("I'm not able to edit that role :no_entry:")
+        await ctx.send("**{}** now has the hex `{}` <:done:403285928233402378>".format(role.name, colour))
 
     @commands.group()
     async def prefix(self, ctx):
@@ -51,13 +59,13 @@ class mod:
         if ctx.invoked_subcommand is None:
             s=discord.Embed(colour=ctx.author.colour)
             s.set_author(name="Prefix Settings", icon_url=ctx.author.avatar_url)
-            s.add_field(name="Default Prefixes", value="`{}`".format(", ".join(['sx4 ', 's?', 'S?', '<@440996323156819968> '])), inline=False)
+            s.add_field(name="Default Prefixes", value="{}".format(", ".join(['sx4 ', 's?', 'S?', '<@440996323156819968> '])), inline=False)
             try:
-                s.add_field(name="Server Prefixes", value="`{}`".format(", ".join(Prefix._prefixes["serverprefix"][str(ctx.guild.id)])), inline=False)
+                s.add_field(name="Server Prefixes", value="{}".format(", ".join(Prefix._prefixes["serverprefix"][str(ctx.guild.id)])), inline=False)
             except:
                 s.add_field(name="Server Prefixes", value="None", inline=False)
             try:
-                s.add_field(name="{}'s Prefixes".format(ctx.author.name), value="`{}`".format(", ".join(Prefix._prefixes["userprefix"][str(ctx.author.id)])), inline=False)
+                s.add_field(name="{}'s Prefixes".format(ctx.author.name), value="{}".format(", ".join(Prefix._prefixes["userprefix"][str(ctx.author.id)])), inline=False)
             except:
                 s.add_field(name="{}'s Prefixes".format(ctx.author.name), value="None", inline=False)
             await ctx.send(embed=s, content="For help on setting the prefix use `{}help prefix`".format(ctx.prefix))
@@ -128,14 +136,14 @@ class mod:
             if not user:
                 await ctx.send("I could not find that user :no_entry:")
                 return
-        url = "https://bans.discordlist.net/api"
+        #url = "https://bans.discordlist.net/api"
         urlds = "https://discord.services/api/ban/{}".format(user.id)
         headers = {"token" : "H5sqJpBmow", "userid" : str(user.id), 'User-Agent' : 'Mozilla/5.0'}
-        request = requests.post(url, data=headers)
+        #request = requests.post(url, data=headers)
         requestds = requests.get(urlds, headers={'User-Agent': 'Mozilla/5.0'}).json()
         description = ""
-        if request.text == True:
-            description += "**{}** is banned on [DiscordList](https://bans.discordlist.net/)\n\n".format(user)
+        #if request.text == True:
+            #description += "**{}** is banned on [DiscordList](https://bans.discordlist.net/)\n\n".format(user)
         try:
             requestds["msg"]
         except:
@@ -919,6 +927,8 @@ class mod:
         if author == user:
             await ctx.send("You can't mute yourself :no_entry:")
             return
+        if author == ctx.me:
+            return await ctx.send("No i like speaking thanks :no_entry:")
         if channel.permissions_for(user).administrator:
             await ctx.send("That user has administrator perms, why would i even try :no_entry:")
             return
@@ -1396,6 +1406,9 @@ class mod:
     @checks.has_permissions("manage_messages")
     async def setwarns(self, ctx, user: discord.Member, warnings: int=None):
         """Set the warn amount for a specific user"""
+        if user.top_role.position >= ctx.author.top_role.position:
+            await ctx.send("You have to be above the user in the role hierarchy to set their warns :no_entry:")
+            return
         server = ctx.message.guild
         await self._create_warn(server, user)
         dataIO.save_json(self.JSON, self.data)
@@ -1427,7 +1440,7 @@ class mod:
                     role = discord.utils.get(server.roles, name="Muted - Sx4")
                     if role != None:
                         if self.d[str(server.id)] != None:
-                            for userid in [x for x in self.d[serverid] if x != "channel"]:
+                            for userid in [x for x in self.d[serverid] if x != "channel"][:len([x for x in self.d[serverid] if x != "channel"])]:
                                 user = discord.utils.get(server.members, id=int(userid))
                                 if user != None:
                                     if self.d[str(server.id)][str(user.id)]["toggle"] != False and self.d[str(server.id)][str(user.id)]["time"] != None and self.d[str(server.id)][str(user.id)]["amount"] != None:
@@ -1453,7 +1466,7 @@ class mod:
                                             self.d[str(server.id)][str(user.id)]["toggle"] = False
                                             self.d[str(server.id)][str(user.id)]["amount"] = None                                            
                                             dataIO.save_json(self.file, self.d)
-            await asyncio.sleep(20)
+            await asyncio.sleep(10)
       
                     
         

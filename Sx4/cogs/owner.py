@@ -28,7 +28,7 @@ class owner:
         try:
             await self.bot.user.edit(password=None, avatar=avatar)
         except:
-            await ctx.send("Clap you've changed my profile picture to many times")
+            return await ctx.send("Clap you've changed my profile picture too many times")
         await ctx.send("I have changed my profile picture")
         os.remove("logo.png")
 		

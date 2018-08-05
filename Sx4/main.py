@@ -15,6 +15,7 @@ import json
 import traceback
 import sys
 import os
+from utils import Token
 import subprocess
 
 
@@ -31,14 +32,17 @@ async def prefix_function(bot, message):
    
 bot = commands.AutoShardedBot(command_prefix=prefix_function)
 wrap = "```py\n{}\n```"
-dbltoken = "token"
-dbotspwtoken = "token was not found"
-botspacetoken = "token.exe has stopped working"
+dbltoken = Token.dbl()
+dbotspwtoken = Token.dbpw()
+botspacetoken = Token.botlistspace()
+konomitoken = Token.konomi()
 dbpwurl = "https://bots.discord.pw/api/bots/440996323156819968/stats"
 url = "https://discordbots.org/api/bots/440996323156819968/stats"
 botspaceurl = "https://botlist.space/api/bots/440996323156819968/"
-headers = {"Authorization" : dbltoken, "Content-Type" : "application/json"}
+konomiurl = "http://bots.disgd.pw/api/bot/440996323156819968/stats"
+headers = {"Authorization" : dbltoken}
 headersdb = {"Authorization" : dbotspwtoken, "Content-Type" : "application/json"}
+headerskon = {"Authorization" : konomitoken, "Content-Type" : "application/json"}
 headersbs = {"Authorization" : botspacetoken, "Content-Type" : "application/json"}
 
 modules = ["cogs." + x.replace(".py", "") for x in os.listdir("cogs") if ".py" in x]
@@ -54,14 +58,14 @@ async def on_ready():
             bot.load_extension(extension)
         except Exception as e:
             print('Failed to load extension {}\n{}: {}'.format(extension, type(e).name, e))
+    setattr(bot, "uptime", datetime.datetime.utcnow().timestamp())
     payloadservers = {"server_count"  : len(bot.guilds)}
     payloadshards = {"shard_count"  : bot.shard_count}
     requests.post(url, data=payloadservers, headers=headers)
     requests.post(url, data=payloadshards, headers=headers)
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
     requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
-    if not hasattr(bot, 'uptime'):
-        bot.uptime = datetime.datetime.utcnow().timestamp()
+    requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
 
 @bot.event
 async def on_guild_join(guild):
@@ -71,6 +75,7 @@ async def on_guild_join(guild):
     requests.post(url, data=payloadshards, headers=headers)
     requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
+    requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
 		
 @bot.event 
 async def on_message(message):
@@ -102,6 +107,7 @@ async def on_guild_remove(guild):
     requests.post(url, data=payloadshards, headers=headers)
     requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
+    requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
 			
 @bot.event
 async def on_command_error(ctx, error, *args, **kwargs):
@@ -163,7 +169,8 @@ async def on_command_error(ctx, error, *args, **kwargs):
         s=discord.Embed(title="Error", description="You have came across an error! [Support Server](https://discord.gg/WJHExmg)\n{}".format(str(error)).replace("Command raised an exception: ", ""))
         await channel.send(embed=s)
         await bot.get_channel(439745234285625355).send("```Server: {}\nTime: {}\nCommand: {}\n\n{}```".format(ctx.message.guild, datetime.datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S"), ctx.command, str(error)))
-        print("".join(traceback.format_exception(type(error), error, error.__traceback__)))
+        if not isinstance(error, KeyError):
+            print("".join(traceback.format_exception(type(error), error, error.__traceback__)))
         
 		
 class Main:
@@ -233,5 +240,5 @@ async def reload(ctx, *, module: str):
 		
 bot.add_cog(Main(bot))
 
-bot.run('customstokensareathing')
+bot.run(Token.bot())
 

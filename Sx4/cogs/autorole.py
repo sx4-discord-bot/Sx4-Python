@@ -56,7 +56,10 @@ class autorole:
     async def fix(self, ctx):
         """Has the bot been offline and missed a few users? Use this to add the role to everyone who doesn't have it"""
         server = ctx.guild
-        role = discord.utils.get(server.roles, name=self.data[str(server.id)]["role"])
+        try:
+            role = discord.utils.get(server.roles, name=self.data[str(server.id)]["role"])
+        except:
+            return await ctx.send("You need to set the autorole before you can use this :no_entry:")
         members = len([x for x in server.members if role not in x.roles])
         if not role:
             await ctx.send("Role is not set or does not exist :no_entry:")

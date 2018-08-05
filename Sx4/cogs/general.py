@@ -11,6 +11,7 @@ from utils import arghelp
 from PIL import Image, ImageFilter, ImageEnhance
 import psutil
 from datetime import datetime, timedelta
+from utils import Token
 from utils import checks
 from urllib.request import Request, urlopen
 import json
@@ -29,7 +30,7 @@ from enum import Enum
 import asyncio
 from difflib import get_close_matches
 
-rps_settings = {"rps_wins": 0, "rps_draws": 0, "rps_losses": 0}
+
 giveaway = {"users": None}
 
 class general:
@@ -37,9 +38,6 @@ class general:
         self.bot = bot
         self._stats_task = bot.loop.create_task(self.checktime())
         self._wait_task = bot.loop.create_task(self._status_check())
-        self.JSON = 'data/general/rps.json'
-        self.settings = dataIO.load_json(self.JSON)
-        self.settings = defaultdict(lambda: rps_settings, self.settings)
         self.file = "data/general/triggers.json"
         self.d = dataIO.load_json(self.file)
         self._shop_file = 'data/economy/shop.json'
@@ -75,19 +73,36 @@ class general:
             responsetime = response.created_at.timestamp()
         await ctx.send("Your reaction speed was **{}ms** (Discord API ping and Message ping have been excluded)".format(round(((responsetime - message.created_at.timestamp()) - self.bot.latency - ping)*1000)))
 
-    @commands.command(aliases=["yt"])
-    async def youtube(self, ctx, *, search: str):
-        url = "https://www.googleapis.com/youtube/v3/search?key=key&part=snippet&safeSearch=none&{}".format(urllib.parse.urlencode({"q": search}))
-        request = requests.get(url)
-        try:
-            await ctx.send("https://www.youtube.com/watch?v={}".format(request.json()["items"][0]["id"]["videoId"]))
-        except:
-            await ctx.send("No results :no_entry:")
-
     @commands.command()
-    async def invites(self, ctx, user: discord.Member=None):
+    async def invites(self, ctx, *, user: str=None):
         if not user:
             user = ctx.author
+        elif "<" in user and "@" in user:
+            userid = user.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
+            user2 = discord.utils.get(ctx.guild.members, id=int(userid))
+            if not user2:
+                user = discord.utils.get(self.bot.get_all_members(), id=int(userid))
+            else:
+                user = user2
+        elif "#" in user and user[len(user) - 4:].isdigit(): 
+            splituser = user.split("#")
+            user2 = discord.utils.get(ctx.guild.members, name=splituser[0], discriminator=splituser[1])
+            if not user2:
+                user = discord.utils.get(self.bot.get_all_members(), name=splituser[0], discriminator=splituser[1])
+            else:
+                user = user2
+        else:
+            try:
+                int(user)
+                user = await self.bot.get_user_info(user)
+            except:
+                user2 = discord.utils.get(ctx.guild.members, name=user)
+                if not user2:
+                    user = discord.utils.get(self.bot.get_all_members(), name=user)
+                else:
+                    user = user2
+        if not (isinstance(user, discord.Member) or isinstance(user, discord.User)):
+            return await ctx.send("I could not find that user :no_entry:")
         amount = 0
         total = 0
         entries = {}
@@ -178,31 +193,6 @@ class general:
         else:
             input = sorted(ctx.guild.members, key=lambda x: x.joined_at).index(user) + 1
             await ctx.send("{} was the **{}** user to join {}".format(user, await self.prefixfy(input), ctx.guild.name))            
-
-    @commands.command()
-    @commands.cooldown(1, 10, commands.BucketType.user)
-    async def shorten(self, ctx, *, url):
-        url1 = "https://api.rebrandly.com/v1/links"
-        request = requests.post(url1, data=json.dumps({"destination": url}), headers={"Content-Type": "application/json", "apikey": "apikey"})
-        try:
-            request.json()["message"]
-            await ctx.send("Invalid Url :no_entry:")
-        except:
-            await ctx.send("https://" + request.json()["shortUrl"])
-
-    @commands.command()
-    @commands.cooldown(1, 2, commands.BucketType.default)
-    async def meme(self, ctx):
-        number = randint(0, 100)
-        url = "https://www.reddit.com/r/meme.json?sort=new&limit=100"
-        url2 = "https://www.reddit.com/r/memeeconomy.json?sort=new&limit=100"
-        url = random.choice([url, url2])
-        request = Request(url)
-        data = json.loads(urlopen(request).read().decode())["data"]["children"][number]["data"]
-        s=discord.Embed()
-        s.set_author(name=data["title"], url="https://www.reddit.com" + data["permalink"])
-        s.set_image(url=data["url"])
-        await ctx.send(embed=s)
 
     @commands.command(hidden=True)
     @checks.is_owner()
@@ -320,130 +310,6 @@ class general:
                 if i <= 2000:
                     s.set_author(name="{} Emojis".format(ctx.guild.name), icon_url=ctx.guild.icon_url)
                 await ctx.send(embed=s)
-
-    @commands.command(pass_context=True)
-    async def discordmeme(self, ctx):
-        """Have a discord meme"""
-        url = "https://api.weeb.sh/images/random?type=discord_memes"
-        request = Request(url)
-        request.add_header("Authorization",  "Wolke token")
-        request.add_header('User-Agent', 'Mozilla/5.0')
-        data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed(); s.set_image(url=data["url"]); s.set_footer(text="Powered by weeb.sh"); await ctx.send(embed=s)
-        
-    @commands.command(pass_context=True)
-    async def google(self, ctx, *, search): 
-        """returns the top 5 results from google of your search query"""
-        url = "https://www.googleapis.com/customsearch/v1?key=key&cx=notouchy&{}".format(urllib.parse.urlencode({"q": search}))
-        request = Request(url)
-        data = json.loads(urlopen(request).read().decode())
-        try:
-            results = "\n\n".join(["**[{}]({})**\n{}".format(x["title"], x["link"], x["snippet"]) for x in data["items"]][:5])
-        except:
-            await ctx.send("No Results :no_entry:")
-            return
-        s=discord.Embed(description=results)
-        s.set_author(name="Google", icon_url="https://images-ext-1.discordapp.net/external/UsMM0mPPHEKn6WMst8WWG9qMCX_A14JL6Izzr47ucOk/http/i.imgur.com/G46fm8J.png", url="https://www.google.co.uk/search?{}".format(urllib.parse.urlencode({"q": search})))
-        await ctx.send(embed=s)
-		
-    @commands.command(pass_context=True)
-    async def googleimage(self, ctx, *, search): 
-        """returns an image based on your search from google"""
-        url = "https://www.googleapis.com/customsearch/v1?key=notouchy&cx=same&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
-        request = Request(url)
-        data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed()
-        s.set_author(name="Google", icon_url="https://images-ext-1.discordapp.net/external/UsMM0mPPHEKn6WMst8WWG9qMCX_A14JL6Izzr47ucOk/http/i.imgur.com/G46fm8J.png", url="https://www.google.co.uk/search?{}".format(urllib.parse.urlencode({"q": search})))
-        try:
-            s.set_image(url=data["items"][0]["image"]["thumbnailLink"])
-        except:
-            await ctx.send("No results :no_entry:")
-            return
-        await ctx.send(embed=s)
-        
-    @commands.command(pass_context=True)
-    async def dictionary(self, ctx, *, word): 
-        """Look up the definition of any word using an actual dictionary"""
-        url = "https://od-api.oxforddictionaries.com:443/api/v1/entries/en/{}".format(word)
-        request = Request(url)
-        request.add_header("Accept", "application/json")
-        request.add_header("app_id", "no")
-        request.add_header("app_key", "no")
-        try:
-            data = json.loads(urlopen(request).read().decode())
-        except:
-            await ctx.send("No results :no_entry:")
-            return
-        definition = data["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]["definitions"][0]
-        pronounce = data["results"][0]["lexicalEntries"][0]["pronunciations"][0]["phoneticSpelling"]
-        s=discord.Embed(colour=ctx.message.author.colour)
-        s.set_author(name=data["results"][0]["id"], url="https://en.oxforddictionaries.com/definition/{}".format(data["results"][0]["id"]))
-        s.add_field(name="Definition", value=definition)
-        s.add_field(name="Pronunciation", value=pronounce, inline=False)
-        await ctx.send(embed=s)
-
-    @commands.command(pass_context=True)
-    async def steam(self, ctx, *, profile_url: str):
-        """To get a steam profile you need to click on the users profile and get the vanityurl which is the name after /id/{} <--- The name should be there""" 
-        idurl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=no&{}".format(urllib.parse.urlencode({"vanityurl": profile_url.replace("https://steamcommunity.com/id/", "")}))
-        idrequest = Request(idurl)
-        try:
-            id = json.loads(urlopen(idrequest).read().decode())["response"]["steamid"]
-        except:
-            id = profile_url.replace("https://steamcommunity.com/id/", "")
-        url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=no&steamids={}".format(id)
-        request = Request(url)
-        try:
-            data = json.loads(urlopen(request).read().decode())["response"]["players"][0]
-        except:
-            await ctx.send("No results :no_entry:")
-            return
-        m, s = divmod(ctx.message.created_at.timestamp() - data["lastlogoff"], 60)
-        h , m = divmod(m, 60)
-        d, h = divmod(h, 24)
-        if d == 0 and h == 0:
-            time = "%dm %ds ago" % (m, s)
-        elif d == 0 and h == 0 and m == 0:
-            time = "%ds ago" % (s)
-        elif d == 0:
-            time = "%dh %dm %ds ago" % (h, m, s)
-        else:
-            time = "%dd %dh %dm %ds ago" % (d, h, m, s)
-        if data["personastate"] == 0:
-            if data["communityvisibilitystate"] == 1:
-                state = "Private Account"
-            else:
-                state = "Offline"
-        if data["personastate"] == 1:
-            state = "Online"
-        if data["personastate"] == 2:
-            state = "Busy"
-        if data["personastate"] == 3:
-            state = "Away"
-        if data["personastate"] == 4:
-            state = "Snooze"
-        if data["personastate"] == 5 or data["personastate"] == 6:
-            state = "Online"
-        s=discord.Embed(description="Steam Profile <:steam:392219187184926732>")
-        s.set_author(name=data["personaname"], icon_url=data["avatarfull"], url=data["profileurl"])
-        s.set_thumbnail(url=data["avatarfull"])
-        s.add_field(name="Status", value=state)
-        if state != "Offline":
-            s.add_field(name="Last time logged in", value="Online now")
-        else:
-            s.add_field(name="Last time logged in", value=time)
-        if data["communityvisibilitystate"] == 1:
-            await ctx.send(embed=s)
-            return
-        try:
-            s.add_field(name="Real name", value=data["realname"])
-        except:
-            pass
-        try:
-            s.add_field(name="Currently Playing", value=data["gameextrainfo"])
-        except:
-            s.add_field(name="Currently Playing", value="Nothing")
-        await ctx.send(embed=s)         
         
     @commands.command(pass_context=True)
     async def dblowners(self, ctx, *, user: str=None):
@@ -616,38 +482,6 @@ class general:
         s.set_author(name="Bot List")
         s.set_footer(text="Page {}/50".format(page+1))
         await ctx.send(embed=s)
-
-    @commands.command(pass_context=True, aliases=["ud"])
-    async def urbandictionary(self, ctx, search_term, page: int=None):
-        """Look up the definition of a word on the urbandictionary"""
-        if not page:
-            page = 0
-        else:
-            page = page - 1
-        url = "http://api.urbandictionary.com/v0/define?" + urllib.parse.urlencode({"term": search_term})
-        request = Request(url)
-        data = json.loads(urlopen(request).read().decode())
-        if data["result_type"] == "no_results":
-            await ctx.send("No results :no_entry:")
-            return
-        if len(data["list"]) < page + 1:
-            await ctx.send("That is not a valid page :no_entry:")
-            return
-        if len([x for x in str(data["list"][page]["definition"])]) > 900:
-            definition = str(data["list"][page]["definition"])[:900] + '... [Read more]({})'.format(data["list"][page]["permalink"])
-        else:
-            definition = str(data["list"][page]["definition"])
-        if len([x for x in str(data["list"][page]["example"])]) > 900:
-            example = str(data["list"][page]["example"])[:900] + '... [Read more]({})'.format(data["list"][page]["permalink"])
-        else:
-            example = str(data["list"][page]["example"])
-        s=discord.Embed(colour=ctx.message.author.colour)
-        s.set_author(name=data["list"][page]["word"], url=data["list"][page]["permalink"])
-        s.add_field(name="Definition", value=definition, inline=False)
-        if example != "":
-            s.add_field(name="Example", value=example)
-        s.set_footer(text="{} 👍 | {} 👎 | Page {}/{}".format(data["list"][page]["thumbs_up"], data["list"][page]["thumbs_down"], page + 1, len(data["list"])))
-        await ctx.send(embed=s)
         
     @commands.command(pass_context=True)
     async def ping(self, ctx):
@@ -720,80 +554,17 @@ class general:
                 await message.remove_reaction("▶", ctx.me)
                 page2 = False
         
-    @commands.command(pass_context=True)
-    async def ascend(self, ctx, *, text):
-        """Make text look cool"""
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
-        await ctx.send(text.replace("", " ")[:2000])
-         
-    @commands.command(pass_context=True)
-    async def backwards(self, ctx, *, text: str):
-        """Make text go backwards"""
-        text = text[::-1]
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
-        await ctx.send(text[:2000])
-        
-    @commands.command()
-    async def randcaps(self, ctx, *, text: str):
-        """Make your text look angry"""
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
-        msg = ""
-        for letter in text:
-            number = randint(0, 1)
-            if number == 0:
-                letter = letter.upper()
-            else:
-                letter = letter.lower()
-            msg += letter
-        await ctx.send(msg[:2000])
-            
-    @commands.command(aliases=["altcaps"])
-    async def alternatecaps(self, ctx, *, text):
-        """Make your text look neatly angry"""
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
-        number = 0
-        msg = ""
-        for letter in text:
-            if number == 0:
-                letter = letter.upper()
-                number = 1
-            else:
-                letter = letter.lower()
-                number = 0
-            msg += letter
-        await ctx.send(msg[:2000])
-        
     @commands.command()
     async def donate(self, ctx):
         """Get my donation link"""
-        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://paypal.me/pools/c/85Se5w2mRH)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
+        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
         s.set_author(name="Donate!", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=s)
         
     @commands.command()
     async def invite(self, ctx):
         """Get my invite link"""
-        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://paypal.me/pools/c/85Se5w2mRH)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
+        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
         s.set_author(name="Invite!", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=s)
         
@@ -956,22 +727,62 @@ class general:
         await ctx.send(embed=s)
         
     @commands.command(pass_context=True)
-    async def inrole(self, ctx, role: discord.Role, page: int=None):
+    async def inrole(self, ctx, *, role: discord.Role):
         """Check who's in a specific role"""
         server = ctx.guild
-        if not page:
-            page = 1
-        number = len([x for x in server.members if role in x.roles])
-        if page - 1 > number / 20:
-            await ctx.send("Invalid Page :no_entry:")
-            return
-        if page < 1:
-            await ctx.send("Invalid Page :no_entry:")
-            return
-        users = "\n".join([x.mention for x in role.members])
+        page = 1
+        number = len(role.members)
+        users = "\n".join([str(x) for x in sorted(role.members, key=lambda x: x.name.lower())][page*20-20:page*20])
         s=discord.Embed(description=users, colour=0xfff90d)
         s.set_author(name="Users in " + role.name + " ({})".format(number), icon_url=server.icon_url)
         s.set_footer(text="Page {}/{}".format(page, math.ceil(number / 20)))
+        message = await ctx.send(embed=s)
+        await message.add_reaction("◀")
+        await message.add_reaction("▶")
+        def reactioncheck(reaction, user):
+            if user != self.bot.user:
+                if user == ctx.author:
+                    if reaction.message.channel == ctx.channel:
+                        if reaction.emoji == "▶" or reaction.emoji == "◀":
+                            return True
+        page2 = True
+        while page2:
+            try:
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=30, check=reactioncheck)
+                if reaction.emoji == "▶":
+                    if page != math.ceil(number / 20):
+                        page += 1
+                        users = "\n".join([str(x) for x in sorted(role.members, key=lambda x: x.name.lower())][page*20-20:page*20])
+                        s=discord.Embed(description=users, colour=0xfff90d)
+                        s.set_author(name="Users in " + role.name + " ({})".format(number), icon_url=server.icon_url)
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(number / 20)))
+                        await message.edit(embed=s)
+                    else:
+                        page = 1
+                        users = "\n".join([str(x) for x in sorted(role.members, key=lambda x: x.name.lower())][page*20-20:page*20])
+                        s=discord.Embed(description=users, colour=0xfff90d)
+                        s.set_author(name="Users in " + role.name + " ({})".format(number), icon_url=server.icon_url)
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(number / 20)))
+                        await message.edit(embed=s)
+                if reaction.emoji == "◀":
+                    if page != 1:
+                        page -= 1
+                        users = "\n".join([str(x) for x in sorted(role.members, key=lambda x: x.name.lower())][page*20-20:page*20])
+                        s=discord.Embed(description=users, colour=0xfff90d)
+                        s.set_author(name="Users in " + role.name + " ({})".format(number), icon_url=server.icon_url)
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(number / 20)))
+                        await message.edit(embed=s)
+                    else:
+                        page = math.ceil(number / 20)
+                        users = "\n".join([str(x) for x in sorted(role.members, key=lambda x: x.name.lower())][page*20-20:page*20])
+                        s=discord.Embed(description=users, colour=0xfff90d)
+                        s.set_author(name="Users in " + role.name + " ({})".format(number), icon_url=server.icon_url)
+                        s.set_footer(text="Page {}/{}".format(page, math.ceil(number / 20)))
+                        await message.edit(embed=s)
+            except asyncio.TimeoutError:
+                await message.remove_reaction("◀", ctx.me)
+                await message.remove_reaction("▶", ctx.me)
+                page2 = False
         await ctx.send(embed=s)
         
     @commands.command(pass_context=True, aliases=["mc", "mcount"])
@@ -1051,11 +862,13 @@ class general:
             mention = "Yes"
         else:
             mention = "No"
+        btt = await self.prefixfy(sorted(ctx.guild.roles, key=ctx.guild.role_hierarchy.index, reverse=True).index(role) + 1)
+        ttb = await self.prefixfy(sorted(ctx.guild.roles, key=ctx.guild.role_hierarchy.index, reverse=False).index(role) + 1)
         s=discord.Embed(colour=role.colour)
         s.set_author(name="{} Role Info".format(role.name), icon_url=ctx.guild.icon_url)
         s.add_field(name="Role ID", value=role.id)
         s.add_field(name="Role Colour", value=role.colour)
-        s.add_field(name="Role Position", value="{} (Bottom to Top)\n{} (Top to Bottom)".format(role.position, (len(server.roles) - (role.position)) + 1))
+        s.add_field(name="Role Position", value="{} (Bottom to Top)\n{} (Top to Bottom)".format(btt, ttb))
         s.add_field(name="Users in Role", value=members)
         s.add_field(name="Hoisted", value=hoist)
         s.add_field(name="Mentionable", value=mention)
@@ -1265,69 +1078,6 @@ class general:
             for trigger in self.d[str(server.id)]["trigger"]:
                 if message.content.lower() == trigger.lower():
                     await message.channel.send(self.d[str(server.id)]["trigger"][trigger]["response"])
-        
-    @commands.command(pass_context=True)
-    async def rps(self, ctx, your_choice):
-        """Play rock paper scissors with the bot"""
-        author = ctx.message.author
-        if your_choice == "rock" or your_choice == "scissors" or your_choice == "paper" or your_choice == "r" or your_choice == "s" or your_choice == "p":
-            if your_choice == "rock" or your_choice == "r":
-                your_choice = 1
-            if your_choice == "paper" or your_choice == "p":
-                your_choice = 2
-            if your_choice == "scissors" or your_choice == "s":
-                your_choice = 3            
-        else:
-            await ctx.send("You have to choose rock, paper or scissors :no_entry:")
-            return
-        bot_choice = randint(1, 3)
-        if bot_choice == your_choice:
-            end = "Draw, let's go again!"
-        if bot_choice == 1 and your_choice == 2:
-            end = "You win! :trophy:"
-        if bot_choice == 1 and your_choice == 3:
-            end = "You lose, better luck next time."
-        if bot_choice == 2 and your_choice == 1:
-            end = "You lose, better luck next time."
-        if bot_choice == 2 and your_choice == 3:
-            end = "You win! :trophy:"
-        if bot_choice == 3 and your_choice == 1:
-            end = "You win! :trophy:"
-        if bot_choice == 3 and your_choice == 2:
-            end = "You lose, better luck next time."
-        if bot_choice == 1:
-            bot_choice = "**Rock :moyai:**"
-        if bot_choice == 2:
-            bot_choice = "**Paper :page_facing_up:**"
-        if bot_choice == 3:
-            bot_choice = "**Scissors :scissors:**"
-        if your_choice == 1:
-            your_choice = "**Rock :moyai:**"
-        if your_choice == 2:
-            your_choice = "**Paper :page_facing_up:**"
-        if your_choice == 3:
-            your_choice = "**Scissors :scissors:**"
-        await ctx.send("{}: {}\nSx4: {}\n\n{}".format(author.name, your_choice, bot_choice, end))
-        if end == "You lose, better luck next time.":
-            self.settings[str(author.id)]["rps_losses"] = self.settings[str(author.id)]["rps_losses"] + 1
-        if end == "Draw, let's go again!":
-            self.settings[str(author.id)]["rps_draws"] = self.settings[str(author.id)]["rps_draws"] + 1
-        if end == "You win! :trophy:":
-            self.settings[str(author.id)]["rps_wins"] = self.settings[str(author.id)]["rps_wins"] + 1
-        dataIO.save_json(self.JSON, self.settings)
-         
-    @commands.command(pass_context=True, aliases=["rpss"])
-    async def rpsstats(self, ctx, *, user: discord.Member=None): 
-        """Check your rps win/loss record"""    
-        author = ctx.message.author
-        if not user:
-            user = author
-        s=discord.Embed(colour=user.colour)
-        s.set_author(name="{}'s RPS Stats".format(user.name), icon_url=user.avatar_url)
-        s.add_field(name="Wins", value=self.settings[str(author.id)]["rps_wins"])
-        s.add_field(name="Draws", value=self.settings[str(author.id)]["rps_draws"])
-        s.add_field(name="Losses", value=self.settings[str(author.id)]["rps_losses"])
-        await ctx.send(embed=s)
             
     @commands.command(pass_context=True, aliases=["uid"])
     async def userid(self, ctx, *, user: discord.Member=None):
@@ -1355,7 +1105,7 @@ class general:
         await ctx.send("<#{}> ID: `{}`".format(channel.id, channel.id))
     
         
-    @commands.command(pass_context=True, aliases=["uinfo"])
+    @commands.command(pass_context=True, aliases=["uinfo", "user"])
     async def userinfo(self, ctx, *, user_arg: str=None):
         """Get some info on a user in the server"""
         author = ctx.message.author

@@ -15,7 +15,7 @@ import time
 import logging
 import datetime
 import math
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from urllib.request import Request, urlopen
 import json
 import urllib.request
@@ -23,14 +23,14 @@ from utils.PagedResult import PagedResult
 from utils.PagedResult import PagedResultData
 import random
 from random import choice
+from utils import Token
 import asyncio
 from difflib import get_close_matches
 import requests
 
 
 endpoint = "https://discordbots.org/api/bots/440996323156819968/check?userId={userId}"
-token = "token"
-                    
+token = Token.dbl()
 
 class economy:
     """Make money"""
@@ -151,11 +151,11 @@ class economy:
 
     @commands.command()
     async def badges(self, ctx):
-        s=discord.Embed(title="Badges", description=("<:server_owner:441255213450526730> - Be a owner of a server in which Sx4 is in\n"
+        s=discord.Embed(title="Badges", description=("<:server_owner:441255213450526730> - Be an owner of a server in which Sx4 is in\n"
         "<:developer:441255213068845056> - Be a developer of Sx4\n<:helper:441255213131628554> - You have at some point contributed to the bot\n"
         "<:donator:441255213224034325> - Donate to Sx4 either through PayPal or Patreon\n<:profile_editor:441255213207126016> - Edit your profile"
 		"\n<:married:441255213106593803> - Be married to someone on the bot\n<:playing:441255213513572358> - Have a playing status\n<:streaming:441255213106724865> - Have a streaming status"
-        "\n<:insx4server:449605025765916692> - Be in the Sx4 Support Server"))
+        "\n<:insx4server:472895584856965132> - Be in the Sx4 Support Server"))
         await ctx.send(embed=s)
         
 
@@ -210,14 +210,56 @@ class economy:
         else:
             colour = (255, 255, 255)
         try:
-            opener = urllib.request.build_opener()
-            opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-            urllib.request.install_opener(opener)
-            urllib.request.urlretrieve(self._background[str(user.id)], "image.jpg")
-            img = Image.open("image.jpg")
-            img = img.resize((2400, 2000))
+            with open("image.jpg", "wb") as f:
+                f.write(requests.get(self._background[str(user.id)], headers={'User-agent': 'Mozilla/5.0'}).content)
+            image = Image.open("image.jpg")
+            image = image.resize((2560, 1440))
         except:
-            img = Image.open("background.png")
+            image = Image.new("RGBA", (2560, 1440), (114, 137, 218))
+        if not self.settingss[str(user.id)]["BIRTHDAY"]:
+            self.settingss[str(user.id)]["BIRTHDAY"] = "Not set"
+        if not self.settingss[str(user.id)]["DESCRIPTION"]:
+            self.settingss[str(user.id)]["DESCRIPTION"] = "Not set"
+        if not self.settingss[str(user.id)]["HEIGHT"]:
+            self.settingss[str(user.id)]["HEIGHT"] = "Not set"
+        with open("avatar.png", "wb") as f:
+            f.write(requests.get(user.avatar_url).content)
+        avatar = Image.open("avatar.png")
+        avatar = avatar.resize((450, 450))
+        size = (avatar.size[0] * 6, avatar.size[1] * 6)
+        mask = Image.new('L', size, 0)
+        draw = ImageDraw.Draw(mask) 
+        draw.ellipse((0, 0) + size, fill=255)
+        mask = mask.resize(avatar.size)
+        avatar.putalpha(mask)
+        output = ImageOps.fit(avatar, mask.size, centering=(0.5, 0.5))
+        output.putalpha(mask)
+        outline = Image.new("RGBA", (470, 470), colour)
+        size = (outline.size[0] * 6, outline.size[1] * 6)
+        mask = Image.new('L', size, 0)
+        draw = ImageDraw.Draw(mask) 
+        draw.ellipse((0, 0) + size, fill=255)
+        mask = mask.resize(outline.size)
+        outline.putalpha(mask)
+        output2 = ImageOps.fit(outline, mask.size, centering=(0.5, 0.5))
+        output2.putalpha(mask)
+        nameplate = Image.new("RGBA", (2000, 500), (35, 39, 42))
+        statsplate = Image.new("RGBA", (2000, 150), (44, 47, 51))
+        badgeplate = Image.new("RGBA", (560, 650), (44, 47, 51))
+        whiteborderlong = Image.new("RGBA", (2000, 10), colour)
+        whiteborderlong2 = Image.new("RGBA", (2560, 10), colour)
+        whiteborderheight = Image.new("RGBA", (10, 510), colour)
+        smallwhiteborder = Image.new("RGBA", (10, 150), colour)
+        boxborderside = Image.new("RGBA", (10, 600), colour)
+        boxborderheight = Image.new("RGBA", (1010, 10), colour)
+        transdesc = Image.new("RGBA", (1000, 600), (0, 0, 0, 175))
+        image.paste(nameplate, (0, 0), nameplate)
+        image.paste(output2, (15, 15), output2)
+        image.paste(output, (25, 25), output)
+        image.paste(statsplate, (0, 500), statsplate)
+        image.paste(badgeplate, (2000, 0), badgeplate)
+        image.paste(transdesc, (70, 750), transdesc)
+        image.paste(transdesc, (1490, 750), transdesc)
         profileeditor = Image.open("badges/profile_editor.png") 
         profileeditor = profileeditor.resize((100, 100))
         serverowner = Image.open("badges/server_owner.png") 
@@ -234,140 +276,141 @@ class economy:
         helper = helper.resize((100, 100))
         married = Image.open("badges/married.png") 
         married = married.resize((100, 100))
-        insx4 = Image.open("sx4-byellow.png") 
+        insx4 = Image.open("badges/sx4-circle.png") 
         insx4 = insx4.resize((100, 100))
         x = 0
         y = 0
         if [x for x in self.bot.guilds if user == x.owner]:
-            img.paste(serverowner, (1500 + x, 1100 + y), serverowner)
-            x += 125
-            if x >= 450:
-                y += 125
+            image.paste(serverowner, (2030 + x, 130 + y), serverowner)
+            x += 130
+            if x >= 520:
+                y += 120
                 x = 0
         if [x for x in self.bot.get_guild(330399610273136641).members if user == x and discord.utils.get(self.bot.get_guild(330399610273136641).roles, id=330400064541425664) in x.roles]:
-            img.paste(developer, (1500 + x, 1100 + y), developer)
-            x += 125
-            if x >= 450:
-                y += 125
+            image.paste(developer, (2030 + x, 130 + y), developer)
+            x += 130
+            if x >= 520:
+                y += 120
                 x = 0
         if user.id == 153286414212005888 or user.id == 285451236952768512 or user.id == 388424304678666240 or user.id == 250815960250974209 or user.id == 223424602150273024:
-            img.paste(helper, (1500 + x, 1100 + y), helper)
-            x += 125
-            if x >= 450:
-                y += 125
+            image.paste(helper, (2030 + x, 130 + y), helper)
+            x += 130
+            if x >= 520:
+                y += 120
                 x = 0
         if [x for x in self.bot.get_guild(330399610273136641).members if user == x and discord.utils.get(self.bot.get_guild(330399610273136641).roles, id=355083059336314881) in x.roles]:
-            img.paste(donator, (1500 + x, 1100 + y), donator)
-            x += 125
-            if x >= 450:
-                y += 125
+            image.paste(donator, (2030 + x, 130 + y), donator)
+            x += 130
+            if x >= 520:
+                y += 120
                 x = 0
         if not self.settingss[str(user.id)]["BIRTHDAY"] and not self.settingss[str(user.id)]["DESCRIPTION"] and not self.settingss[str(user.id)]["HEIGHT"]:
             pass
         elif self.settingss[str(user.id)]["BIRTHDAY"] == "Not set" and self.settingss[str(user.id)]["DESCRIPTION"] == "Not set" and self.settingss[str(user.id)]["HEIGHT"] == "Not set":
             pass
         else:
-            img.paste(profileeditor, (1500 + x, 1100 + y), profileeditor)
-            x += 125
-            if x >= 450:
-                y += 125
+            image.paste(profileeditor, (2030 + x, 130 + y), profileeditor)
+            x += 130
+            if x >= 520:
+                y += 120
                 x = 0
         if user in self.bot.get_guild(330399610273136641).members:
-            img.paste(insx4, (1500 + x, 1100 + y), insx4)
-            x += 125
-            if x >= 450:
-                y += 125
+            image.paste(insx4, (2030 + x, 130 + y), insx4)
+            x += 130
+            if x >= 520:
+                y += 120
                 x = 0
-        if msg != "No-one":
-            img.paste(married, (1500 + x, 1100 + y), married)
-            x += 125
-            if x >= 450:
-                y += 125
+        if msg != "No-one\nMarry someone to get a free badge":
+            image.paste(married, (2030 + x, 130 + y), married)
+            x += 130
+            if x >= 520:
+                y += 120
                 x = 0
         if not user.activity:
             pass
         elif user.activity:
-            img.paste(playing, (1500 + x, 1100 + y), playing)
-            x += 125
-            if x >= 450:
-                y += 125
+            image.paste(playing, (2030 + x, 130 + y), playing)
+            x += 130
+            if x >= 520:
+                y += 120
                 x = 0
         elif user.activity.url:
-            img.paste(streaming, (1500 + x, 1100 + y), streaming)
-            x += 125
-            if x >= 450:
-                y += 125
+            image.paste(streaming, (2030 + x, 130 + y), streaming)
+            x += 130
+            if x >= 520:
+                y += 120
                 x = 0
-        if not self.settingss[str(user.id)]["BIRTHDAY"]:
-            self.settingss[str(user.id)]["BIRTHDAY"] = "Not set"
-        if not self.settingss[str(user.id)]["DESCRIPTION"]:
-            self.settingss[str(user.id)]["DESCRIPTION"] = "Not set"
-        if not self.settingss[str(user.id)]["HEIGHT"]:
-            self.settingss[str(user.id)]["HEIGHT"] = "Not set"
-        draw = ImageDraw.Draw(img)
-        font = ImageFont.truetype("exo.regular.otf", 75)
-        if x > 0 or y > 0:
-            draw.text((1500, 950), "Badges:", colour, font=font)
-        size = 300
-        number = 0
-        left = 300
+        image.paste(boxborderside, (70, 750), boxborderside)
+        image.paste(boxborderside, (1070, 750), boxborderside)
+        image.paste(boxborderside, (1490, 750), boxborderside)
+        image.paste(boxborderside, (2490, 750), boxborderside)
+        image.paste(boxborderheight, (70, 750), boxborderheight)
+        image.paste(boxborderheight, (70, 1350), boxborderheight)
+        image.paste(boxborderheight, (1490, 750), boxborderheight)
+        image.paste(boxborderheight, (1490, 1350), boxborderheight)
+        image.paste(whiteborderlong, (0, 500), whiteborderlong)
+        image.paste(whiteborderlong2, (0, 650), whiteborderlong2)
+        image.paste(whiteborderheight, (2000, 0), whiteborderheight)
+        image.paste(smallwhiteborder, (495, 500), smallwhiteborder)
+        image.paste(smallwhiteborder, (995, 500), smallwhiteborder)
+        image.paste(smallwhiteborder, (1495, 500), smallwhiteborder)
+        image.paste(smallwhiteborder, (2000, 510), smallwhiteborder)
+        draw = ImageDraw.Draw(image)
+        fontsize = 216
+        left = 720
+        down = 90
         i = 0
-        for x in range(len(str(user.name))):
+        for x in range(len(str(user))):
+            fontsize -= 4
+            left -= 5
             i += 1
-            number -= 10
-            left -= 17
-            if i >= 12:
-                size -= 5
-            else:
-                size -= 9    
-        fontbig = ImageFont.truetype("exo.regular.otf", size)
-        draw.text((left, 0), "{}'s Profile:".format(user.name), colour, font=fontbig)
+            down += 2
+            if i >= 12 and i <= 18:
+                fontsize -= 3
+                down += 1
+            if i >= 28:
+                left -= 1
+                down += 1
+                fontsize += 2
         n = 0
-        m = 55
-        j = 0
-        s = 50
+        m = 46
         times = 0 
-        times2 = 0
-        description2 = ""
-        married = ""
-        for x in range(math.ceil(len(str(self.settingss[str(user.id)]["DESCRIPTION"]))/55)+1):
+        description = ""
+        for x in range(math.ceil(len(str(self.settingss[str(user.id)]["DESCRIPTION"]))/46)+1):
             if [x for x in self.settingss[str(user.id)]["DESCRIPTION"] if " " in x]:
                 for x in range(len([x for x in self.settingss[str(user.id)]["DESCRIPTION"] if " " in x])+1):
                     while self.settingss[str(user.id)]["DESCRIPTION"][m-1:m] != " " and m != 0 and m != len(str(self.settingss[str(user.id)]["DESCRIPTION"])):
                         m -= 1
-                    times += 55
+                    times += 46
                     if m == 0:
-                        n = times - 55
+                        n = times - 46
                         m = times
-            description2 += self.settingss[str(user.id)]["DESCRIPTION"][n:m] + "\n"
+            description += self.settingss[str(user.id)]["DESCRIPTION"][n:m] + "\n"
             n = m
-            m += 55
-        for x in range(math.ceil(len(str(msg))/50)+1):
-            if [x for x in msg if " " in x]:
-                for x in range(len([x for x in msg if " " in x])+1):
-                    while msg[s-1:s] != " " and s != 0 and s != len(str(msg)):
-                        s -= 1
-                    times2 += 50
-                    if s == 0:
-                        j = times2 - 50
-                        s = times2
-            married += msg[j:s] + "\n"
-            j = s
-            s += 50
-        draw.text((50, 400 + number), "Description:\n{}".format(description2), colour, font=font)
-        number += math.ceil(len(str(self.settingss[str(user.id)]["DESCRIPTION"]))/55) * 80
-        draw.text((50, 600 + number), "Height: {}".format(self.settingss[str(user.id)]["HEIGHT"]), colour, font=font)
-        draw.text((50, 800 + number), "Birthday: {}".format(self.settingss[str(user.id)]["BIRTHDAY"]), colour, font=font)
-        draw.text((50, 1000 + number), "Reputation: {}".format(self.settings["user"][str(user.id)]["rep"]), colour, font=font)
-        draw.text((50, 1200 + number), "Balance: ${}".format(self.settings["user"][str(user.id)]["balance"]), colour, font=font)
-        draw.text((50, 1400 + number), "Married to:\n{}".format(married), colour, font=font)
-        img.save("result.png")
-        await ctx.send(file=discord.File("result.png", "result.png"))
+            m += 50
+        font = ImageFont.truetype("exo.regular.otf", fontsize)
+        fontstats = ImageFont.truetype("exo.regular.otf", 45)
+        fontbig = ImageFont.truetype("exo.regular.otf", 70)
+        draw.text((left, down), str(user), colour, font=font)
+        draw.text((20, 545), "Reputation: {}".format(self.settings["user"][str(user.id)]["rep"]), colour, font=fontstats)
+        draw.text((520, 545), "Balance: ${}".format(self.settings["user"][str(user.id)]["balance"]), colour, font=fontstats)
+        draw.text((1020, 545), "Birthday: {}".format(self.settingss[str(user.id)]["BIRTHDAY"]), colour, font=fontstats)
+        draw.text((1520, 545), "Height: {}".format(self.settingss[str(user.id)]["HEIGHT"]), colour, font=fontstats)
+        draw.text((2160, 20), "Badges", colour, font=fontbig)
+        draw.text((95, 770), "Description", colour, font=fontbig)
+        draw.text((95, 870), description, colour, font=fontstats)
+        draw.text((1515, 770), "Partners", colour, font=fontbig)
+        draw.text((1515, 870), msg, colour, font=fontstats)
+        image.save("test.png")
+        await ctx.send(file=discord.File("test.png", "test.png"))
         try:
-            os.remove("result.png")
+            os.remove("test.png")
         except:
             pass
-        return
+        try:
+            os.remove("avatar.png")
+        except: 
+            pass
         
     @commands.command(aliases=["pd", "payday"])
     async def daily(self, ctx):
@@ -474,7 +517,7 @@ class economy:
             user = ctx.author
             await self._set_bank_user(user)
             try:
-                s=discord.Embed(description="Your balance: **${}**".format(self.settings["user"][str(user.id)]["balance"]), colour=colour)
+                s=discord.Embed(description="Your balance: **${:,}**".format(self.settings["user"][str(user.id)]["balance"]), colour=colour)
             except:
                 s=discord.Embed(description="Your balance: **$0**", colour=colour)
             s.set_author(name=user.name, icon_url=user.avatar_url)
@@ -482,7 +525,7 @@ class economy:
         else:
             await self._set_bank_user(user)
             try:
-                s=discord.Embed(description="Their balance: **${}**".format(self.settings["user"][str(user.id)]["balance"]), colour=colour)
+                s=discord.Embed(description="Their balance: **${:,}**".format(self.settings["user"][str(user.id)]["balance"]), colour=colour)
             except:
                 s=discord.Embed(description="Their balance: **$0**", colour=colour)
             s.set_author(name=user.name, icon_url=user.avatar_url)
@@ -514,7 +557,7 @@ class economy:
         if check is True or user == ctx.author:
             await self._set_bank_user(user)
             try:
-                s=discord.Embed(description="Your networth: **${}**".format(worth), colour=colour)
+                s=discord.Embed(description="Your networth: **${:,}**".format(worth), colour=colour)
             except:
                 s=discord.Embed(description="Your networth: **$0**", colour=colour)
             s.set_author(name=user.name, icon_url=user.avatar_url)
@@ -522,7 +565,7 @@ class economy:
         else:
             await self._set_bank_user(user)
             try:
-                s=discord.Embed(description="Their networth: **${}**".format(worth), colour=colour)
+                s=discord.Embed(description="Their networth: **${:,}**".format(worth), colour=colour)
             except:
                 s=discord.Embed(description="Their networth: **$0**", colour=colour)
             s.set_author(name=user.name, icon_url=user.avatar_url)
@@ -537,7 +580,7 @@ class economy:
             await ctx.send("You don't have enough money to do double or nothing :no_entry:")
             ctx.command.reset_cooldown(ctx)
             return
-        msg = await ctx.send("This will bet **${}**, are you sure you want to bet this?\nYes or No".format(self.settings["user"][str(author.id)]["balance"]))
+        msg = await ctx.send("This will bet **${:,}**, are you sure you want to bet this?\nYes or No".format(self.settings["user"][str(author.id)]["balance"]))
         try:
             def don(m):
                 return m.author == ctx.author
@@ -555,14 +598,14 @@ class economy:
             ctx.command.reset_cooldown(ctx)
             return
         number = randint(0, 1)
-        message = await ctx.send("You just put **${}** on the line and...".format(self.settings["user"][str(author.id)]["balance"]))
+        message = await ctx.send("You just put **${:,}** on the line and...".format(self.settings["user"][str(author.id)]["balance"]))
         await asyncio.sleep(2)
         if number == 0:
-            await message.edit(content="You lost it all! **-${}**".format(self.settings["user"][str(author.id)]["balance"]))
+            await message.edit(content="You lost it all! **-${:,}**".format(self.settings["user"][str(author.id)]["balance"]))
             self.settings["user"][str(author.id)]["winnings"] -= self.settings["user"][str(author.id)]["balance"]
             self.settings["user"][str(author.id)]["balance"] = 0
         if number == 1:
-            await message.edit(content="You double your money! **+${}**".format(self.settings["user"][str(author.id)]["balance"]))
+            await message.edit(content="You double your money! **+${:,}**".format(self.settings["user"][str(author.id)]["balance"]))
             self.settings["user"][str(author.id)]["winnings"] += self.settings["user"][str(author.id)]["balance"]
             self.settings["user"][str(author.id)]["balance"] *= 2
         dataIO.save_json(self.location, self.settings) 
@@ -575,9 +618,9 @@ class economy:
         s.set_author(name="Shop", icon_url=self.bot.user.avatar_url)
         
         for item in self._shop["picitems"]:
-            s.add_field(name=item["name"], value="Price: ${}\nDurability: {}".format(item["price"], item["durability"]))
+            s.add_field(name=item["name"], value="Price: ${:,}\nDurability: {}".format(item["price"], item["durability"]))
         try:    
-            s.set_footer(text="Use s?shopbuy <item> to buy an item. | Your balance: ${}".format(self.settings["user"][str(ctx.author.id)]["balance"]))
+            s.set_footer(text="Use s?shopbuy <item> to buy an item. | Your balance: ${:,}".format(self.settings["user"][str(ctx.author.id)]["balance"]))
         except:
             s.set_footer(text="Use s?shopbuy <item> to buy an item. | Your balance: $0")
         
@@ -759,13 +802,13 @@ class economy:
         rr = randint(1, 6)
         winnings = math.ceil(bet * (100/((6 - bullets) / 6 * 100)* 0.95))
         if bullets >= rr:
-            s=discord.Embed(description="You were shot :gun:\nYou lost your bet of **${}**".format(bet), colour=discord.Colour(value=colour))
+            s=discord.Embed(description="You were shot :gun:\nYou lost your bet of **${:,}**".format(bet), colour=discord.Colour(value=colour))
             s.set_author(name=author.name, icon_url=author.avatar_url)
             await ctx.send(embed=s)
         else:
             self.settings["user"][str(author.id)]["balance"] += winnings
             self.settings["user"][str(author.id)]["winnings"] += winnings
-            s=discord.Embed(description="You're lucky, you get to live another day.\nYou Won **${}**".format(winnings), colour=discord.Colour(value=colour))
+            s=discord.Embed(description="You're lucky, you get to live another day.\nYou Won **${:,}**".format(winnings), colour=discord.Colour(value=colour))
             s.set_author(name=author.name, icon_url=author.avatar_url)
             await ctx.send(embed=s)
         dataIO.save_json(self.location, self.settings)
@@ -1118,11 +1161,11 @@ class economy:
             for x in range(0, item["amount"]):
                 self.settings["user"][str(author.id)]["items"].append(item["name"].title())
             try:
-                await channel.send("You just bought `{} {}` for **${}** :tada:".format(item["amount"], item["name"], item["price"]))
+                await channel.send("You just bought `{} {}` for **${:,}** :tada:".format(item["amount"], item["name"], item["price"]))
             except:
-                await channel.send("You just bought `1 {}` for **${}** :tada:".format(item["name"], item["price"]))
+                await channel.send("You just bought `1 {}` for **${:,}** :tada:".format(item["name"], item["price"]))
             try:
-                await owner.send("Your `{}` just got bought on the auction house, it was sold for **${}** :tada:".format(item["name"], item["price"]))
+                await owner.send("Your `{}` just got bought on the auction house, it was sold for **${:,}** :tada:".format(item["name"], item["price"]))
             except:
                 pass
             
@@ -1389,7 +1432,7 @@ class economy:
                     
                     dataIO.save_json(self.location, self.settings)
                     
-                    await ctx.send("You just bought a {} for **${}** :ok_hand:".format(item["name"], item["price"]))
+                    await ctx.send("You just bought a {} for **${:,}** :ok_hand:".format(item["name"], item["price"]))
                 else:
                     await ctx.send("You don't have enough money to buy that item :no_entry:")
                     
@@ -1677,7 +1720,7 @@ class economy:
             user = discord.utils.get(self.bot.get_all_members(), id=int(x[0]))
             if not user:
                 user = "Unknown User"
-            msg+= "{}. `{}` - ${}\n".format(i, user, x[1]["winnings"])
+            msg+= "{}. `{}` - ${:,}\n".format(i, user, x[1]["winnings"])
         s=discord.Embed(title="Winnings Leaderboard", description=msg, colour=0xfff90d)
         s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.author.name, n, page, math.ceil(len(self.settings["user"])/10)), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=s)
@@ -1707,25 +1750,25 @@ class economy:
             user = discord.utils.get(self.bot.get_all_members(), id=int(x[0]))
             if not user:
                 user = "Unknown User"
-            msg+= "{}. `{}` - ${}\n".format(i, user, x[1]["balance"])
+            msg+= "{}. `{}` - ${:,}\n".format(i, user, x[1]["balance"])
         s=discord.Embed(title="Bank Leaderboard", description=msg, colour=0xfff90d)
         s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.author.name, n, page, math.ceil(len([x for x in self.settings["user"].items() if x[1]["balance"] != 0])/10)), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=s)
         
     @commands.command(hidden=True)
-    @checks.is_owner()
+    @checks.is_main_owner()
     async def moneyset(self, ctx, amount: str, *, user: discord.Member=None):
         if not user:
             user = ctx.author
         if amount[0:1] == "+":
             self.settings["user"][str(user.id)]["balance"] += int(amount[1:len(amount)])
-            await ctx.send("**{}** has been given an extra **${}**".format(user, str(amount[1:len(amount)])))
+            await ctx.send("**{}** has been given an extra **${:,}**".format(user, str(amount[1:len(amount)])))
         elif amount[0:1] == "-":
             self.settings["user"][str(user.id)]["balance"] -= int(amount[1:len(amount)])
-            await ctx.send("**{}** has had **${}** taken off their balance".format(user, str(amount[1:len(amount)])))
+            await ctx.send("**{}** has had **${:,}** taken off their balance".format(user, str(amount[1:len(amount)])))
         else:
             self.settings["user"][str(user.id)]["balance"] = int(amount)
-            await ctx.send("**{}** has had their balance set to **${}**".format(user, amount))
+            await ctx.send("**{}** has had their balance set to **${:,}**".format(user, amount))
         dataIO.save_json(self.location, self.settings)
         
     @commands.command()
@@ -1740,14 +1783,14 @@ class economy:
         sortedloser = sorted(self.settings["user"].items(), key=lambda x: x[1]["winnings"])[:1]
         for x in sortedloser:
             user = discord.utils.get(self.bot.get_all_members(), id=int(x[0]))
-            toploser = "${} ({})".format(x[1]["winnings"], user)
+            toploser = "${:,} ({})".format(x[1]["winnings"], user)
         for x in sortedslot:
-            topwin = "${} ({})".format(x["winnings"], x["username"])            
+            topwin = "${:,} ({})".format(x["winnings"], x["username"])            
         s=discord.Embed(colour=0xfff90d)
         s.set_author(name="Bank Stats", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Users", value=len(self.settings["user"]))
-        s.add_field(name="Total Money", value="$" + str(msg))
-        s.add_field(name="Total Winnings", value="$" + str(win))
+        s.add_field(name="Total Money", value="${:,}".format(msg))
+        s.add_field(name="Total Winnings", value="${:,}".format(win))
         s.add_field(name="Biggest Win (Slot)", value=topwin)
         s.add_field(name="Biggest Loser", value=toploser)
         await ctx.send(embed=s)
@@ -1805,7 +1848,7 @@ class economy:
         
         i = page*10-9
         for entry in networth_sorted[page*10-10:page*10]:
-            msg += "{}. `{}` - ${}\n".format(i, entry["user"], entry["worth"])
+            msg += "{}. `{}` - ${:,}\n".format(i, entry["user"], entry["worth"])
             
             i += 1
         
@@ -1816,6 +1859,7 @@ class economy:
         else:
             embed.set_footer(text = "{} does not have a rank | Page {}/{}".format(ctx.author.name, page, math.ceil(len([x for x in entries if x["worth"] != 0])/10)), icon_url = ctx.author.avatar_url)
         await ctx.send(embed=embed)
+        del entries
         
     @leaderboard.command()
     async def streak(self, ctx, page: int=None):
@@ -1925,7 +1969,19 @@ class economy:
             user = discord.utils.get(self.bot.get_all_members(), name=user[:usernum], discriminator=user[usernum + 1:len(user)])
         else:
             try:
-                user = await self.bot.get_user_info(int(user))
+                user2 = await self.bot.get_user_info(int(user))
+                if not user2:
+                    try:
+                        del self.data["user"][str(author.id)]["marriedto"][user]
+                        try:
+                            del self.data["user"][user]["marriedto"][str(author.id)]
+                        except: 
+                            pass
+                        return await ctx.send("I could not find that user but i found the id in your married list, they have now been deleted from it.")
+                    except:
+                        user = user2
+                else:
+                    user = user2
             except:
                 user = discord.utils.get(self.bot.get_all_members(), name=user)
         if not user:
@@ -1958,6 +2014,22 @@ class economy:
             await ctx.send("Feels bad **{}**, Argument?".format(user.name))
         else:
             await ctx.send("You are not married to that user :no_entry:")
+
+    @commands.command()
+    async def married(self, ctx, user: discord.Member=None):
+        if not user:
+            user = ctx.author
+        list = []
+        try:
+            for x in self.data["user"][str(user.id)]["marriedto"]:
+                user = await self.bot.get_user_info(x)
+                if user:
+                    list.append(str(user) + " ({})".format(x))
+                else:
+                    list.append(x)
+        except:
+            return await ctx.send("That user is not married to anyone :no_entry:")
+        await ctx.send(embed=discord.Embed(description="\n".join(list)).set_author(name=str(user), icon_url=user.avatar_url))
             
     @commands.command(aliases=["mdivorce"]) 
     async def massdivorce(self, ctx):
@@ -2013,12 +2085,10 @@ class economy:
         for userid in self.data["user"][str(user.id)]["marriedto"]:
             user = discord.utils.get(self.bot.get_all_members(), id=int(userid))
             if user:
-                msg += "{}, ".format(user)
+                msg += "• {}\n\n".format(user)
         
         if msg == "":
-            msg = "No-one"
-        else:
-            msg = msg[:-2]
+            msg = "No-one\nMarry someone to get a free badge"
         return msg
         
     @commands.group()
@@ -2056,7 +2126,7 @@ class economy:
         if inches >= 12:
             await ctx.send("There's 12 inches in a foot you should know that :no_entry:")
             return
-        if feet == 0 and inches == 0:
+        if feet <= 0 and inches <= 0:
             await ctx.send("You have to be a height :no_entry:")
             return
         cm = inches * 2.54
@@ -2067,82 +2137,32 @@ class economy:
         await ctx.send("Your height has been set to {}'{} ({}cm)".format(feet, inches, total))
     
     @set.command()
-    async def birthday(self, ctx, day: int, month: int, year: int=None):
+    async def birthday(self, ctx, birthday: str):
         """set your birthday
-        example: s?set birthday 1 7 2002
-        1st July 2002"""
+        example: s?set birthday 01/07/2002"""
         author = ctx.author
-        days = "{}th".format(day)
-        if day == 1:
-            days = "1st"
-        if day == 2:
-            days = "2nd"
-        if day == 3:
-            days = "3rd"
-        if day == 21:
-            days = "21st"
-        if day == 22:
-            days = "22nd"
-        if day == 23:
-            days = "23rd"
-        if day == 31:
-            days = "31st"
-        if day <= 0:
-            await ctx.send("Invalid day :no_entry:")
-            return
-        if day >= 32:
-            await ctx.send("Invalid day :no_entry:")
-            return
-        months = ""
-        if month == 1:
-            months = "January"
-        if month == 2:
-            months = "February"
-            if day >= 30:
-                await ctx.send("Last time i checked February only had 29 days and that's on a leap year :thinking:")
-                return
-        if month == 3:
-            months = "March"
-        if month == 4:
-            months = "April" 
-            if day == 31:
-                await ctx.send("Last time i checked April only had 30 days :thinking:")
-                return
-        if month == 5:
-            months = "May"
-        if month == 6:
-            months = "June"
-            if day == 31:
-                await ctx.send("Last time i checked June only had 30 days :thinking:")
-                return
-        if month == 7:
-            months = "July"
-        if month == 8:
-            months = "August"
-        if month == 9:
-            months = "September"
-            if day == 31:
-                await ctx.send("Last time i checked September only had 30 days :thinking:")
-                return
-        if month == 10:
-            months = "October"
-        if month == 11:
-            months = "November"
-            if day == 31:
-                await ctx.send("Last time i checked November only had 30 days :thinking:")
-                return
-        if month == 12:
-            months = "December"
-        if months == "":
-            await ctx.send("Invalid month :no_entry:")
-            return
-        if not year:
-            year = ""
-        if year:
-            if year >= int(datetime.datetime.utcnow().strftime("%Y")):
-                await ctx.send("I think we both know you weren't born in {}.".format(year))
-                return
-        self.settingss[str(author.id)]["BIRTHDAY"] = "{} {} {}".format(days, months, year)
+        birthdates = birthday.split("/")
+        try:
+            day = int(birthdates[0])
+            month = int(birthdates[1])
+        except:
+            return await ctx.send("Invalid Birthday :no_entry:")
+        try:
+            year = int(birthdates[2])
+        except:
+            year = None
+        if day > 31:
+            return await ctx.send("Invalid Birthday :no_entry:")
+        if month > 12:
+            return await ctx.send("Invalid Birthday :no_entry:")
+        elif day > 28 and month == 2:
+            return await ctx.send("Invalid Birthday :no_entry:")
+        elif day == 31 and (month % 2) == 0:
+            return await ctx.send("Invalid Birthday :no_entry:")
+        elif year is not None and (year > int(datetime.datetime.utcnow().strftime("%Y")) - 1 or year < int(datetime.datetime.utcnow().strftime("%Y")) - 100):
+            return await ctx.send("Invalid Birthday :no_entry:")
+        else:
+            self.settingss[str(author.id)]["BIRTHDAY"] = birthday
         await ctx.send("Your birthday has been set to the {}".format(self.settingss[str(author.id)]["BIRTHDAY"]))
         dataIO.save_json(self.JSON, self.settingss)
         
@@ -2159,7 +2179,7 @@ class economy:
         
     @set.command()
     async def background(self, ctx, image_url=None): 
-        """Set your background on your profile to make it shine a bit more"""
+        """Set your background on your profile to make it shine a bit more (Ideal resolution: 2560x1440)"""
         author = ctx.author
         if str(author.id) not in self._background:
             self._background[str(author.id)] = {}
