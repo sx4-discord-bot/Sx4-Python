@@ -41,8 +41,21 @@ class selfroles:
 			
     @selfrole.command() 
     @checks.has_permissions("manage_roles")
-    async def add(self, ctx, *, role: discord.Role):
+    async def add(self, ctx, *, role):
         """Add a role to be self assignable"""
+        if "<" in role and "&" in role and ">" in role and "@" in role:
+            role = role.replace("<", "").replace(">", "").replace("@", "").replace("&", "")
+            role = discord.utils.get(ctx.guild.roles, id=int(role))
+        else:
+            try:
+                role = discord.utils.get(ctx.guild.roles, id=int(role))
+            except:
+                try:
+                    role = list(set(filter(lambda r: r.name.lower() == role.lower(), ctx.guild.roles)))[0]
+                except:
+                    return await ctx.send("I could not find that role :no_entry:")
+        if not role:
+            return await ctx.send("I could not find that role :no_entry:")
         server = ctx.message.guild
         try:
             if str(role.id) in self.data[str(server.id)]["role"]:
@@ -56,8 +69,21 @@ class selfroles:
 		
     @selfrole.command() 
     @checks.has_permissions("manage_roles")
-    async def remove(self, ctx, *, role: discord.Role): 
+    async def remove(self, ctx, *, role): 
         """Remove a role to be self assignable"""
+        if "<" in role and "&" in role and ">" in role and "@" in role:
+            role = role.replace("<", "").replace(">", "").replace("@", "").replace("&", "")
+            role = discord.utils.get(ctx.guild.roles, id=int(role))
+        else:
+            try:
+                role = discord.utils.get(ctx.guild.roles, id=int(role))
+            except:
+                try:
+                    role = list(set(filter(lambda r: r.name.lower() == role.lower(), ctx.guild.roles)))[0]
+                except:
+                    return await ctx.send("I could not find that role :no_entry:")
+        if not role:
+            return await ctx.send("I could not find that role :no_entry:")
         server = ctx.message.guild
         if str(role.id) not in self.data[str(server.id)]["role"]:
             await ctx.send("That role isn't a self role :no_entry:")
@@ -84,6 +110,8 @@ class selfroles:
             role = discord.utils.get(server.roles, id=int(roleid))
             if role:
                 i += 1
+        if i == 0:
+            return await ctx.send("This server has no selfroles :no_entry:")
         page = 1
         s=discord.Embed(colour=0xfff90d)
         s.set_author(name=server.name, icon_url=server.icon_url)
@@ -138,12 +166,25 @@ class selfroles:
                     await message.remove_reaction("▶", ctx.me)
                     page2 = False
         except:
-            await ctx.send("This server has no Self Roles :no_entry:")
+            pass
         
 			
     @commands.command()
-    async def role(self, ctx, *, role: discord.Role):
+    async def role(self, ctx, *, role):
         """Self assign a role in the selfrole list"""
+        if "<" in role and "&" in role and ">" in role and "@" in role:
+            role = role.replace("<", "").replace(">", "").replace("@", "").replace("&", "")
+            role = discord.utils.get(ctx.guild.roles, id=int(role))
+        else:
+            try:
+                role = discord.utils.get(ctx.guild.roles, id=int(role))
+            except:
+                try:
+                    role = list(set(filter(lambda r: r.name.lower() == role.lower(), ctx.guild.roles)))[0]
+                except:
+                    return await ctx.send("I could not find that role :no_entry:")
+        if not role:
+            return await ctx.send("I could not find that role :no_entry:")
         author = ctx.message.author
         server = ctx.message.guild
         if str(server.id) not in self.data:

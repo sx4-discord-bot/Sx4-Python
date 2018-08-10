@@ -47,23 +47,26 @@ class autorole:
     async def role(self, ctx, *, role: discord.Role):
         """Set the role to be added to a user whne they join"""
         server = ctx.guild
-        self.data[str(server.id)]["role"] = role.name
+        self.data[str(server.id)]["role"] = role.id
         dataIO.save_json(self.JSON, self.data)
         await ctx.send("The autorole role is now **{}** <:done:403285928233402378>".format(role.name))
 		
     @autorole.command()
     @checks.has_permissions("manage_roles")
-    async def fix(self, ctx):
+    async def fix(self, ctx, subarg=None):
         """Has the bot been offline and missed a few users? Use this to add the role to everyone who doesn't have it"""
         server = ctx.guild
-        try:
-            role = discord.utils.get(server.roles, name=self.data[str(server.id)]["role"])
-        except:
+        if not subarg:
+            users = server.members
+        elif subarg.lower() == "nobots":
+            users = filter(lambda m: not m.bot, server.members)
+        role = discord.utils.get(server.roles, id=self.data[str(server.id)]["role"])
+        if not role:
             return await ctx.send("You need to set the autorole before you can use this :no_entry:")
-        members = len([x for x in server.members if role not in x.roles])
+        members = len([x for x in users if role not in x.roles])
         if not role:
             await ctx.send("Role is not set or does not exist :no_entry:")
-        for user in [x for x in server.members if role not in x.roles]:
+        for user in [x for x in users if role not in x.roles]:
             await user.add_roles(role, reason="Autorole fix")
         await ctx.send("Added **{}** to **{}** users <:done:403285928233402378>".format(role.name, members))
             
@@ -99,12 +102,12 @@ class autorole:
         if self.data[str(server.id)]["role"] == {}:
             s.add_field(name="Auto-role role", value="Role not set")
         else:
-            s.add_field(name="Auto-role role", value=self.data[str(server.id)]["role"])
+            s.add_field(name="Auto-role role", value=discord.utils.get(ctx.guild.roles, id=self.data[str(server.id)]["role"]).name)
         await ctx.send(embed=s)
 			
     async def on_member_join(self, member):
         server = member.guild
-        role = discord.utils.get(server.roles, name=self.data[str(server.id)]["role"])
+        role = discord.utils.get(server.roles, id=self.data[str(server.id)]["role"])
         if self.data[str(server.id)]["toggle"] == True: 
             await member.add_roles(role, reason="Autorole")
 			

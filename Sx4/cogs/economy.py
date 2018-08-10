@@ -22,8 +22,8 @@ import urllib.request
 from utils.PagedResult import PagedResult
 from utils.PagedResult import PagedResultData
 import random
-from random import choice
 from utils import Token
+from random import choice
 import asyncio
 from difflib import get_close_matches
 import requests

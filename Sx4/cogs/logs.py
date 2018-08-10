@@ -76,7 +76,7 @@ class logs:
         s.set_author(name=author, icon_url=author.avatar_url)
         s.add_field(name="Message", value=message.content)
         if self.data[str(server.id)]["toggle"] == True:
-            await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_message_edit(self, before, after):
         author = before.author
@@ -89,7 +89,7 @@ class logs:
         s.add_field(name="Before", value=before.content, inline=False)
         s.add_field(name="After", value=after.content)
         if self.data[str(server.id)]["toggle"] == True:
-            await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_guild_channel_delete(self, channel):
         server = channel.guild
@@ -101,17 +101,17 @@ class logs:
             s=discord.Embed(description="The text channel **{}** has just been deleted by **{}**".format(channel, deletedby), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
         elif isinstance(channel, discord.VoiceChannel):
             s=discord.Embed(description="The voice channel **{}** has just been deleted by **{}**".format(channel, deletedby), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
         else:
             s=discord.Embed(description="The category **{}** has just been deleted by **{}**".format(channel, deletedby), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_guild_channel_create(self, channel):
         server = channel.guild
@@ -123,17 +123,17 @@ class logs:
             s=discord.Embed(description="The text channel <#{}> has just been created by **{}**".format(channel.id, createdby), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
         elif isinstance(channel, discord.VoiceChannel):
             s=discord.Embed(description="The voice channel **{}** has just been created by **{}**".format(channel, createdby), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
         else:
             s=discord.Embed(description="The category **{}** has just been created by **{}**".format(channel, createdby), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=server, icon_url=server.icon_url)
             if self.data[str(server.id)]["toggle"] == True:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_guild_channel_update(self, before, after):
         server = before.guild
@@ -158,7 +158,7 @@ class logs:
             s.add_field(name="After", value="`{}`".format(after))
         if self.data[str(server.id)]["toggle"] == True:
             if before.name != after.name:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_member_join(self, member):
         server = member.guild
@@ -166,7 +166,7 @@ class logs:
         s.set_author(name=member, icon_url=member.avatar_url)
         s.set_footer(text="User ID: {}".format(member.id))
         if self.data[str(server.id)]["toggle"] == True:
-            await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			 
     async def on_member_remove(self, member):
         server = member.guild
@@ -174,7 +174,7 @@ class logs:
         s.set_author(name=member, icon_url=member.avatar_url)
         s.set_footer(text="User ID: {}".format(member.id))
         if self.data[str(server.id)]["toggle"] == True:
-            await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_member_ban(self, guild, user):
         server = guild
@@ -186,7 +186,7 @@ class logs:
         s.set_author(name=user, icon_url=user.avatar_url)
         s.set_footer(text="User ID: {}".format(user.id))
         if self.data[str(server.id)]["toggle"] == True:
-            await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_member_unban(self, guild, user):
         server = guild
@@ -198,7 +198,7 @@ class logs:
         s.set_author(name=user, icon_url=user.avatar_url)
         s.set_footer(text="User ID: {}".format(user.id))
         if self.data[str(server.id)]["toggle"] == True:
-            await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_guild_role_create(self, role): 
         server = role.guild
@@ -208,7 +208,7 @@ class logs:
         s=discord.Embed(description="The role **{}** has been created by **{}**".format(role.name, user), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=server, icon_url=server.icon_url)
         if self.data[str(server.id)]["toggle"] == True:
-            await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			 
     async def on_guild_role_delete(self, role):
         server = role.guild
@@ -218,7 +218,7 @@ class logs:
         s=discord.Embed(description="The role **{}** has been deleted by **{}**".format(role.name, user), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=server, icon_url=server.icon_url)
         if self.data[str(server.id)]["toggle"] == True:
-            await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_guild_role_update(self, before, after):
         server = before.guild
@@ -232,7 +232,7 @@ class logs:
         s.add_field(name="After", value=after)
         if self.data[str(server.id)]["toggle"] == True:
             if before.name != after.name:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 				
     async def on_voice_state_update(self, member, before, after):
         server = member.guild
@@ -262,7 +262,7 @@ class logs:
             s=discord.Embed(description="**{}** has been muted by **{}**".format(member.name, mutedby), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=member, icon_url=member.avatar_url)
         if self.data[str(server.id)]["toggle"] == True:
-            await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 			
     async def on_member_update(self, before, after):
         server = before.guild
@@ -282,7 +282,7 @@ class logs:
                 s=discord.Embed(description="The role `{}` has been added to **{}** by **{}**".format(role, after.name, user2), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
                 s.set_author(name=after, icon_url=before.avatar_url)
             if self.data[str(server.id)]["toggle"] == True:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
         if before.nick != after.nick:
             for x in await server.audit_logs(limit=1).flatten():
                 if x.action == discord.AuditLogAction.member_update:
@@ -297,7 +297,15 @@ class logs:
             s.add_field(name="Before", value=before.nick, inline=False)
             s.add_field(name="After", value=after.nick)
             if self.data[str(server.id)]["toggle"] == True:
-                await self.bot.get_channel(int(self.data[str(server.id)]["channel"])).send(embed=s)
+                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
+
+    async def webhook_send(self, channel, guild, embed):
+        with open("sx4-byellow.png", "rb") as f:
+            avatar = f.read()
+        webhook = discord.utils.get(await guild.webhooks(), name="Sx4")
+        if not webhook:
+            webhook = await channel.create_webhook(name="Sx4", avatar=avatar)
+        await webhook.send(embed=embed)
 		
 		
 def check_folders():

@@ -10,12 +10,12 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 import requests
 from cogs.mod import Prefix
+from utils import Token
 import aiohttp
 import json
 import traceback
 import sys
 import os
-from utils import Token
 import subprocess
 
 
@@ -59,20 +59,18 @@ async def on_ready():
         except Exception as e:
             print('Failed to load extension {}\n{}: {}'.format(extension, type(e).name, e))
     setattr(bot, "uptime", datetime.datetime.utcnow().timestamp())
+    dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
     payloadservers = {"server_count"  : len(bot.guilds)}
-    payloadshards = {"shard_count"  : bot.shard_count}
-    requests.post(url, data=payloadservers, headers=headers)
-    requests.post(url, data=payloadshards, headers=headers)
+    requests.post(url, data=dblpayloadservers, headers=headers)
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
     requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
     requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
 
 @bot.event
 async def on_guild_join(guild):
+    dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
     payloadservers = {"server_count"  : len(bot.guilds)}
-    payloadshards = {"shard_count"  : bot.shard_count}
-    requests.post(url, data=payloadservers, headers=headers)
-    requests.post(url, data=payloadshards, headers=headers)
+    requests.post(url, data=dblpayloadservers, headers=headers)
     requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
     requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
@@ -101,10 +99,10 @@ async def on_message_edit(before, after):
 		
 @bot.event
 async def on_guild_remove(guild):
+    dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
     payloadservers = {"server_count"  : len(bot.guilds)}
     payloadshards = {"shard_count"  : bot.shard_count}
-    requests.post(url, data=payloadservers, headers=headers)
-    requests.post(url, data=payloadshards, headers=headers)
+    requests.post(url, data=dblpayloadservers, headers=headers)
     requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
     requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)

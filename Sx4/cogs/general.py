@@ -348,17 +348,17 @@ class general:
         url = "https://discordbots.org/api/bots?search=tags:{}&limit=10&sort=monthlyPoints&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot,tags".format(urllib.parse.urlencode({"": dbl_tag}).replace("=", ""))
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
-        if len(data["results"]) == 0:
-            await ctx.send("That is not a valid tag :no_entry:")
-            return
         n = 0
         msg = ""
+        tag = None
         for x in data["results"]:
             msg += "{}. **{}#{}**\n".format(n+1, x["username"], x["discriminator"])
             n = n + 1
             for y in x["tags"]:         
                 if dbl_tag.lower() in y.lower():
                     tag = y 
+        if not tag:
+            return await ctx.send("That tag could not be found :no_entry:")
         s=discord.Embed(title="Bots in the tag {}".format(tag), description=msg)
         s.set_footer(text="Choose a number | cancel")
         message = await ctx.send(embed=s)
@@ -414,27 +414,45 @@ class general:
     @commands.command(pass_context=True)
     async def dbl(self, ctx, user: str=None):
         """Look up any bot on discord bot list and get statistics from it"""
+        request2 = requests.get("https://discordbots.org/api/bots?sort=server_count&limit=500&fields=id,username").json()["results"]
+        request3 = requests.get("https://discordbots.org/api/bots?sort=points&limit=500&fields=username,id").json()["results"]
         if not user:
-            user = str(self.bot.user.id)
-        if "<" in user and "@" in user:
+            user = self.bot.user
+            url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user.id)
+        elif "<" in user and "@" in user:
             userid = user.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
             url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(userid)
+            user = discord.utils.get(self.bot.get_all_members(), id=int(userid))
         elif "#" in user: 
             number = len([x for x in user if "#" not in x])
             usernum = number - 4
             url = "https://discordbots.org/api/bots?search=username:{}&discriminator:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user[:usernum], user[usernum + 1:len(user)])
+            user = discord.utils.get(self.bot.get_all_members, name=user[:usernum], discriminator=user[usernum + 1:len(user)])
         else:
             try:
                 int(user)
                 url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user)
+                user = discord.utils.get(self.bot.get_all_members(), id=int(user))
             except:
+                username = user
                 user = urllib.parse.quote(user)
                 url = "https://discordbots.org/api/bots?search=username:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&limit=1&sort=points".format(user)
+                try:
+                    user = [x for x in list(set(self.bot.get_all_members())) if x.bot and str(x.id) == [x["id"] for x in request3 if username.lower() in x["username"].lower()][0]][0]
+                except:
+                    try:
+                        user = [x for x in list(set(self.bot.get_all_members())) if x.bot and username in x.name][0]
+                    except:
+                        user = None
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())["results"]
         if len(data) == 0:
             await ctx.send("I could not find that bot :no_entry:")
             return
+        try:
+            number = [x["id"] for x in request2].index(str(user.id)) + 1
+        except:
+            number = None
         data = data[0]
         if data["certifiedBot"] == True:
             s=discord.Embed(description="<:dblCertified:392249976639455232> | " + data["shortdesc"])
@@ -443,14 +461,17 @@ class general:
         s.set_author(name=data["username"] + "#" + data["discriminator"], icon_url="https://cdn.discordapp.com/avatars/{}/{}".format(data["id"], data["avatar"]), url="https://discordbots.org/bot/{}".format(data["id"]))
         s.set_thumbnail(url="https://cdn.discordapp.com/avatars/{}/{}".format(data["id"], data["avatar"]))
         try:
-            s.add_field(name="Guilds", value=data["server_count"])
+            if not number:
+                s.add_field(name="Guilds", value="{:,}".format(data["server_count"]))
+            else:
+                s.add_field(name="Guilds", value="{:,}".format(data["server_count"]) + " ({})".format(await self.prefixfy(number)))
         except:
             s.add_field(name="Guilds", value="N/A")
         s.add_field(name="Prefix", value=data["prefix"])
         s.add_field(name="Library", value=data["lib"])
         s.add_field(name="Approval Date", value=datetime.strptime(data["date"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%d/%m/%Y"))
-        s.add_field(name="Monthly votes", value=str(data["monthlyPoints"]) + " :thumbsup:")
-        s.add_field(name="Total votes", value=str(data["points"]) + " :thumbsup:")
+        s.add_field(name="Monthly votes", value="{:,}".format(data["monthlyPoints"]) + " :thumbsup:")
+        s.add_field(name="Total votes", value="{:,}".format(data["points"]) + " :thumbsup:")
         if "https://" not in data["invite"]:
             s.add_field(name="Invite", value="**[Invite {} to your server](https://discordapp.com/oauth2/authorize?client_id={}&scope=bot)**".format(data["username"], data["id"]))
         else:
@@ -477,7 +498,7 @@ class general:
         for x in data["results"]:
             n = n + 1
             l = l + 1
-            msg += "{}. {} - **{}** servers\n".format(n, data["results"][l-1]["username"], data["results"][l-1]["server_count"])
+            msg += "{}. {} - **{:,}** servers\n".format(n, data["results"][l-1]["username"], data["results"][l-1]["server_count"])
         s=discord.Embed(description=msg)
         s.set_author(name="Bot List")
         s.set_footer(text="Page {}/50".format(page+1))
@@ -783,8 +804,7 @@ class general:
                 await message.remove_reaction("◀", ctx.me)
                 await message.remove_reaction("▶", ctx.me)
                 page2 = False
-        await ctx.send(embed=s)
-        
+
     @commands.command(pass_context=True, aliases=["mc", "mcount"])
     async def membercount(self, ctx):
         """Get all the numbers about a server"""
@@ -1295,9 +1315,17 @@ class general:
         await ctx.send(embed=s)
 
     @commands.command(pass_context=True, no_pm=True, aliases=["sinfo"])
-    async def serverinfo(self, ctx):
+    async def serverinfo(self, ctx, *, server=None):
         """Get some info on the current server"""
-        server = ctx.guild
+        if not server:
+            server = ctx.guild
+        else:
+            try:
+                server = self.bot.get_guild(int(server))
+            except:
+                server = discord.utils.get(self.bot.guilds, name=server)
+            if not server:
+                return await ctx.send("I could not find that guild :no_entry:")
         author = ctx.message.author
         colour = ''.join([choice('0123456789ABCDEF') for x in range(6)])
         colour = int(colour, 16)

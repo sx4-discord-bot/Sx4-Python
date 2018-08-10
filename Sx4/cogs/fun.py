@@ -40,6 +40,13 @@ class fun:
         self.settings = dataIO.load_json(self.JSON)
         self.settings = defaultdict(lambda: rps_settings, self.settings)
 
+    @commands.command(aliases=["calc"])
+    async def calculator(self, ctx, *, equation):
+        answer = os.popen('./calc {}'.format(equation.replace(" ", ""))).read()
+        if answer == "":
+            return await ctx.send("Invalid equation :no_entry:")
+        await ctx.send(answer)
+
     @commands.command()
     async def quote(self, ctx):
         """Gives you a random quote"""

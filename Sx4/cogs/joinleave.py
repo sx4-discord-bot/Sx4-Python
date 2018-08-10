@@ -353,7 +353,7 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
                 f.write(requests.get(self.settings[str(server.id)]["banner"]).content)
             image = Image.open("backgroundwelcomer.png")
             image = image.resize((2560, 1440))
-            background = Image.new('RGBA', (2560, 600), (0, 0, 0, 100))
+            background = Image.new('RGBA', (2560, 600), (0, 0, 0, 200))
             image.paste(background, (0, 425), background)
             x += 425
         else:
