@@ -39,3 +39,5 @@ Sx4 has a welcomer which is highly customizable, you can edit the message it wel
 <u>__Fun__</u>
 
 There are many fun commands on Sx4 to keep you entertained, there are commands such as rock paper scissors which you can play against the bot (the bot logs how many you've won/lost in stats) you can also marry/divorce other users which can be displayed on your very own customizable profile, as well as use google, steam, urbandictionary and much more!
+
+[![Discord Bots](https://discordbots.org/api/widget/440996323156819968.svg)](https://discordbots.org/bot/440996323156819968)
