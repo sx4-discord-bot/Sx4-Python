@@ -17,7 +17,7 @@ class music:
     def __init__(self, bot):
         self.bot = bot
         if not hasattr(bot, 'lavalink'):
-            lavalink.Client(ws_port=2334, rest_port=2333, bot=bot, password='youshallnotpass', loop=self.bot.loop, log_level=logging.DEBUG)
+            lavalink.Client(ws_port=2334, rest_port=2333, bot=bot, password=password, loop=self.bot.loop, log_level=logging.DEBUG)
             self.bot.lavalink.register_hook(self._events)
 
     async def _events(self, event):
