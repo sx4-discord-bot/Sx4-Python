@@ -52,6 +52,24 @@ class owner:
         await ctx.send("Shutting down...")
         await self.bot.logout()
 
+    async def on_message(self, message):
+        guild = self.bot.get_guild(474915121458839554)
+        if message.channel.id == 435991419484897301:
+            attachment = None
+            if message.embeds:
+                embed = message.embeds[0]
+            else:
+                embed = None
+            if message.attachments:
+                attachment = message.attachments[0].url
+            if attachment:
+                message = "{}: {} {}".format(message.author, message.content, attachment)
+            else:
+                message = "{}: {}".format(message.author, message.content)
+            
+            webhook = discord.utils.get(await guild.webhooks(), name="Webhook")
+            await webhook.send(content=message, embed=embed)
+
 		
 def setup(bot):
     bot.add_cog(owner(bot))

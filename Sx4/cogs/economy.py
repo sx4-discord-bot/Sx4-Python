@@ -1762,13 +1762,13 @@ class economy:
             user = ctx.author
         if amount[0:1] == "+":
             self.settings["user"][str(user.id)]["balance"] += int(amount[1:len(amount)])
-            await ctx.send("**{}** has been given an extra **${:,}**".format(user, str(amount[1:len(amount)])))
+            await ctx.send("**{}** has been given an extra **${}**".format(user, amount[1:len(amount)]))
         elif amount[0:1] == "-":
             self.settings["user"][str(user.id)]["balance"] -= int(amount[1:len(amount)])
-            await ctx.send("**{}** has had **${:,}** taken off their balance".format(user, str(amount[1:len(amount)])))
+            await ctx.send("**{}** has had **${}** taken off their balance".format(user, amount[1:len(amount)]))
         else:
             self.settings["user"][str(user.id)]["balance"] = int(amount)
-            await ctx.send("**{}** has had their balance set to **${:,}**".format(user, amount))
+            await ctx.send("**{}** has had their balance set to **${}**".format(user, amount))
         dataIO.save_json(self.location, self.settings)
         
     @commands.command()
@@ -2201,7 +2201,7 @@ class economy:
         image_url = image_url.replace(".gif", ".png").replace(".webp", ".png")
         if "https://" in image_url or "http://" in image_url:
             if ".png" in image_url or ".jpg" in image_url:
-                if "cdn.discordapp.com" in image_url or "i.imgur.com" in image_url:
+                if "cdn.discordapp.com" in image_url or "i.imgur.com" in image_url or "media.discordapp.net" in image_url:
                     self._background[str(author.id)] = image_url
                     dataIO.save_json(self._background_file, self._background)
                     await ctx.send("Your background has been set.")

@@ -58,6 +58,7 @@ class giveaway:
     @giveaway.command()
     @checks.has_permissions("manage_roles")
     async def delete(self, ctx, id: str):
+        """delete a giveaway"""
         try:
             message = await self.bot.get_channel(int(self._giveaway[str(ctx.guild.id)]["giveaways"][id][0]["channel"])).get_message(int(self._giveaway[str(ctx.guild.id)]["giveaways"][id][0]["message"]))
         except:
@@ -74,6 +75,7 @@ class giveaway:
     @giveaway.command()
     @checks.has_permissions("manage_roles")
     async def setup(self, ctx):
+        """Setup a giveaway, minimum time 120 seconds"""
         giveaway = {}
         server = ctx.guild
         def checkchar(m):
@@ -85,7 +87,7 @@ class giveaway:
         def check_time(m):
             if m.content.lower() == "cancel" and m.channel == ctx.channel and m.author == ctx.author:
                 return True
-            if m.channel == ctx.channel and m.author == ctx.author and m.content.isdigit() and int(m.content) >= 30 and int(m.content) <= 31556926:
+            if m.channel == ctx.channel and m.author == ctx.author and m.content.isdigit() and int(m.content) >= 120 and int(m.content) <= 31556926:
                 return True
         def check_channel(m):
             if m.channel == ctx.channel and m.author == ctx.author:
@@ -206,7 +208,7 @@ class giveaway:
                                 dataIO.save_json(self._giveaway_file, self._giveaway)
                             except:
                                 pass
-            await asyncio.sleep(30)
+            await asyncio.sleep(120)
 
 
     async def giveaway_time(self, starttime, endtime):

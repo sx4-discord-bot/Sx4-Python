@@ -52,6 +52,20 @@ class general:
         self._wait_task.cancel()
 
     @commands.command()
+    async def changes(self, ctx):
+        message = list(await self.bot.get_channel(455806567577681921).history(limit=1).flatten())[0].content
+        bugfixes = message.split("\n\n")[2]
+        updates = message.split("\n\n")[4]
+        announcements = message.split("\n\n")[6]
+        date = message.split("\n\n")[7]
+        s=discord.Embed().set_author(name="Sx4 Change Log", icon_url=self.bot.user.avatar_url)
+        s.add_field(name="Bug Fixes", value=bugfixes, inline=False)
+        s.add_field(name="Updates", value=updates, inline=False)
+        s.add_field(name="Announcements", value=announcements, inline=False)
+        s.set_footer(text=date)
+        await ctx.send(embed=s)
+
+    @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def reaction(self, ctx):
         """Test your reaction time"""
@@ -181,7 +195,7 @@ class general:
         if not user:
             try:
                 number = int(user_or_number)
-                user = "".join([str(x) for x in sorted(ctx.guild.members, key=lambda x: x.joined_at)[number-1:number]])
+                user = "".join([str(x) for x in sorted([x for x in ctx.guild.members if x.joined_at], key=lambda x: x.joined_at)[number-1:number]])
                 if user == "":
                     await ctx.send("Invalid join position :no_entry:")
                     return
@@ -191,7 +205,7 @@ class general:
                 await ctx.send("You have not given a valid number or user :no_entry:")
                 return
         else:
-            input = sorted(ctx.guild.members, key=lambda x: x.joined_at).index(user) + 1
+            input = sorted([x for x in ctx.guild.members if x.joined_at], key=lambda x: x.joined_at).index(user) + 1
             await ctx.send("{} was the **{}** user to join {}".format(user, await self.prefixfy(input), ctx.guild.name))            
 
     @commands.command(hidden=True)
@@ -605,7 +619,7 @@ class general:
         s=discord.Embed(description=description, colour=0xfff90d)
         s.set_author(name="Info!", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Stats", value="Ping: {}ms\nServers: {}\nUsers: {}".format(ping, servers, users))
-        s.add_field(name="Credits", value="[Nexus](https://discord.gg/t2umQq3)\n[Python](https://www.python.org/downloads/release/python-352/)\n[discord.py](https://pypi.python.org/pypi/discord.py/)")
+        s.add_field(name="Credits", value="[Victor#6359 (Host)](https://vjserver.ddns.net/discordbots.html)\n[Nexus](https://discord.gg/t2umQq3)\n[Lavalink (Music)](https://github.com/Devoxin/Lavalink.py/)\n[Python](https://www.python.org/downloads/release/python-352/)\n[discord.py](https://pypi.python.org/pypi/discord.py/)")
         s.add_field(name="Sx4", value="Developers: {}, {}, {}\nInvite: [Click Here](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\nSupport: [Click Here](https://discord.gg/p5cWHjS)\nDonate: [PayPal](https://paypal.me/SheaCartwright), [Patreon](https://www.patreon.com/SheaBots)".format(shea, legacy, joakim))
         await ctx.send(embed=s)
 
@@ -620,7 +634,7 @@ class general:
             if i == ctx.guild.shard_id:
                 guildshard = ">"
             else:
-                guildshard = None
+                guildshard = ""
             s.add_field(name="{} Shard {}".format(guildshard, i + 1), value="{} servers\n{} users\n{}ms".format(len([x for x in self.bot.guilds if x.shard_id == i]), len([x for x in list(set(self.bot.get_all_members())) if x.guild.shard_id == i]), round(self.bot.latencies[i][1]*1000)))
             i += 1
         await ctx.send(embed=s)
@@ -915,7 +929,7 @@ class general:
         s.set_footer(text="Page {}/{}".format(page, math.ceil(number / 20)))
         await ctx.send(embed=s)
             
-    @commands.command(pass_context=True, no_pm=True)
+    @commands.command(pass_context=True, aliases=["av"])
     async def avatar(self, ctx, *, user: discord.Member=None):
         """Look at your own or someone elses avatar"""
         author = ctx.message.author
@@ -1144,6 +1158,8 @@ class general:
                     description = ""
                     status = None
                     user = discord.utils.get(self.bot.get_all_members(), name=user_arg[:usernum], discriminator=user_arg[usernum + 1:len(user_arg)])
+                    if not user:
+                        return await ctx.send("I could not find that user :no_entry:")
                     if user.status == discord.Status.online:
                         status="Online<:online:361440486998671381>"
                     if user.status == discord.Status.idle:
@@ -1184,6 +1200,8 @@ class general:
                     user = discord.utils.get(ctx.guild.members, id=int(user_arg))
                     if not user:
                         user = discord.utils.get(self.bot.get_all_members(), id=int(user_arg))
+                        if not user:
+                            return await ctx.send("I could not find that user :no_entry:")
                         description = ""
                         status = None
                         if user:
@@ -1229,6 +1247,8 @@ class general:
                             description = ""
                             status = None
                             user = discord.utils.get(self.bot.get_all_members(), name=user_arg)
+                            if not user:
+                                return await ctx.send("I could not find that user :no_entry:")
                             if user.status == discord.Status.online:
                                 status="Online<:online:361440486998671381>"
                             if user.status == discord.Status.idle:
@@ -1268,7 +1288,7 @@ class general:
                 await ctx.send("I could not find that user :no_entry:")
                 return
         joined_server = user.joined_at.strftime("%d %b %Y %H:%M")
-        joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
+        joined_discord = user.created_at
         if user.status == discord.Status.online:
             status="Online<:online:361440486998671381>"
         if user.status == discord.Status.idle:
@@ -1278,7 +1298,7 @@ class general:
         if user.status == discord.Status.offline:
             status="Offline<:offline:361445086275567626>"
         description=""
-        input = sorted(ctx.guild.members, key=lambda x: x.joined_at).index(user) + 1
+        input = sorted([x for x in ctx.guild.members if x.joined_at], key=lambda x: x.joined_at).index(user) + 1
         if not user.activity:
             pass
         elif isinstance(user.activity, discord.Spotify):
@@ -1374,6 +1394,7 @@ class general:
         s.add_field(name="Verification level", value=verificationlevel)
         s.add_field(name="AFK Timeout", value="{} minutes".format(m, s))
         s.add_field(name="AFK Channel",value=str(server.afk_channel))
+        s.add_field(name="Explicit Content Filter", value=str(ctx.guild.explicit_content_filter).title().replace("_", " "))
         s.add_field(name="Roles", value=len(server.roles))
         s.add_field(name="Owner", value="{}".format(server.owner))
         s.add_field(name="Server ID", value=server.id)
@@ -1454,6 +1475,7 @@ class general:
         s.add_field(name="Servers Joined Today", value=self._stats["servers"])
         s.add_field(name="Commands Used Today", value=self._stats["commands"])
         s.add_field(name="Messages Sent Today", value=self._stats["messages"])
+        s.add_field(name="Connected Channels", value=len(set(filter(lambda x: x[1].connected_channel, self.bot.lavalink.players))))
         s.add_field(name="Servers", value=len(self.bot.guilds))
         s.add_field(name="Users ({} total)".format(len(members)), value="{} Online\n{} Offline".format(online, offline))
         await ctx.send(embed=s)

@@ -57,7 +57,8 @@ async def on_ready():
         try:
             bot.load_extension(extension)
         except Exception as e:
-            print('Failed to load extension {}\n{}: {}'.format(extension, type(e).name, e))
+            await bot.get_channel(439745234285625355).send(e)
+            pass
     setattr(bot, "uptime", datetime.datetime.utcnow().timestamp())
     dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
     payloadservers = {"server_count"  : len(bot.guilds)}

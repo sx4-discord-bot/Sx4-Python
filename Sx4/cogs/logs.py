@@ -268,6 +268,7 @@ class logs:
         server = before.guild
         user1 = "Unknown"
         user2 = "Unknown"
+        user = "Unknown"
         if before.roles != after.roles:
             for x in await server.audit_logs(limit=1).flatten():
                 if x.action == discord.AuditLogAction.member_role_update:

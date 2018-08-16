@@ -35,7 +35,34 @@ class image:
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def rip(self, ctx, user: discord.Member=None):
+    async def flag(self, ctx, flag_initial, *, user: discord.Member=None):
+        if not user:
+            user = ctx.author
+        request = requests.get("http://www.geonames.org/flags/x/{}.gif".format(flag_initial))
+        with open("flag.png", "wb") as f:
+            f.write(request.content)
+        with open("avatar.png", "wb") as f:
+            f.write(requests.get(user.avatar_url).content)
+        try:
+            flag = Image.open("flag.png").convert("RGBA")
+        except:
+            return await ctx.send("Invalid flag initial :no_entry:")
+        avatar = Image.open("avatar.png").convert("RGBA")
+        avatar = avatar.resize((200, 200))
+        flag = flag.resize((200, 200))
+        flag.putalpha(100)
+        avatar.paste(flag, (0, 0), flag)
+        avatar.save("flag.png")
+        await ctx.send(file=discord.File("flag.png", "flag.png"))
+        try:
+            os.remove("avatar.png")
+            os.remove("flag.png")
+        except:
+            pass
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def rip(self, ctx, *, user: discord.Member=None):
         if not user:
             user = ctx.author
         with open("avatar.png", "wb") as f:

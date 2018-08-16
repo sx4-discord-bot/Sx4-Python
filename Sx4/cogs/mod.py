@@ -659,6 +659,8 @@ class mod:
                             return await ctx.send("User with the ID **{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
                         except:
                             return await ctx.send("Invalid user :no_entry:")
+                    else:
+                        user = user2
                 else:
                     user = user2
             else: 
@@ -688,6 +690,8 @@ class mod:
                                 return await ctx.send("User with the ID **{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
                             except:
                                 return await ctx.send("Invalid user :no_entry:")
+                        else:
+                            user = user2
                     else:
                         user = user2
                 else:
@@ -724,6 +728,8 @@ class mod:
                 else:
                     await ctx.send("You can not ban someone higher than your own role :no_entry:")
                     return
+        if user in [x.user for x in await ctx.guild.bans()]:
+            return await ctx.send("That user is already banned :no_entry:")
         try: 
             await server.ban(user, reason="Ban made by {}".format(author))
             await ctx.send("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
@@ -773,11 +779,15 @@ class mod:
             await ctx.send("I need the `BAN_MEMBERS` permission :no_entry:")
             return
         ban_list = await server.bans()
-        invite = await channel.create_invite(max_age=86400, max_uses=1)
+        try:
+            invite = await channel.create_invite(max_age=86400, max_uses=1)
+        except:
+            invite=None
         s=discord.Embed(title="You have been unbanned from {}".format(server.name), description="Feel free to join back whenever.", colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
         s.set_thumbnail(url=server.icon_url)
         s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)), inline=False)
-        s.add_field(name="Invite", value="{} (This will expire in 1 day)".format(str(invite)))
+        if invite:
+            s.add_field(name="Invite", value="{} (This will expire in 1 day)".format(str(invite)))
         if user == author:
             await ctx.send("You can't unban yourself :no_entry:")
             return
@@ -1487,7 +1497,7 @@ class mod:
                                             except:
                                                 pass                             
                                             dataIO.save_json(self.file, self.d)
-            await asyncio.sleep(10)
+            await asyncio.sleep(45)
       
                     
         

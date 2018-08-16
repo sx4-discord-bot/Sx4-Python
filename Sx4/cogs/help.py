@@ -38,7 +38,7 @@ class help:
                 commandsnum = len([x for x in self.bot.all_commands if self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases])
                 cogsnum = len([x for x in self.bot.all_commands if self.bot.all_commands[x].module[5:].lower() == cog.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases])
                 s.set_author(name="Help ({} Commands)".format(commandsnum), icon_url=self.bot.user.avatar_url)
-                if commands != "" and cog != "music" and cog != "help":
+                if commands != "" and cog != "help":
                     s.add_field(name=cog.title() + " [{}]".format(cogsnum), value=commands, inline=False)
             s.add_field(name="Welcomer [2]", value="`welcomer`, `imgwelcomer`", inline=False)
             await ctx.send(embed=s)
