@@ -35,7 +35,7 @@ class image:
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def flag(self, ctx, flag_initial, *, user: discord.Member=None):
+    async def flag(self, ctx, flag_initial: str, *, user: discord.Member=None):
         if not user:
             user = ctx.author
         request = requests.get("http://www.geonames.org/flags/x/{}.gif".format(flag_initial))

@@ -53,16 +53,16 @@ class general:
 
     @commands.command()
     async def changes(self, ctx):
-        message = list(await self.bot.get_channel(455806567577681921).history(limit=1).flatten())[0].content
-        bugfixes = message.split("\n\n")[2]
-        updates = message.split("\n\n")[4]
-        announcements = message.split("\n\n")[6]
-        date = message.split("\n\n")[7]
-        s=discord.Embed().set_author(name="Sx4 Change Log", icon_url=self.bot.user.avatar_url)
+        message = list(await self.bot.get_channel(455806567577681921).history(limit=1).flatten())[0]
+        bugfixes = message.content.split("\n\n")[2]
+        updates = message.content.split("\n\n")[4]
+        announcements = message.content.split("\n\n")[6]
+        date = message.content.split("\n\n")[7]
+        s=discord.Embed(timestamp=message.edited_at if message.edited_at else message.created_at).set_author(name="Sx4 Change Log", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Bug Fixes", value=bugfixes, inline=False)
         s.add_field(name="Updates", value=updates, inline=False)
         s.add_field(name="Announcements", value=announcements, inline=False)
-        s.set_footer(text=date)
+        s.set_footer(text=date + " | Last Updated")
         await ctx.send(embed=s)
 
     @commands.command()
@@ -133,6 +133,10 @@ class general:
                 if "uses" not in entries["user"][str(x.inviter.id)]:
                     entries["user"][str(x.inviter.id)]["uses"] = 0
                 entries["user"][str(x.inviter.id)]["uses"] += x.uses
+        try: 
+            entries["user"]
+        except:
+            return await ctx.send("No-one has made an invite in this server :no_entry:")
         if str(user.id) not in entries["user"]:
             await ctx.send("{} has no invites :no_entry:".format(user))
             return
@@ -298,6 +302,7 @@ class general:
         s=discord.Embed(colour=ctx.message.author.colour) 
         s.set_author(name=emote.name, url=emote.url)		
         s.set_image(url=emote.url)
+        s.set_footer(text="ID: " + str(emote.id))
         await ctx.send(embed=s)
 
     @commands.command(aliases=["emotes", "emojis", "semotes", "semojis", "serveremojis"])
@@ -503,7 +508,7 @@ class general:
         if page < 0 or page > 49:
             await ctx.send("Invalid page :no_entry:")
             return
-        url="https://discordbots.org/api/bots?sort=server_count&limit=10&offset={}&fields=username,server_count".format((page + 1)*10-10)
+        url="https://discordbots.org/api/bots?sort=server_count&limit=10&offset={}&fields=username,server_count,id".format((page + 1)*10-10)
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
         n = page*10
@@ -512,7 +517,7 @@ class general:
         for x in data["results"]:
             n = n + 1
             l = l + 1
-            msg += "{}. {} - **{:,}** servers\n".format(n, data["results"][l-1]["username"], data["results"][l-1]["server_count"])
+            msg += "{}. [{}]({}) - **{:,}** servers\n".format(n, data["results"][l-1]["username"], "https://discordbots.org/bot/{}".format(data["results"][l-1]["id"]), data["results"][l-1]["server_count"])
         s=discord.Embed(description=msg)
         s.set_author(name="Bot List")
         s.set_footer(text="Page {}/50".format(page+1))
@@ -936,8 +941,8 @@ class general:
         if not user:
             user = author
         s=discord.Embed(colour=user.colour)
-        s.set_author(name="{}'s Avatar".format(user.name), icon_url=user.avatar_url, url=user.avatar_url_as(size=1024))
-        s.set_image(url=user.avatar_url.replace("webp", "png"))
+        s.set_author(name="{}'s Avatar".format(user.name), icon_url=user.avatar_url, url=user.avatar_url)
+        s.set_image(url=user.avatar_url_as(format="png", size=1024))
         await ctx.send(embed=s)
         
     @commands.command(pass_context=True, no_pm=True, aliases=["savatar"])
@@ -1033,6 +1038,10 @@ class general:
         """List all your triggers"""
         msg = ""
         server = ctx.guild
+        try:
+            self.d[str(server.id)]["trigger"]
+        except:
+            return await ctx.send("This server has no triggers :no_entry:")
         if not page: 
             page = 1
         if page < 1:
@@ -1288,7 +1297,7 @@ class general:
                 await ctx.send("I could not find that user :no_entry:")
                 return
         joined_server = user.joined_at.strftime("%d %b %Y %H:%M")
-        joined_discord = user.created_at
+        joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
         if user.status == discord.Status.online:
             status="Online<:online:361440486998671381>"
         if user.status == discord.Status.idle:
@@ -1475,7 +1484,7 @@ class general:
         s.add_field(name="Servers Joined Today", value=self._stats["servers"])
         s.add_field(name="Commands Used Today", value=self._stats["commands"])
         s.add_field(name="Messages Sent Today", value=self._stats["messages"])
-        s.add_field(name="Connected Channels", value=len(set(filter(lambda x: x[1].connected_channel, self.bot.lavalink.players))))
+        #s.add_field(name="Connected Channels", value=len(set(filter(lambda x: x[1].connected_channel, self.bot.lavalink.players))))
         s.add_field(name="Servers", value=len(self.bot.guilds))
         s.add_field(name="Users ({} total)".format(len(members)), value="{} Online\n{} Offline".format(online, offline))
         await ctx.send(embed=s)

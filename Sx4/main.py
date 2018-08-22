@@ -20,17 +20,15 @@ import subprocess
 
 
 async def prefix_function(bot, message):
-    try:
+    if str(message.author.id) in Prefix._prefixes["userprefix"]:
         return [x.encode().decode() for x in Prefix._prefixes["userprefix"][str(message.author.id)]] + ['<@440996323156819968> ']
-    except:
-        pass
-    try:
+    elif str(message.guild.id) in Prefix._prefixes["serverprefix"]:
         return [x.encode().decode() for x in Prefix._prefixes["serverprefix"][str(message.guild.id)]] + ['<@440996323156819968> ']
-    except:
-        pass
-    return ['sx4 ', 's?', 'S?', '<@440996323156819968> ']
+    else:
+        return ['sx4 ', 's?', 'S?', '<@440996323156819968> ']
    
 bot = commands.AutoShardedBot(command_prefix=prefix_function)
+blacklistusers = [296343513430360064, 277398577934893056, 146974226988007424]
 wrap = "```py\n{}\n```"
 dbltoken = Token.dbl()
 dbotspwtoken = Token.dbpw()
@@ -45,7 +43,7 @@ headersdb = {"Authorization" : dbotspwtoken, "Content-Type" : "application/json"
 headerskon = {"Authorization" : konomitoken, "Content-Type" : "application/json"}
 headersbs = {"Authorization" : botspacetoken, "Content-Type" : "application/json"}
 
-modules = ["cogs." + x.replace(".py", "") for x in os.listdir("cogs") if ".py" in x]
+modules = ["cogs." + x.replace(".py", "") for x in os.listdir("cogs") if ".py" in x and x != "music.py"]
 
 @bot.event
 async def on_ready():
@@ -66,21 +64,14 @@ async def on_ready():
     requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
     requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
     requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
-
-@bot.event
-async def on_guild_join(guild):
-    dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
-    payloadservers = {"server_count"  : len(bot.guilds)}
-    requests.post(url, data=dblpayloadservers, headers=headers)
-    requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
-    requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
-    requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
 		
 @bot.event 
 async def on_message(message):
     if message.author.bot:
         return
-    if isinstance(message.channel, discord.abc.PrivateChannel) and message.content.startswith("s?"):
+    elif message.author.id in blacklistusers:
+        return
+    elif isinstance(message.channel, discord.abc.PrivateChannel) and message.content.startswith("s?"):
         await message.channel.send("You can't use commands in private messages :no_entry:")
         return
     else:
@@ -90,6 +81,8 @@ async def on_message(message):
 async def on_message_edit(before, after):
     if after.author.bot:
         return
+    elif message.author.id in blacklistusers:
+        return
     elif before.content == after.content:
         return
     elif isinstance(after.channel, discord.abc.PrivateChannel) and after.content.startswith("s?"):
@@ -97,16 +90,16 @@ async def on_message_edit(before, after):
         return
     else:
         await bot.process_commands(after)
-		
-@bot.event
-async def on_guild_remove(guild):
-    dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
-    payloadservers = {"server_count"  : len(bot.guilds)}
-    payloadshards = {"shard_count"  : bot.shard_count}
-    requests.post(url, data=dblpayloadservers, headers=headers)
-    requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
-    requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
-    requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
+
+async def server_post():
+    while not bot.is_closed():
+        dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
+        payloadservers = {"server_count"  : len(bot.guilds)}
+        requests.post(url, data=dblpayloadservers, headers=headers)
+        requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
+        requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
+        requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
+        await asyncio.sleep(3600)
 			
 @bot.event
 async def on_command_error(ctx, error, *args, **kwargs):
@@ -238,6 +231,8 @@ async def reload(ctx, *, module: str):
 		
 		
 bot.add_cog(Main(bot))
+
+bot.loop.create_task(server_post())
 
 bot.run(Token.bot())
 

@@ -23,11 +23,11 @@ class statuses:
                 await self.bot.change_presence(activity=discord.Game(name=new_status, type=discord.ActivityType.watching))
             except:
                 pass
-            await asyncio.sleep(30)
             if i == 0:
                 i += 1
             else:
                 i -= 1
+            await asyncio.sleep(300)
 
 def setup(bot):
     n = statuses(bot)

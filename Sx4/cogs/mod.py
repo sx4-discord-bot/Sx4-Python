@@ -30,9 +30,8 @@ class Prefix:
 
 class mod:
     def __init__(self, bot):
-        loop = asyncio.get_event_loop()
         self.bot = bot
-        self._task = loop.create_task(self.check_mute())
+        self._task = bot.loop.create_task(self.check_mute())
         self.file_path = "data/mod/autobotclean.json"
         self.settings = dataIO.load_json(self.file_path)
         self.JSON = "data/mod/warn.json"
@@ -243,15 +242,6 @@ class mod:
         except discord.HTTPException:
             await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
-        if len(deleted) == 1:
-            msg = await ctx.send("Deleted **{}** message from **{}** <:done:403285928233402378>:ok_hand:".format(len(deleted), user))
-        else:
-            msg = await ctx.send("Deleted **{}** messages from **{}** <:done:403285928233402378>:ok_hand:".format(len(deleted), user))
-        await asyncio.sleep(3)
-        try:
-            await msg.delete() 
-        except discord.HTTPException:
-            pass
         
     @commands.command(aliases=["bc"])
     @checks.has_permissions("manage_messages")
@@ -273,15 +263,6 @@ class mod:
         except discord.HTTPException:
             await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
-        if len(deleted) == 1:
-            msg = await ctx.send("*Deleted **{}** bot message <:done:403285928233402378>:ok_hand:*".format(len(deleted)))
-        else:
-            msg = await ctx.send("*Deleted **{}** bot messages* *<:done:403285928233402378>:ok_hand:*".format(len(deleted)))
-        await asyncio.sleep(3)
-        try:
-            await msg.delete()
-        except discord.HTTPException:
-            pass
 
     @commands.command()
     @checks.has_permissions("manage_messages")
@@ -297,17 +278,13 @@ class mod:
         elif limit > 100:
             limit = 100
         await ctx.message.delete()
+        def check(m):
+            return word.lower() in m.content.lower()
         try:
-            def check(m):
-                return word.lower() in m.content.lower()
             deleted = await channel.purge(limit=limit, before=ctx.message, check=check)
         except discord.HTTPException:
             await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
-        if len(deleted) == 1:
-            msg = await ctx.send("Deleted **{}** message <:done:403285928233402378>:ok_hand:".format(len(deleted)), delete_after=3)
-        else:
-            msg = await ctx.send("Deleted **{}** messages <:done:403285928233402378>:ok_hand:".format(len(deleted)), delete_after=3)
         
     @commands.command(aliases=["prune"])
     @checks.has_permissions("manage_messages")
@@ -329,15 +306,6 @@ class mod:
         except discord.HTTPException:
             await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
-        if len(deleted) == 1:
-            msg = await ctx.send("*Deleted **{}** message <:done:403285928233402378>:ok_hand:*".format(len(deleted)))
-        else:
-            msg = await ctx.send("*Deleted **{}** messages* *<:done:403285928233402378>:ok_hand:*".format(len(deleted)))
-        await asyncio.sleep(3)
-        try:
-            await msg.delete()
-        except discord.HTTPException:
-            pass
             
     @commands.group()
     async def modlog(self, ctx):
@@ -645,7 +613,10 @@ class mod:
         notinserver = False
         if "<" in user and "@" in user and ">" in user:
             user = user.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            user2 = discord.utils.get(ctx.guild.members, id=int(user))
+            try:
+                user2 = discord.utils.get(ctx.guild.members, id=int(user))
+            except:
+                return await ctx.send("I could not find that user :no_entry:")
             if not user2:
                 user2 = discord.utils.get(self.bot.get_all_members(), id=int(user))
                 notinserver = True
@@ -676,7 +647,10 @@ class mod:
                 user = user2
         else:
             try:
-                user2 = discord.utils.get(ctx.guild.members, id=int(user))
+                try:
+                    user2 = discord.utils.get(ctx.guild.members, id=int(user))
+                except:
+                    return await ctx.send("I could not find that user :no_entry:")
                 if not user2:
                     user2 = discord.utils.get(self.bot.get_all_members(), id=int(user))
                     notinserver = True
@@ -1282,7 +1256,11 @@ class mod:
         if reason:
             if reason not in self.data[str(server.id)]["user"][str(user.id)]["reasons"]:
                 self.data[str(server.id)]["user"][str(user.id)]["reasons"][reason] = {}
-        self.data[str(server.id)]["user"][str(user.id)]["warnings"] = self.data[str(server.id)]["user"][str(user.id)]["warnings"] + 1
+        if self.data[str(server.id)]["user"][str(user.id)]["warnings"] == 2 and not ctx.channel.permissions_for(ctx.author).kick_members:
+            return await ctx.send("You need the kick members permission to warn the user again :no_entry:")
+        if self.data[str(server.id)]["user"][str(user.id)]["warnings"] == 3 and not ctx.channel.permissions_for(ctx.author).ban_members:
+            return await ctx.send("You need the ban members permission to warn the user again :no_entry:")
+        self.data[str(server.id)]["user"][str(user.id)]["warnings"] += 1
         dataIO.save_json(self.JSON, self.data)
         if self.data[str(server.id)]["user"][str(user.id)]["warnings"] == 1:
             await ctx.send("**{}** has been warned :warning:".format(user))

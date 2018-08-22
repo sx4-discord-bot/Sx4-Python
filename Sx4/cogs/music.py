@@ -3,12 +3,18 @@ import discord
 import logging
 import math
 import datetime
+import urllib
 import asyncio
+from urllib.request import Request, urlopen
 from utils import checks
 import lavalink
 import random
+import requests
 from utils import arghelp
+from utils import Token
 from discord.ext import commands
+
+#this is diabled but oh well still here
 
 url_re = re.compile('https?:\/\/(?:www\.)?.+')
 
@@ -16,8 +22,9 @@ class music:
 
     def __init__(self, bot):
         self.bot = bot
+        self.timeout = bot.loop.create_task(self.check_timeout())
         if not hasattr(bot, 'lavalink'):
-            lavalink.Client(ws_port=2334, rest_port=2333, bot=bot, password=password, loop=self.bot.loop, log_level=logging.DEBUG)
+            lavalink.Client(ws_port=2086, rest_port=2333, bot=bot, password=password, shard_count=self.bot.shard_count, loop=self.bot.loop, log_level=logging.DEBUG)
             self.bot.lavalink.register_hook(self._events)
 
     async def _events(self, event):
@@ -46,13 +53,24 @@ class music:
                 event.player.delete("votes")
             except:
                 pass
+        
+    def __unload(self):
+        self.timeout.cancel()
                 
     @commands.command(aliases=["summon"])
     async def join(self, ctx):
         """Make the bot join your current voice channel"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if player.is_connected:
-            return await ctx.send("I'm already in a voice channel :no_entry:")
+            if len(set(filter(lambda m: not m.bot, player.connected_channel.members))) == 0 or ctx.author.id == player.fetch("sessionowner"):
+                if not ctx.author.voice or not ctx.author.voice.channel:
+                    return await ctx.send("You are not in a voice channel :no_entry:")
+                player.store('sessionowner', ctx.author.id)
+                player.store('channel', ctx.channel.id)
+                await player.connect(ctx.author.voice.channel.id)
+                await ctx.send("Summoned to `{}` <:done:403285928233402378>".format(ctx.author.voice.channel.name))
+            else:
+                return await ctx.send("I'm already in a voice channel :no_entry:")
         else:
             if not ctx.author.voice or not ctx.author.voice.channel:
                 return await ctx.send("You are not in a voice channel :no_entry:")
@@ -68,10 +86,10 @@ class music:
         query = query.strip('<>')
         if player.is_connected:
             if not ctx.author.voice or not ctx.author.voice.channel or player.connected_channel.id != ctx.author.voice.channel.id:
-                return await ctx.send("You have to be in my voice channel to queue a song :no_entry:")
+                return await ctx.send("I'm already in a voice channel :no_entry:")
         else:
             if not ctx.author.voice or not ctx.author.voice.channel:
-                return await ctx.send("Join a voice channel :no_entry:")
+                return await ctx.send("You are not in a voice channel :no_entry:")
             else:
                 player.store('sessionowner', ctx.author.id)
                 player.store('channel', ctx.channel.id)
@@ -113,16 +131,69 @@ class music:
             await player.play()
 
     @commands.command()
+    async def playlist(self, ctx, *, query):
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+        if player.is_connected:
+            if not ctx.author.voice or not ctx.author.voice.channel or player.connected_channel.id != ctx.author.voice.channel.id:
+                return await ctx.send("I'm already in a voice channel :no_entry:")
+        else:
+            if not ctx.author.voice or not ctx.author.voice.channel:
+                return await ctx.send("You are not in a voice channel :no_entry:")
+            else:
+                player.store('sessionowner', ctx.author.id)
+                player.store('channel', ctx.channel.id)
+                await player.connect(ctx.author.voice.channel.id)
+        url = "https://www.googleapis.com/youtube/v3/search?key=" + Token.youtube() + "&part=snippet&safeSearch=none&maxResults=10&type=playlist&{}".format(urllib.parse.urlencode({"q": query}))
+        request = requests.get(url).json()
+        try:
+            request["items"][0]
+        except:
+            return await ctx.send("No results :no_entry:")
+        msg = ""
+        for i, x in enumerate(request["items"], start=1):
+            msg += "{}. [{}]({})\n".format(i, x["snippet"]["title"], "https://www.youtube.com/playlist?list=" + x["id"]["playlistId"])
+        message = await ctx.send(embed=discord.Embed(description=msg).set_footer(text="Choose a number to queue the playlist | cancel"))
+        def check(m):
+            return m.channel == ctx.channel and m.author == ctx.author and (m.content.isdigit() or m.content.lower() == "cancel")
+        try:
+            response = await self.bot.wait_for("message", check=check, timeout=60)
+            if response.content.lower() == "cancel":
+                try:
+                    await response.delete()
+                    await message.delete()
+                    return
+                except:
+                    pass
+            elif int(response.content) > i or int(response.content) < 1:
+                await response.delete()
+                await message.delete()
+                return await ctx.send("Invalid index :no_entry:")
+            else:
+                results = await self.bot.lavalink.get_tracks("https://www.youtube.com/playlist?list=" + request["items"][int(response.content) - 1]["id"]["playlistId"])
+                tracks = results["tracks"]
+                for track in tracks:
+                    player.add(requester=ctx.author.id, track=track)
+                s=discord.Embed()
+                s.description = "Enqueued {} with **{}** tracks <:done:403285928233402378>".format(results['playlistInfo']['name'], len(tracks))
+                await message.delete()
+                await response.delete()
+                await self.bot.get_channel(player.fetch('channel')).send(embed=s)
+                if not player.is_playing:
+                    await player.play()
+        except asyncio.TimeoutError:
+            return await ctx.send("Timed out :stopwatch:")
+
+    @commands.command()
     async def search(self, ctx, *, query):
         """Search for a song on youtube and play it"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
         query = "ytsearch:{}".format(query)
         if player.is_connected:
             if not ctx.author.voice or not ctx.author.voice.channel or player.connected_channel.id != ctx.author.voice.channel.id:
-                return await ctx.send("You have to be in my voice channel to queue a song :no_entry:")
+                return await ctx.send("I'm already in a voice channel :no_entry:")
         else:
             if not ctx.author.voice or not ctx.author.voice.channel:
-                return await ctx.send("Join a voice channel :no_entry:")
+                return await ctx.send("You are not in a voice channel :no_entry:")
             else:
                 player.store('sessionowner', ctx.author.id)
                 player.store('channel', ctx.channel.id)
@@ -133,14 +204,21 @@ class music:
         msg = ""
         for i, x in enumerate(results["tracks"][:10], start=1):
             msg += "{}. **[{}]({})**\n".format(i, x["info"]["title"], x["info"]["uri"])
-        message = await ctx.send(embed=discord.Embed(description=msg).set_footer(text="Choose a number to the queue the song | cancel"))
+        message = await ctx.send(embed=discord.Embed(description=msg).set_footer(text="Choose a number to queue the song | cancel"))
         def check(m):
             return m.channel == ctx.channel and m.author == ctx.author and (m.content.isdigit() or m.content.lower() == "cancel")
         try:
             response = await self.bot.wait_for("message", check=check, timeout=60)
             if response.content.lower() == "cancel":
+                try:
+                    await response.delete()
+                    return await message.delete()
+                except:
+                    pass
+            elif int(response.content) > i or int(response.content) < 1:
                 await response.delete()
-                return await message.delete()
+                await message.delete()
+                return await ctx.send("Invalid index :no_entry:")
             else:
                 track = results["tracks"][int(response.content) + 1]
                 player.add(requester=ctx.author.id, track=track)
@@ -328,15 +406,27 @@ class music:
     async def connected(self, ctx):
         players = self.bot.lavalink.players
         msg = ""
+        totallis, totalcon = 0, 0
         for x in players:
             player = x[1]
             if player.is_connected:
                 listeners = len(set(filter(lambda x: not x.bot, player.connected_channel.members)))
+                totallis += listeners
+                totalcon += 1
                 msg += "{} connected with {} {}\n".format(player.connected_channel.guild, listeners, "listener" if listeners == 1 else "listeners")
         if msg:
-            await ctx.send(embed=discord.Embed(description=msg))
+            await ctx.send(embed=discord.Embed(description=msg).set_footer(text="Total Connections: {} | Total Listeners: {}".format(totalcon, totallis)))
         else:
             await ctx.send("No connections :no_entry:")
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def forcedisconnect(self, ctx, *, server):
+        server = discord.utils.get(self.bot.guilds, name=server)
+        player = self.bot.lavalink.players.get(server.id)
+        await player.connect([x.id for x in server.voice_channels][0])
+        await player.disconnect()
+        await ctx.send("Disconnected.")
 
     def format_time(self, time):
         h, r = divmod(time / 1000, 3600)
@@ -344,7 +434,28 @@ class music:
         if h == 0:
             return '%02d:%02d' % (m, s)
         else:
-            return '%02d:%02d:%02d' % (h, m, s)           
+            return '%02d:%02d:%02d' % (h, m, s)       
+
+    async def check_timeout(self):
+        while not self.bot.is_closed():
+            for x in self.bot.lavalink.players:
+                player = x[1]
+                channel = self.bot.get_channel(player.fetch("channel"))
+                if player.is_connected:
+                    if len(set(filter(lambda x: not x.bot, player.connected_channel.members))) == 0:
+                        if not player.fetch("nousers"):
+                            player.store("nousers", datetime.datetime.utcnow().timestamp())
+                        else:
+                            if datetime.datetime.utcnow().timestamp() - player.fetch("nousers") >= 100:
+                                player.queue.clear()
+                                await player.disconnect()
+                                player.delete("votes")
+                                player.delete("nousers")
+                                if channel:
+                                    await channel.send("No one has been in the voice channel for 2 minutes :wave:")
+                    else:
+                        player.delete("nousers")
+            await asyncio.sleep(45)
 
 def setup(bot):
     bot.add_cog(music(bot))

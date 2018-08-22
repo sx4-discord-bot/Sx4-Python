@@ -13,6 +13,7 @@ from utils import checks
 from enum import Enum
 import time
 import logging
+import re
 import datetime
 import math
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -116,6 +117,199 @@ class economy:
                 await ctx.send(str(eval(code))) 
             except Exception as e:
                 await ctx.send(str(e))
+
+    @commands.command()
+    async def trade(self, ctx, *, user: discord.Member):
+        author = ctx.author
+        if author == user:
+            return await ctx.send("You can't trade with yourself :no_entry:")
+        if user in filter(lambda x: x.bot, self.bot.get_all_members()):
+            return await ctx.send("You can't trade with a bot :no_entry:")
+        await self._set_bank(author)
+        await self._set_bank_user(user)
+        await ctx.send("What are you offering to the user? Respond below in this format "
+        "`amount_of_money | amount_of_materials name_of_material, amount_of_materials name_of_material,... etc` "
+        "If you're not trading money just put 0 and if you're not trading materials don't put the dash. Respond with cancel to cancel the trade (The user you want to trade with has to be online to accept your trade)",
+        embed=discord.Embed(title="Example").set_image(url="https://cdn.discordapp.com/attachments/344091594972069888/481118196481523712/2018-08-20_16-10-29.gif"))
+        def user_check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+        try:
+            response = await self.bot.wait_for("message", check=user_check, timeout=300)
+            if response.content.lower() == "cancel":
+                return await ctx.send("Cancelled.")
+            if "|" in response.content:
+                responsesplit = response.content.split("|")
+                material = responsesplit[1]
+                material = material.split(", " if ", " in response.content else ",")
+                materials = [x[1:] if x.startswith(" ") else x for x in material]
+                materials2 = []
+                for x in materials:
+                    result = re.search('(.*)"(.*)"', str(x))
+                    if result:
+                        amount = int(result.group(1))
+                        materialname = result.group(2)
+                    else:
+                        try:
+                            amount = int(x.split(" ")[0])
+                        except:
+                            return await ctx.send("The amount of materials you want to give must be a number :no_entry:")
+                        materialname = x.split(" ")[1]
+                    if amount > 0:
+                        i = 0
+                        for x in self._mine["items"]:
+                            if materialname.lower() == x["name"].lower():
+                                i += 1    
+                                useramount = self.settings["user"][str(author.id)]["items"].count(x["name"])
+                                if useramount < amount:
+                                    return await ctx.send("You don't have that much `{}` to trade :no_entry:".format(x["name"])) 
+                                materials2.append("{} {}".format(amount, x["name"]))
+                        if i == 0:
+                            for x in self._factories["factory"]:
+                                if materialname.lower() == x["name"].lower():
+                                    i += 1
+                                    useramount = self.settings["user"][str(author.id)]["items"].count(x["name"])
+                                    if useramount < amount:
+                                        return await ctx.send("You don't have that much `{}` to trade :no_entry:".format(x["name"])) 
+                                    materials2.append("{} {}".format(amount, x["name"]))
+                            if i == 0:
+                                return await ctx.send("One of the materials you offered doesn't exist check your spelling :no_entry:")
+                try:
+                    money = int(responsesplit[0])
+                except:
+                    return await ctx.send("Invalid money amount :no_entry:")
+                if money > self.settings["user"][str(author.id)]["balance"]:
+                    return await ctx.send("You don't have that much money :no_entry:")
+                if money <= 0:
+                    money = None
+                if not money and materials2 == []:
+                    return await ctx.send("You have to offer something :no_entry:")
+                usergetsmoney = money if money else None
+                usergetsmaterials = materials2
+                await ctx.send(content="What would you like from the the user? Respond below in this format "
+                "`amount_of_money | amount_of_materials name_of_material, amount_of_materials name_of_material,... etc` "
+                "If you're not trading money just put 0 and if you're not trading materials don't put the dash. (The user you want to trade with has to be online to accept your trade)",
+                embed=discord.Embed(title="What you're offering", description="{}\n{}".format("$" + str(money) if money else "", "\n".join(materials2))))
+            else:
+                try:
+                    money = int(response.content)
+                except:
+                    return await ctx.send("Follow the format given above :no_entry:")
+                if money > self.settings["user"][str(author.id)]["balance"]:
+                    return await ctx.send("You don't have that much money :no_entry:")
+                if money <= 0:
+                    return await ctx.send("You need to give some money at least :no_entry:")
+                usergetsmaterials = None
+                usergetsmoney = money
+                await ctx.send(content="What would you like from the the user? Respond below in this format "
+                "`amount_of_money | amount_of_materials name_of_material, amount_of_materials name_of_material,... etc` "
+                "If you're not trading money just put 0 and if you're not trading materials don't put the dash. (The user you want to trade with has to be online to accept your trade)",
+                embed=discord.Embed(title="What you're offering", description="${}".format(money)))
+        except asyncio.TimeoutError:
+            return await ctx.send("Timed out :stopwatch:")
+        try:
+            response = await self.bot.wait_for("message", check=user_check, timeout=300)
+            if response.content.lower() == "cancel":
+                return await ctx.send("Cancelled.")
+            if "|" in response.content:
+                responsesplit = response.content.split("|")
+                material = responsesplit[1]
+                material = material.split(", " if ", " in response.content else ",")
+                materials = [x[1:] if x.startswith(" ") else x for x in material]
+                materials2 = []
+                for x in materials:
+                    result = re.search('(.*)"(.*)"', str(x))
+                    if result:
+                        amount = int(result.group(1))
+                        materialname = result.group(2)
+                    else:
+                        try:
+                            amount = int(x.split(" ")[0])
+                        except:
+                            return await ctx.send("The amount of materials you want to give must be a number :no_entry:")
+                        materialname = x.split(" ")[1]
+                    if amount > 0:
+                        i = 0
+                        for x in self._mine["items"]:
+                            if materialname.lower() == x["name"].lower():
+                                i += 1    
+                                useramount = self.settings["user"][str(user.id)]["items"].count(x["name"])
+                                if useramount < amount:
+                                    return await ctx.send("They don't that much `{}` to trade :no_entry:".format(x["name"])) 
+                                materials2.append("{} {}".format(amount, x["name"]))
+                        if i == 0:
+                            for x in self._factories["factory"]:
+                                if materialname.lower() == x["name"].lower():
+                                    i += 1
+                                    useramount = self.settings["user"][str(user.id)]["items"].count(x["name"])
+                                    if useramount < amount:
+                                        return await ctx.send("They don't have that much `{}` to trade :no_entry:".format(x["name"])) 
+                                    materials2.append("{} {}".format(amount, x["name"]))
+                            if i == 0:
+                                return await ctx.send("One of the materials you offered doesn't exist check your spelling :no_entry:")
+                try:
+                    money = int(responsesplit[0])
+                except:
+                    return await ctx.send("Invalid money amount :no_entry:")
+                if money > self.settings["user"][str(user.id)]["balance"]:
+                    return await ctx.send("The user doesn't have that much money :no_entry:")
+                if money <= 0:
+                    money = None
+                if not money and materials2 == []:
+                    return await ctx.send("You have to offer something :no_entry:")
+                authorgetsmoney = money if money else None
+                authorgetsmaterials = materials2
+                await ctx.send(embed=discord.Embed(title="The Final Trade").add_field(name="{} Gets".format(user), value="{}\n{}".format("$" + str(usergetsmoney) if usergetsmoney else "", "\n".join(usergetsmaterials) if usergetsmaterials else ""),
+                inline=False).add_field(name="{} Gets".format(author), value="{}\n{}".format("$" + str(authorgetsmoney) if authorgetsmoney else "", "\n".join(authorgetsmaterials) if authorgetsmaterials else "")).set_footer(
+                text="{} needs to type yes to accept the trade or it will be declined".format(user)))
+            else:
+                try:
+                    money = int(response.content)
+                except:
+                    return await ctx.send("Follow the format given above :no_entry:")
+                if money > self.settings["user"][str(user.id)]["balance"]:
+                    return await ctx.send("The user doesn't have that much money :no_entry:")
+                if money <= 0:
+                    return await ctx.send("You need to give some money at least :no_entry:")
+                if not usergetsmaterials:
+                    return await ctx.send("You can't trade just money :no_entry:")
+                authorgetsmaterials = None
+                authorgetsmoney = money
+                await ctx.send(embed=discord.Embed(title="The Final Trade").add_field(name="{} Gets".format(user), value="{}\n{}".format("$" + str(usergetsmoney) if usergetsmoney else "", "\n".join(usergetsmaterials) if usergetsmaterials else ""),
+                inline=False).add_field(name="{} Gets".format(author), value="{}\n{}".format("$" + str(authorgetsmoney) if authorgetsmoney else "", "\n".join(authorgetsmaterials) if authorgetsmaterials else "")).set_footer(
+                text="{} needs to type yes to accept the trade or it will be declined".format(user)))
+        except asyncio.TimeoutError:
+            return await ctx.send("Timed out :stopwatch:")
+        try:
+            def check(m):
+                return m.author == user and m.channel == ctx.channel
+            userresponse = await self.bot.wait_for("message", check=check, timeout=60)
+            if userresponse.content.lower() == "yes":
+                if usergetsmaterials:
+                    for x in usergetsmaterials:
+                        amount = x.split(" ", 1)[0]
+                        item = x.split(" ", 1)[1]
+                        for x in range(int(amount)):
+                            self.settings["user"][str(user.id)]["items"].append(item)
+                            self.settings["user"][str(author.id)]["items"].remove(item)
+                if authorgetsmaterials:
+                    for x in authorgetsmaterials:
+                        amount = x.split(" ", 1)[0]
+                        item = x.split(" ", 1)[1]
+                        for x in range(int(amount)):
+                            self.settings["user"][str(user.id)]["items"].remove(item)
+                            self.settings["user"][str(author.id)]["items"].append(item)
+                if authorgetsmoney:
+                    self.settings["user"][str(author.id)]["balance"] += authorgetsmoney
+                    self.settings["user"][str(user.id)]["balance"] -= authorgetsmoney
+                if usergetsmoney:
+                    self.settings["user"][str(author.id)]["balance"] -= usergetsmoney
+                    self.settings["user"][str(user.id)]["balance"] += usergetsmoney
+                dataIO.save_json(self.location, self.settings)
+                await ctx.send("All items and money have been transferred <:done:403285928233402378>")
+            else:
+                await ctx.send("Trade Declined.")
+        except asyncio.TimeoutError:
+            return await ctx.send("Timed out :stopwatch:")
  
         
     @commands.command()
@@ -736,12 +930,12 @@ class economy:
         if amount < 1:
             await ctx.send("You can't give them less than a dollar, too mean :no_entry:")
             return
-        self.settings["user"][str(user.id)]["balance"] += round(amount * 0.9)
+        self.settings["user"][str(user.id)]["balance"] += round(amount * 0.95)
         self.settings["user"][str(author.id)]["balance"] -= amount
         dataIO.save_json(self.location, self.settings)
-        s=discord.Embed(description="You have gifted **${}** to **{}**\n\n{}'s new balance: **${}**\n{}'s new balance: **${}**".format(round(amount*0.9), user.name, author.name, self.settings["user"][str(author.id)]["balance"], user.name, self.settings["user"][str(user.id)]["balance"]), colour=author.colour)
+        s=discord.Embed(description="You have gifted **${}** to **{}**\n\n{}'s new balance: **${}**\n{}'s new balance: **${}**".format(round(amount*0.95), user.name, author.name, self.settings["user"][str(author.id)]["balance"], user.name, self.settings["user"][str(user.id)]["balance"]), colour=author.colour)
         s.set_author(name="{} → {}".format(author.name, user.name), icon_url="https://png.kisspng.com/20171216/8cb/5a355146d99f18.7870744715134436548914.png")
-        s.set_footer(text="10% Tax is taken per transaction")
+        s.set_footer(text="5% Tax is taken per transaction")
         await ctx.send(embed=s)
 		
     @commands.command(aliases=["givemats"])
@@ -1215,19 +1409,20 @@ class economy:
             dataIO.save_json(self.location, self.settings)
         
     @commands.command()
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    async def slot(self, ctx, bet: int):
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def slot(self, ctx, bet: int=None):
         """Bid your money into slots with a chance of winning big"""
         author = ctx.author
-        await self._set_bank(author)
-        if self.settings["user"][str(author.id)]["balance"] < bet:
-            await ctx.send("You don't have that much to bet :no_entry:")
-            return
-        if bet <= 0:
-            await ctx.send("At least bet a dollar :no_entry:")
-            return
-        self.settings["user"][str(author.id)]["balance"] -= bet
-        self.settings["user"][str(author.id)]["winnings"] -= bet
+        if bet:
+            await self._set_bank(author)
+            if self.settings["user"][str(author.id)]["balance"] < bet:
+                await ctx.send("You don't have that much to bet :no_entry:")
+                return
+            if bet <= 0:
+                await ctx.send("At least bet a dollar :no_entry:")
+                return
+            self.settings["user"][str(author.id)]["balance"] -= bet
+            self.settings["user"][str(author.id)]["winnings"] -= bet
         slots = [
                 {"icon" : ":athletic_shoe:", "percentage" : 12.5, "number" : 1}, {"icon" : "<:coal:441006067523256350>", "percentage" : 3.7, "number" : 2}, {"icon" : "<:copper:441006065828757504>", "percentage" : 0.8, "number" : 3},
                 {"icon" : "<:iron:441006065069326357>", "percentage" : 0.2, "number" : 4}, {"icon" : "<:aluminium:441006064545300491>", "percentage" : 0.08, "number" : 5}, {"icon" : "<:gold:441006068328300551>", "percentage" : 0.03, "number" : 6}, 
@@ -1318,23 +1513,26 @@ class economy:
         if slot1 == slot3 and slot2 == slot3:
             for slot in slots:
                 if slot["icon"] == slot1:
-                    winnings = bet * round((100/slot["percentage"]) * 0.5)
-                    msg = slots[number1a-1]["icon"] + slots[number2a-1]["icon"] + slots[number3a-1]["icon"] + "\n" + slot1 + slot2 + slot3 + "\n" + slots[number1b-1]["icon"] + slots[number2b-1]["icon"] + slots[number3b-1]["icon"] + "\n\nYou won **${}**!".format(winnings)
-                    self.settings["user"][str(author.id)]["balance"] += winnings
-                    self.settings["user"][str(author.id)]["winnings"] += winnings
-                    win = {}
-                    win["userid"] = str(author.id)
-                    win["username"] = author.name + "#" + author.discriminator
-                    win["chance"] = str(slot["percentage"]) + "%"
-                    win["multiplier"] = round((100/slot["percentage"]) * 0.5)
-                    win["bet"] = bet
-                    win["icon"] = slot["icon"]
-                    win["winnings"] = winnings
-                    self._slots["wins"].append(win)
-                    dataIO.save_json(self.location, self.settings)
-                    dataIO.save_json(self._slots_file, self._slots)
+                    if bet:
+                        winnings = bet * round((100/slot["percentage"]) * 0.5)
+                        msg = slots[number1a-1]["icon"] + slots[number2a-1]["icon"] + slots[number3a-1]["icon"] + "\n" + slot1 + slot2 + slot3 + "\n" + slots[number1b-1]["icon"] + slots[number2b-1]["icon"] + slots[number3b-1]["icon"] + "\n\nYou won **${}**!".format(winnings)
+                        self.settings["user"][str(author.id)]["balance"] += winnings
+                        self.settings["user"][str(author.id)]["winnings"] += winnings
+                        win = {}
+                        win["userid"] = str(author.id)
+                        win["username"] = author.name + "#" + author.discriminator
+                        win["chance"] = str(slot["percentage"]) + "%"
+                        win["multiplier"] = round((100/slot["percentage"]) * 0.5)
+                        win["bet"] = bet
+                        win["icon"] = slot["icon"]
+                        win["winnings"] = winnings
+                        self._slots["wins"].append(win)
+                        dataIO.save_json(self.location, self.settings)
+                        dataIO.save_json(self._slots_file, self._slots)
+                    else:
+                        msg = slots[number1a-1]["icon"] + slots[number2a-1]["icon"] + slots[number3a-1]["icon"] + "\n" + slot1 + slot2 + slot3 + "\n" + slots[number1b-1]["icon"] + slots[number2b-1]["icon"] + slots[number3b-1]["icon"] + "\n\nYou would have won **{}x** your bet!".format(round((100/slot["percentage"]) * 0.5))
         else:
-            msg = slots[number1a-1]["icon"] + slots[number2a-1]["icon"] + slots[number3a-1]["icon"] + "\n" + slot1 + slot2 + slot3 + "\n" + slots[number1b-1]["icon"] + slots[number2b-1]["icon"] + slots[number3b-1]["icon"] + "\n\nYou won **nothing**!"
+            msg = slots[number1a-1]["icon"] + slots[number2a-1]["icon"] + slots[number3a-1]["icon"] + "\n" + slot1 + slot2 + slot3 + "\n" + slots[number1b-1]["icon"] + slots[number2b-1]["icon"] + slots[number3b-1]["icon"] + "\n\nYou {} won **nothing**!".format("would have" if not bet else "")
         s=discord.Embed(description=msg, colour=0xfff90d)
         s.set_author(name="🎰 Slot Machine 🎰")
         s.set_thumbnail(url="https://images.emojiterra.com/twitter/512px/1f3b0.png")
@@ -1508,7 +1706,7 @@ class economy:
                         chance = randint(0, number)
                         if chance == 0:
                             author_data["items"].append(item2["name"])
-                            materials += item2["name"] + ", "
+                            materials += item2["name"] + item2["emote"] + ", "
                     materials = materials[:-2]
                     if materials == "":
                         materials = "Absolutely nothing"
@@ -2162,7 +2360,7 @@ class economy:
         elif year is not None and (year > int(datetime.datetime.utcnow().strftime("%Y")) - 1 or year < int(datetime.datetime.utcnow().strftime("%Y")) - 100):
             return await ctx.send("Invalid Birthday :no_entry:")
         else:
-            self.settingss[str(author.id)]["BIRTHDAY"] = birthday
+            self.settingss[str(author.id)]["BIRTHDAY"] = "%02d/%02d" % (day, month) + ("/" + str(year) if year else "")
         await ctx.send("Your birthday has been set to the {}".format(self.settingss[str(author.id)]["BIRTHDAY"]))
         dataIO.save_json(self.JSON, self.settingss)
         

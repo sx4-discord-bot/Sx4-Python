@@ -245,6 +245,16 @@ class fun:
         s.set_footer(text="{} 👍 | {} 👎 | Page {}/{}".format(data["list"][page]["thumbs_up"], data["list"][page]["thumbs_down"], page + 1, len(data["list"])))
         await ctx.send(embed=s)
 
+    @commands.command()
+    async def clapify(self, ctx, *, text):
+        if "@everyone" in text.lower():
+            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
+            return
+        if "@here" in text.lower():
+            await ctx.send("@Here. Ha get pranked :middle_finger:")
+            return
+        await ctx.send(text.replace(" ", ":clap:")[:2000])
+
     @commands.command(pass_context=True)
     async def ascend(self, ctx, *, text):
         """Make text look cool"""
