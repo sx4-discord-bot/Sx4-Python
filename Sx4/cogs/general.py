@@ -33,11 +33,13 @@ from difflib import get_close_matches
 
 giveaway = {"users": None}
 
+permsjson = {'change_nickname': 67108864, 'use_vad': 33554432, 'manage_channels': 16, 'manage_guild': 32, 'connect': 1048576, 'read_message_history': 65536, 'view_channel': 1024, 'move_members': 16777216, 'mention_everyone': 131072, 'manage_nicknames': 134217728, 'view_audit_log': 128, 'use_external_emojis': 262144, 'add_reactions': 64, 'manage_roles': 268435456, 'speak': 2097152, 'ban_members': 4, 'manage_webhooks': 536870912, 'send_messages': 2048, 'manage_messages': 8192, 'create_instant_invite': 1, 'embed_links': 16384, 'priority_speaker': 256, 'read_messages': 1024, 'manage_emojis': 1073741824, 'attach_files': 32768, 'mute_members': 4194304, 'administrator': 8, 'deafen_members': 8388608, 'send_tts_messages': 4096, 'kick_members': 2}
+
 class general:
     def __init__(self, bot):
         self.bot = bot
         self._stats_task = bot.loop.create_task(self.checktime())
-        self._wait_task = bot.loop.create_task(self._status_check())
+        self._stats_save = bot.loop.create_task(self.save_stats())
         self.file = "data/general/triggers.json"
         self.d = dataIO.load_json(self.file)
         self._shop_file = 'data/economy/shop.json'
@@ -49,9 +51,53 @@ class general:
 
     def __unload(self):
         self._stats_task.cancel()
-        self._wait_task.cancel()
+        self._stats_save.cancel()
 
     @commands.command()
+    async def invitegenerator(self, ctx, bot: str, *permissions):
+        if re.search("<@!(.*)>" if "!" in bot else "<@(.*)>", bot):
+            bot = discord.utils.get(self.bot.get_all_members(), id=int(re.search("<@!(.*)>" if "!" in bot else "<@(.*)>", bot).group(1)))
+        elif "#" in bot and bot[len(bot)-4:].isdigit():
+            regex = re.search("(.*)#(.*)", bot)
+            bot = discord.utils.get(self.bot.get_all_members(), name=regex.group(1), discriminator=regex.group(2))
+        else:
+            try:
+                bot = discord.utils.get(self.bot.get_all_members(), id=int(bot))
+            except:
+                bot = discord.utils.get(self.bot.get_all_members(), name=bot)
+        if not bot or not bot.bot:
+            return await ctx.send("Invalid bot :no_entry:")
+        value = 0
+        if permissions:
+            for x in permissions:
+                try:
+                    value += permsjson[x]
+                except: 
+                    pass
+        await ctx.send("https://discordapp.com/oauth2/authorize?client_id={}{}&scope=bot".format(bot.id, "" if not permissions or value == 0 else "&permissions=" + str(value)))
+
+
+    @commands.command()
+    async def decode(self, ctx):
+        if ctx.message.attachments:
+            with open("test.txt", "wb") as f:
+                f.write(requests.get(ctx.message.attachments[0].url).content)
+            with open("test.txt", "rb") as f:
+                try:
+                    contents = f.read().decode()
+                except:
+                    await ctx.send("Failed to decode the file :no_entry:")
+                    os.remove("test.txt")
+            amount = ctx.message.attachments[0].url.rfind(".")
+            if len(contents) > 2000:
+                os.remove("test.txt")
+                return await ctx.send("This file contains more than 2000 characters :no_entry:")
+            await ctx.send("```{}\n".format(ctx.message.attachments[0].url[amount+1:]) + contents  + "```")
+            os.remove("test.txt")
+        else:
+            await ctx.send("You didn't attach a text file with the command :no_entry:")
+
+    @commands.command(aliases=["updates"])
     async def changes(self, ctx):
         message = list(await self.bot.get_channel(455806567577681921).history(limit=1).flatten())[0]
         bugfixes = message.content.split("\n\n")[2]
@@ -597,14 +643,14 @@ class general:
     @commands.command()
     async def donate(self, ctx):
         """Get my donation link"""
-        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
+        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
         s.set_author(name="Donate!", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=s)
         
     @commands.command()
     async def invite(self, ctx):
         """Get my invite link"""
-        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
+        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
         s.set_author(name="Invite!", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=s)
         
@@ -625,7 +671,7 @@ class general:
         s.set_author(name="Info!", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Stats", value="Ping: {}ms\nServers: {}\nUsers: {}".format(ping, servers, users))
         s.add_field(name="Credits", value="[Victor#6359 (Host)](https://vjserver.ddns.net/discordbots.html)\n[Nexus](https://discord.gg/t2umQq3)\n[Lavalink (Music)](https://github.com/Devoxin/Lavalink.py/)\n[Python](https://www.python.org/downloads/release/python-352/)\n[discord.py](https://pypi.python.org/pypi/discord.py/)")
-        s.add_field(name="Sx4", value="Developers: {}, {}, {}\nInvite: [Click Here](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&scope=bot)\nSupport: [Click Here](https://discord.gg/p5cWHjS)\nDonate: [PayPal](https://paypal.me/SheaCartwright), [Patreon](https://www.patreon.com/SheaBots)".format(shea, legacy, joakim))
+        s.add_field(name="Sx4", value="Developers: {}, {}, {}\nInvite: [Click Here](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\nSupport: [Click Here](https://discord.gg/p5cWHjS)\nDonate: [PayPal](https://paypal.me/SheaCartwright), [Patreon](https://www.patreon.com/SheaBots)".format(shea, legacy, joakim))
         await ctx.send(embed=s)
 
     @commands.command(aliases=["shards"])
@@ -942,7 +988,7 @@ class general:
             user = author
         s=discord.Embed(colour=user.colour)
         s.set_author(name="{}'s Avatar".format(user.name), icon_url=user.avatar_url, url=user.avatar_url)
-        s.set_image(url=user.avatar_url_as(format="png", size=1024))
+        s.set_image(url=user.avatar_url_as(size=1024))
         await ctx.send(embed=s)
         
     @commands.command(pass_context=True, no_pm=True, aliases=["savatar"])
@@ -1109,7 +1155,6 @@ class general:
         if "messages" not in self._stats[str(server.id)]:
             self._stats[str(server.id)]["messages"] = 0
         self._stats[str(server.id)]["messages"] += 1
-        dataIO.save_json(self._stats_file, self._stats)
         if message.author.id == self.bot.user.id:
             return
         if self.d[str(server.id)]["toggle"] == False:
@@ -1184,11 +1229,9 @@ class general:
                         duration = "%d:%02d" % (m, s)
                         description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
                     elif user.activity:
-                        description="{} {}".format(user.activity.type.name.title(), user.activity.name)
+                        description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
                     elif user.activity.url:
                         description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
-                    if not user:
-                        user = await self.bot.get_user_info(int(user_arg))
                     if user.bot:
                         bot = "Yes"
                     else:
@@ -1209,8 +1252,6 @@ class general:
                     user = discord.utils.get(ctx.guild.members, id=int(user_arg))
                     if not user:
                         user = discord.utils.get(self.bot.get_all_members(), id=int(user_arg))
-                        if not user:
-                            return await ctx.send("I could not find that user :no_entry:")
                         description = ""
                         status = None
                         if user:
@@ -1229,7 +1270,7 @@ class general:
                                 duration = "%d:%02d" % (m, s)
                                 description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
                             elif user.activity:
-                                description="{} {}".format(user.activity.type.name.title(), user.activity.name)
+                                description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
                             elif user.activity.url:
                                 description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
                         if not user:
@@ -1273,7 +1314,7 @@ class general:
                                 duration = "%d:%02d" % (m, s)
                                 description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
                             elif user.activity:
-                                description="{} {}".format(user.activity.type.name.title(), user.activity.name)
+                                description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
                             elif user.activity.url:
                                 description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
                             if user.bot:
@@ -1315,7 +1356,7 @@ class general:
             duration = "%d:%02d" % (m, s)
             description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
         elif user.activity:
-            description="{} {}".format(user.activity.type.name.title(), user.activity.name)
+            description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps and "start" in user.activity.timestamps else ""))
         elif user.activity.url:
             description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
         roles=[x.mention for x in user.roles if x.name != "@everyone"][:20]
@@ -1484,7 +1525,7 @@ class general:
         s.add_field(name="Servers Joined Today", value=self._stats["servers"])
         s.add_field(name="Commands Used Today", value=self._stats["commands"])
         s.add_field(name="Messages Sent Today", value=self._stats["messages"])
-        #s.add_field(name="Connected Channels", value=len(set(filter(lambda x: x[1].connected_channel, self.bot.lavalink.players))))
+        s.add_field(name="Connected Channels", value=len(set(filter(lambda x: x[1].connected_channel, self.bot.lavalink.players))))
         s.add_field(name="Servers", value=len(self.bot.guilds))
         s.add_field(name="Users ({} total)".format(len(members)), value="{} Online\n{} Offline".format(online, offline))
         await ctx.send(embed=s)
@@ -1505,14 +1546,25 @@ class general:
         else:
             prefix = "th"
         return number + prefix
+
+    def format_time_activity(self, time):
+        m, s = divmod(time, 60)
+        h, m = divmod(m, 60)
+        d, h = divmod(h, 24)
+        if d != 0:
+            return "{} {}".format(round(d), "day" if round(d) == 1 else "days")
+        elif h != 0:
+            return "{} {}".format(round(h), "hour" if round(h) == 1 else "hours")
+        elif m != 0:
+            return "{} {}".format(round(m), "minute" if round(m) == 1 else "minutes")
+        else:
+            return "{} {}".format(round(s), "second" if round(s) == 1 else "seconds")
         
     async def on_guild_join(self, guild):
         self._stats["servers"] += 1
-        dataIO.save_json(self._stats_file, self._stats) 
         
     async def on_guild_remove(self, guild):
         self._stats["servers"] -= 1
-        dataIO.save_json(self._stats_file, self._stats) 
         
     async def on_member_join(self, member):
         server = member.guild
@@ -1521,7 +1573,6 @@ class general:
         if "members" not in self._stats[str(server.id)]:
             self._stats[str(server.id)]["members"] = 0
         self._stats[str(server.id)]["members"] += 1
-        dataIO.save_json(self._stats_file, self._stats) 
         
     async def on_member_remove(self, member):
         server = member.guild
@@ -1530,11 +1581,9 @@ class general:
         if "members" not in self._stats[str(server.id)]:
             self._stats[str(server.id)]["members"] = 0
         self._stats[str(server.id)]["members"] -= 1
-        dataIO.save_json(self._stats_file, self._stats) 
         
     async def on_command(self, ctx):
         self._stats["commands"] += 1
-        dataIO.save_json(self._stats_file, self._stats) 
 
     async def checktime(self):
         while not self.bot.is_closed():
@@ -1545,7 +1594,7 @@ class general:
                     s.add_field(name="Average Command Usage", value="1 every {}s".format(round(86400/self._stats["commands"])))
                 else:
                     s.add_field(name="Average Command Usage", value="{} every second".format(round(self._stats["commands"]/86400)))
-                s.add_field(name="Servers", value=len(self.bot.guilds), inline=False)
+                s.add_field(name="Servers", value="{} ({})".format(len(self.bot.guilds), "+" + str(self._stats["servers"]) if self._stats["servers"] >= 0 else self._stats["servers"]), inline=False)
                 s.add_field(name="Users (No Bots)", value=len(set(filter(lambda m: not m.bot, list(set(self.bot.get_all_members()))))))
                 await self.bot.get_channel(445982429522690051).send(embed=s)
                 self._stats["servers"] = 0
@@ -1556,23 +1605,20 @@ class general:
                     self._stats[serverid]["messages"] = 0
                 dataIO.save_json(self._stats_file, self._stats) 
             await asyncio.sleep(3540)
-        
-    async def _status_check(self):
+
+    async def save_stats(self):
         while not self.bot.is_closed():
-            for authorid in list(self._status)[:len(self._status)]:
-                author = discord.utils.get(self.bot.get_all_members(), id=int(authorid))
-                if author != None:
-                    for users in list(self._status[str(author.id)]["users"])[:len(self._status[str(author.id)]["users"])]:
-                        user = discord.utils.get(self.bot.get_all_members(), id=int(users))
-                        if user != None:
-                            if user.status != discord.Status.offline:
-                                try:
-                                    await author.send("**{}** is now online<:online:361440486998671381>".format(str(user)))
-                                    del self._status[str(author.id)]["users"][str(user.id)]
-                                    dataIO.save_json(self._status_file, self._status)
-                                except:
-                                    pass
-            await asyncio.sleep(5)
+            dataIO.save_json(self._stats_file, self._stats) 
+            await asyncio.sleep(360)
+
+    async def on_member_update(self, before, after):
+        if after.status != discord.Status.offline and before.status == discord.Status.offline:
+            for x in list(self._status)[:len(self._status)]:
+                if str(after.id) in self._status[x]["users"]:
+                    author = discord.utils.get(self.bot.get_all_members(), id=int(x))
+                    del self._status[str(author.id)]["users"][str(after.id)]
+                    dataIO.save_json(self._status_file, self._status)
+                    await author.send("**{}** is now online<:online:361440486998671381>".format(after))
         
 def check_folders():
     if not os.path.exists("data/general"):

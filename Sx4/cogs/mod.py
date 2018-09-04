@@ -23,11 +23,6 @@ from random import choice as randchoice
 from discord.ext.commands import CommandNotFound
 from utils.dataIO import fileIO
 
-class Prefix:
-    _prefixes_file = "data/mod/prefixes.json"
-    _prefixes = dataIO.load_json(_prefixes_file)
-
-
 class mod:
     def __init__(self, bot):
         self.bot = bot
@@ -40,9 +35,47 @@ class mod:
         self.d = dataIO.load_json(self.file)
         self._logs_file = "data/mod/logs.json"
         self._logs = dataIO.load_json(self._logs_file)
+        self._prefixes_file = "data/mod/prefixes.json"
+        self._prefixes = dataIO.load_json(self._prefixes_file)
 
     def __unload(self):
         self._task.cancel()
+
+    @commands.command()
+    @checks.has_permissions("manage_guild")
+    async def lockdown(self, ctx, *, channel: discord.TextChannel=None):
+        """Locks down a channel so no one can speak in it at the current time using the command again will unlock it"""
+        if not channel:
+            channel = ctx.channel
+        try:
+            if channel.overwrites_for(ctx.guild.default_role).send_messages == True or channel.overwrites_for(ctx.guild.default_role).send_messages == None:
+                overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
+                overwrite.send_messages = False
+                await channel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
+                return await ctx.send("{} has been locked down <:done:403285928233402378>".format(channel.mention))
+            else:
+                overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
+                overwrite.send_messages = None
+                await channel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
+                return await ctx.send("{} is no longer locked down <:done:403285928233402378>".format(channel.mention))
+        except:
+            await ctx.send("I'm unable to edit the channel permissions :no_entry:")
+
+    @commands.command()
+    @checks.has_permissions("manage_guild")
+    async def region(self, ctx, *, region: str):
+        """change the server region"""
+        region = region.replace(" ", "_").lower()
+        if hasattr(discord.VoiceRegion, region):
+            try:
+                if ctx.guild.region == region:
+                    return await ctx.send("The voice region is already set to that :no_entry:")
+                await ctx.guild.edit(region=getattr(discord.VoiceRegion, region, None))
+                await ctx.send("Succesfully changed the voice region to **{}** <:done:403285928233402378>".format(region.replace("_", " ").title()))
+            except:
+                return await ctx.send("I was unable to change the voice region :no_entry:")
+        else:
+            await ctx.send("Not a valid voice region :no_entry:")
 
     @commands.command(aliases=["colorrole"])
     @checks.has_permissions("manage_roles")
@@ -61,55 +94,55 @@ class mod:
             s.set_author(name="Prefix Settings", icon_url=ctx.author.avatar_url)
             s.add_field(name="Default Prefixes", value="{}".format(", ".join(['sx4 ', 's?', 'S?', '<@440996323156819968> '])), inline=False)
             try:
-                s.add_field(name="Server Prefixes", value="{}".format(", ".join(Prefix._prefixes["serverprefix"][str(ctx.guild.id)])), inline=False)
+                s.add_field(name="Server Prefixes", value="{}".format(", ".join(self._prefixes["serverprefix"][str(ctx.guild.id)])), inline=False)
             except:
                 s.add_field(name="Server Prefixes", value="None", inline=False)
             try:
-                s.add_field(name="{}'s Prefixes".format(ctx.author.name), value="{}".format(", ".join(Prefix._prefixes["userprefix"][str(ctx.author.id)])), inline=False)
+                s.add_field(name="{}'s Prefixes".format(ctx.author.name), value="{}".format(", ".join(self._prefixes["userprefix"][str(ctx.author.id)])), inline=False)
             except:
                 s.add_field(name="{}'s Prefixes".format(ctx.author.name), value="None", inline=False)
             await ctx.send(embed=s, content="For help on setting the prefix use `{}help prefix`".format(ctx.prefix))
         else:
-            if "userprefix" not in Prefix._prefixes:
-                Prefix._prefixes["userprefix"] = {}
-            if "serverprefix" not in Prefix._prefixes:
-                Prefix._prefixes["serverprefix"] = {}
-            dataIO.save_json(Prefix._prefixes_file, Prefix._prefixes)
+            if "userprefix" not in self._prefixes:
+                self._prefixes["userprefix"] = {}
+            if "serverprefix" not in self._prefixes:
+                self._prefixes["serverprefix"] = {}
+            dataIO.save_json(self._prefixes_file, self._prefixes)
 
     @prefix.command()
     async def self(self, ctx, *prefixes):
         "Set a prefix or multiple for yourself on the bot"
         prefixes = [x for x in prefixes if x != ""]
-        if str(ctx.author.id) not in Prefix._prefixes["userprefix"]:
-            Prefix._prefixes["userprefix"][str(ctx.author.id)] = {}
+        if str(ctx.author.id) not in self._prefixes["userprefix"]:
+            self._prefixes["userprefix"][str(ctx.author.id)] = {}
         if len(prefixes) == 0:
-            del Prefix._prefixes["userprefix"][str(ctx.author.id)] 
+            del self._prefixes["userprefix"][str(ctx.author.id)] 
             await ctx.send("Your prefixes have been reset <:done:403285928233402378>")
         else:
-            Prefix._prefixes["userprefix"][str(ctx.author.id)] = prefixes
+            self._prefixes["userprefix"][str(ctx.author.id)] = prefixes
             if len(prefixes) > 1:
                 await ctx.send("Your prefixes have been set to `{}` <:done:403285928233402378>".format(", ".join(prefixes)))
             else:
                 await ctx.send("Your prefix has been set to `{}` <:done:403285928233402378>".format(", ".join(prefixes)))
-        dataIO.save_json(Prefix._prefixes_file, Prefix._prefixes)
+        dataIO.save_json(self._prefixes_file, self._prefixes)
 
     @prefix.command()
     @checks.has_permissions("manage_guild")
     async def server(self, ctx, *prefixes):
         """Set a prefix for the server you're in"""
         prefixes = [x for x in prefixes if x != ""]
-        if str(ctx.guild.id) not in Prefix._prefixes["serverprefix"]:
-            Prefix._prefixes["serverprefix"][str(ctx.guild.id)] = {}
+        if str(ctx.guild.id) not in self._prefixes["serverprefix"]:
+            self._prefixes["serverprefix"][str(ctx.guild.id)] = {}
         if len(prefixes) == 0:
-            del Prefix._prefixes["serverprefix"][str(ctx.guild.id)] 
+            del self._prefixes["serverprefix"][str(ctx.guild.id)] 
             await ctx.send("The server prefixes have been reset <:done:403285928233402378>")
         else:
-            Prefix._prefixes["serverprefix"][str(ctx.guild.id)] = prefixes
+            self._prefixes["serverprefix"][str(ctx.guild.id)] = prefixes
             if len(prefixes) > 1:
                 await ctx.send("The server prefixes have been set to `{}` <:done:403285928233402378>".format(", ".join(prefixes)))
             else:
                 await ctx.send("The server prefix has been set to `{}` <:done:403285928233402378>".format(", ".join(prefixes)))
-        dataIO.save_json(Prefix._prefixes_file, Prefix._prefixes)
+        dataIO.save_json(self._prefixes_file, self._prefixes)
 
 
     @commands.command()
@@ -550,12 +583,6 @@ class mod:
         except discord.errors.Forbidden:
             await ctx.send("I'm not able to remove the role from the user :no_entry:")
             
-    @commands.command() 
-    @checks.has_permissions("ban_members")
-    async def Ban(self, ctx, user: discord.Member):
-        """This is a fake bean don't exp0se"""
-        await ctx.send("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
-            
     @commands.command(no_pm=True, )
     @checks.has_permissions("kick_members")
     async def kick(self, ctx, user: discord.Member, *, reason: str = None):
@@ -605,8 +632,14 @@ class mod:
                 pass
         except Exception as e:
             print(e)
+
+    @commands.command(no_pm=True)
+    @checks.has_permissions("ban_members")
+    async def Ban(self, ctx, user: discord.Member):
+        """Fake bean don't exp0se"""
+        await ctx.send("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
             
-    @commands.command(no_pm=True, )
+    @commands.command(no_pm=True)
     @checks.has_permissions("ban_members")
     async def ban(self, ctx, user, *, reason: str = None):
         """Bans a user."""
@@ -647,10 +680,7 @@ class mod:
                 user = user2
         else:
             try:
-                try:
-                    user2 = discord.utils.get(ctx.guild.members, id=int(user))
-                except:
-                    return await ctx.send("I could not find that user :no_entry:")
+                user2 = discord.utils.get(ctx.guild.members, id=int(user))
                 if not user2:
                     user2 = discord.utils.get(self.bot.get_all_members(), id=int(user))
                     notinserver = True

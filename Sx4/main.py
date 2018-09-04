@@ -9,7 +9,6 @@ from utils import checks
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 import requests
-from cogs.mod import Prefix
 from utils import Token
 import aiohttp
 import json
@@ -18,32 +17,20 @@ import sys
 import os
 import subprocess
 
-
 async def prefix_function(bot, message):
-    if str(message.author.id) in Prefix._prefixes["userprefix"]:
-        return [x.encode().decode() for x in Prefix._prefixes["userprefix"][str(message.author.id)]] + ['<@440996323156819968> ']
-    elif str(message.guild.id) in Prefix._prefixes["serverprefix"]:
-        return [x.encode().decode() for x in Prefix._prefixes["serverprefix"][str(message.guild.id)]] + ['<@440996323156819968> ']
+    _prefixes_file = "data/mod/prefixes.json"
+    _prefixes = dataIO.load_json(_prefixes_file)
+    if str(message.author.id) in _prefixes["userprefix"]:
+        return [x.encode().decode() for x in _prefixes["userprefix"][str(message.author.id)]] + ['<@440996323156819968> ']
+    elif str(message.guild.id) in _prefixes["serverprefix"]:
+        return [x.encode().decode() for x in _prefixes["serverprefix"][str(message.guild.id)]] + ['<@440996323156819968> ']
     else:
         return ['sx4 ', 's?', 'S?', '<@440996323156819968> ']
    
-bot = commands.AutoShardedBot(command_prefix=prefix_function)
-blacklistusers = [296343513430360064, 277398577934893056, 146974226988007424]
+bot = commands.AutoShardedBot(command_prefix=prefix_function, case_insensitive=False)
 wrap = "```py\n{}\n```"
-dbltoken = Token.dbl()
-dbotspwtoken = Token.dbpw()
-botspacetoken = Token.botlistspace()
-konomitoken = Token.konomi()
-dbpwurl = "https://bots.discord.pw/api/bots/440996323156819968/stats"
-url = "https://discordbots.org/api/bots/440996323156819968/stats"
-botspaceurl = "https://botlist.space/api/bots/440996323156819968/"
-konomiurl = "http://bots.disgd.pw/api/bot/440996323156819968/stats"
-headers = {"Authorization" : dbltoken}
-headersdb = {"Authorization" : dbotspwtoken, "Content-Type" : "application/json"}
-headerskon = {"Authorization" : konomitoken, "Content-Type" : "application/json"}
-headersbs = {"Authorization" : botspacetoken, "Content-Type" : "application/json"}
-
-modules = ["cogs." + x.replace(".py", "") for x in os.listdir("cogs") if ".py" in x and x != "music.py"]
+blacklisted_users = [296343513430360064, 277398577934893056, 146974226988007424]
+modules = ["cogs." + x.replace(".py", "") for x in os.listdir("cogs") if ".py" in x]
 
 @bot.event
 async def on_ready():
@@ -60,16 +47,12 @@ async def on_ready():
     setattr(bot, "uptime", datetime.datetime.utcnow().timestamp())
     dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
     payloadservers = {"server_count"  : len(bot.guilds)}
-    requests.post(url, data=dblpayloadservers, headers=headers)
-    requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
-    requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
-    requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
 		
 @bot.event 
 async def on_message(message):
     if message.author.bot:
         return
-    elif message.author.id in blacklistusers:
+    elif message.author.id in blacklisted_users:
         return
     elif isinstance(message.channel, discord.abc.PrivateChannel) and message.content.startswith("s?"):
         await message.channel.send("You can't use commands in private messages :no_entry:")
@@ -81,7 +64,7 @@ async def on_message(message):
 async def on_message_edit(before, after):
     if after.author.bot:
         return
-    elif message.author.id in blacklistusers:
+    elif after.author.id in blacklisted_users:
         return
     elif before.content == after.content:
         return
@@ -90,16 +73,6 @@ async def on_message_edit(before, after):
         return
     else:
         await bot.process_commands(after)
-
-async def server_post():
-    while not bot.is_closed():
-        dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
-        payloadservers = {"server_count"  : len(bot.guilds)}
-        requests.post(url, data=dblpayloadservers, headers=headers)
-        requests.post(dbpwurl, data=json.dumps(payloadservers), headers=headersdb)
-        requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
-        requests.post(konomiurl, data=json.dumps({"guild_count" : len(bot.guilds)}), headers=headerskon)
-        await asyncio.sleep(3600)
 			
 @bot.event
 async def on_command_error(ctx, error, *args, **kwargs):
@@ -160,9 +133,8 @@ async def on_command_error(ctx, error, *args, **kwargs):
     else:
         s=discord.Embed(title="Error", description="You have came across an error! [Support Server](https://discord.gg/WJHExmg)\n{}".format(str(error)).replace("Command raised an exception: ", ""))
         await channel.send(embed=s)
-        await bot.get_channel(439745234285625355).send("```Server: {}\nTime: {}\nCommand: {}\n\n{}```".format(ctx.message.guild, datetime.datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S"), ctx.command, str(error)))
-        if not isinstance(error, KeyError):
-            print("".join(traceback.format_exception(type(error), error, error.__traceback__)))
+        await bot.get_channel(439745234285625355).send("```Server: {}\nTime: {}\nCommand: {}\nAuthor: {}\n\n{}```".format(ctx.message.guild, datetime.datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S"), ctx.command, ctx.message.author, str(error)))
+        print("".join(traceback.format_exception(type(error), error, error.__traceback__)))
         
 		
 class Main:
@@ -231,8 +203,6 @@ async def reload(ctx, *, module: str):
 		
 		
 bot.add_cog(Main(bot))
-
-bot.loop.create_task(server_post())
 
 bot.run(Token.bot())
 

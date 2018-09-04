@@ -293,7 +293,7 @@ class logs:
                 before.nick = after.name
             if not after.nick:
                 after.nick = after.name
-            s=discord.Embed(description="**{}** has has had their nickname changed by **{}**".format(after.name, user), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="**{}** has had their nickname changed by **{}**".format(after.name, user), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=after, icon_url=after.avatar_url)
             s.add_field(name="Before", value=before.nick, inline=False)
             s.add_field(name="After", value=after.nick)

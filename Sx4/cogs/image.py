@@ -15,6 +15,7 @@ import datetime
 import math
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 from urllib.request import Request, urlopen
+import re
 import json
 import urllib.request
 import requests
@@ -619,18 +620,42 @@ class image:
             
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def colour(self, ctx, colour: discord.Colour=None):
+    async def colour(self, ctx, *, colour: str=None):
         """View a colours hex code and RGB and a image with the colour, if a colour is not specified it will get a random one"""
         if not colour:
             colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
             colour = discord.Colour(int(colour, 16))
-        colourname = str(colour)
+            colourname = str(colour)
+            for x in self.colours:
+                if str(colour).lower() == self.colours[x].lower():
+                    if not re.match("(?:[a-f A-F]|[0-9]){6}" if "#" not in colour else "#(?:[a-f A-F]|[0-9]){6}", colour):
+                        return await ctx.send("Invalid hex :no_entry:")
+                    colourname = x.title()
+            image = Image.new('RGBA', (100, 100), (colour.r, colour.g, colour.b))
+            image.save("result.png")
+            s=discord.Embed(colour=colour, description="Hex: {}\nRGB: ({}, {}, {})".format(str(colour), colour.r, colour.g, colour.b))
+            s.set_image(url="attachment://result.png")
+            s.set_author(name=colourname, icon_url="attachment://result.png")
+            await ctx.send(file=discord.File("result.png", "result.png"), embed=s)
+            try:
+                os.remove("result.png")
+            except:
+                pass
+            return
+        colourname = colour
         for x in self.colours:
-            if str(colour) == self.colours[x]:
+            if x.title() == colour.title():
+                colourname = self.colours[x].lower()
+                colour = self.colours[x].lower()
+            elif "#" + str(colour).replace("#", "").lower() == self.colours[x].lower():
+                if not re.match("(?:[a-f A-F]|[0-9]){6}" if "#" not in colour else "#(?:[a-f A-F]|[0-9]){6}", colour):
+                    return await ctx.send("Invalid hex :no_entry:")
                 colourname = x.title()
-        image = Image.new('RGBA', (100, 100), (colour.r, colour.g, colour.b))
+        if not re.match("(?:[a-f A-F]|[0-9]){6}" if "#" not in colour else "#(?:[a-f A-F]|[0-9]){6}", colour):
+            return await ctx.send("Invalid hex :no_entry:")
+        image = Image.new('RGBA', (100, 100), (discord.Colour(int(colour.replace("#", ""), 16)).r, discord.Colour(int(colour.replace("#", ""), 16)).g, discord.Colour(int(colour.replace("#", ""), 16)).b))
         image.save("result.png")
-        s=discord.Embed(colour=colour, description="Hex: {}\nRGB: ({}, {}, {})".format(str(colour), colour.r, colour.g, colour.b))
+        s=discord.Embed(colour=discord.Colour(int(colour.replace("#", ""), 16)), description="Hex: {}\nRGB: ({}, {}, {})".format("#" + str(colour).replace("#", ""), discord.Colour(int(colour.replace("#", ""), 16)).r, discord.Colour(int(colour.replace("#", ""), 16)).g, discord.Colour(int(colour.replace("#", ""), 16)).b))
         s.set_image(url="attachment://result.png")
         s.set_author(name=colourname, icon_url="attachment://result.png")
         await ctx.send(file=discord.File("result.png", "result.png"), embed=s)

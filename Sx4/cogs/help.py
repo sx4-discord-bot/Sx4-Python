@@ -40,7 +40,6 @@ class help:
                 s.set_author(name="Help ({} Commands)".format(commandsnum), icon_url=self.bot.user.avatar_url)
                 if commands != "" and cog != "help":
                     s.add_field(name=cog.title() + " [{}]".format(cogsnum), value=commands, inline=False)
-            s.add_field(name="Welcomer [2]", value="`welcomer`, `imgwelcomer`", inline=False)
             await ctx.send(embed=s)
         elif not subcommand and commandname:
             msg = ""

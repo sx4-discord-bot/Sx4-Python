@@ -14,8 +14,6 @@ from utils import arghelp
 from utils import Token
 from discord.ext import commands
 
-#this is diabled but oh well still here
-
 url_re = re.compile('https?:\/\/(?:www\.)?.+')
 
 class music:
@@ -24,7 +22,7 @@ class music:
         self.bot = bot
         self.timeout = bot.loop.create_task(self.check_timeout())
         if not hasattr(bot, 'lavalink'):
-            lavalink.Client(ws_port=2086, rest_port=2333, bot=bot, password=password, shard_count=self.bot.shard_count, loop=self.bot.loop, log_level=logging.DEBUG)
+            lavalink.Client(ws_port=2086, rest_port=2333, bot=bot, password='youshallnotpass', shard_count=self.bot.shard_count, loop=self.bot.loop, log_level=logging.DEBUG)
             self.bot.lavalink.register_hook(self._events)
 
     async def _events(self, event):
@@ -220,7 +218,7 @@ class music:
                 await message.delete()
                 return await ctx.send("Invalid index :no_entry:")
             else:
-                track = results["tracks"][int(response.content) + 1]
+                track = results["tracks"][int(response.content) - 1]
                 player.add(requester=ctx.author.id, track=track)
                 timetill = 0
                 for x in player.queue:
@@ -288,8 +286,11 @@ class music:
             return await ctx.send("I'm not connected to a voice channel :no_entry:")
         if not channel:
             channel = ctx.channel
-        player.store('channel', channel.id)
-        await ctx.send("Messages will now be sent in {} <:done:403285928233402378>".format(channel.mention))
+        if player.fetch('sessionowner') == ctx.author.id or player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members):
+            player.store('channel', channel.id)
+            await ctx.send("Messages will now be sent in {} <:done:403285928233402378>".format(channel.mention))
+        else:
+            return await ctx.send("You are not the session owner :no_entry:")
 
     @commands.command(aliases=["resume", "unpause"])
     async def pause(self, ctx):
@@ -299,12 +300,38 @@ class music:
             return await ctx.send("I'm not connected to a voice channel :no_entry:")
         if not player.is_playing:
             return await ctx.send("Nothing is currently playing :no_entry:")
-        if player.paused:
-            await player.set_pause(False)
-            await ctx.send("Resumed.")
+        if player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members): 
+            if player.paused:
+                await player.set_pause(False)
+                await ctx.send("Resumed.")
+            else:
+                await player.set_pause(True)
+                await ctx.send("Paused.")
+        elif player.fetch("sessionowner") == ctx.author.id:
+            if player.paused:
+                await player.set_pause(False)
+                await ctx.send("Resumed.")
+            else:
+                await player.set_pause(True)
+                await ctx.send("Paused.")
         else:
-            await player.set_pause(True)
-            await ctx.send("Paused.")
+            return await ctx.send("You are not the session owner :no_entry:")
+
+    @commands.command()
+    async def rewind(self, ctx):
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+        if not player.is_connected:
+            return await ctx.send("I'm not connected to a voice channel :no_entry:")
+        if not player.is_playing:
+            return await ctx.send("Nothing is currently playing :no_entry:")
+        if player.current.requester not in map(lambda c: c.id, player.connected_channel.members) and player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members): 
+            await ctx.send("Rewound ⏪")
+            await player.seek(0)
+        elif player.current.requester == ctx.author.id or player.fetch("sessionowner") == ctx.author.id:
+            await ctx.send("Rewound ⏪")
+            await player.seek(0)
+        else:
+            return await ctx.send("You are not the session owner or the user who requested this song :no_entry:")
 
     @commands.command()
     async def skip(self, ctx):
@@ -314,7 +341,7 @@ class music:
             return await ctx.send("I'm not connected to a voice channel :no_entry:")
         if not player.is_playing:
             return await ctx.send("Nothing is currently playing :no_entry:")
-        if player.current.requester not in map(lambda c: c.id, player.connected_channel.members):
+        if player.current.requester not in map(lambda c: c.id, player.connected_channel.members) and player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members):
             await ctx.send("Skipped.")
             await player.skip()
         else:
@@ -344,10 +371,16 @@ class music:
             return await ctx.send('Nothing is queued :no_entry:')
         if index > len(player.queue) or index < 1:
             return await ctx.send("Invalid song index :no_entry:")
-        index -= 1
-        removed = player.queue.pop(index)
-
-        await ctx.send("Removed **" + removed.title + "** from the queue <:done:403285928233402378>")
+        if player.queue[index-1].requester not in map(lambda c: c.id, player.connected_channel.members) and player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members):
+            index -= 1
+            removed = player.queue.pop(index)
+            await ctx.send("Removed **" + removed.title + "** from the queue <:done:403285928233402378>")
+        elif player.queue[index-1].requester == ctx.author.id or player.fetch("sessionowner") == ctx.author.id:
+            index -= 1
+            removed = player.queue.pop(index)
+            await ctx.send("Removed **" + removed.title + "** from the queue <:done:403285928233402378>")
+        else:
+            return await ctx.send("You are not the session owner or the user who requested this song :no_entry:")
 
     @commands.command()
     async def repeat(self, ctx):
@@ -358,7 +391,7 @@ class music:
         if not player.is_playing:
             return await ctx.send("Nothing is currently playing :no_entry:")
         player.repeat = not player.repeat
-        if player.fetch('sessionowner') == ctx.author.id:
+        if player.fetch('sessionowner') == ctx.author.id or player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members):
             await ctx.send("Repeat turned **{}**".format("On" if player.repeat else "Off"))
         else:
             await ctx.send("You are not the session owner :no_entry:")
@@ -371,7 +404,7 @@ class music:
             return await ctx.send("I'm not connected to a voice channel :no_entry:")
         if not player.is_playing:
             return await ctx.send("Nothing is currently playing :no_entry:")
-        if player.fetch('sessionowner') == ctx.author.id:
+        if player.fetch('sessionowner') == ctx.author.id or player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members):
             random.shuffle(player.queue)
             await ctx.send("The queue has been shuffled <:done:403285928233402378>")
         else:

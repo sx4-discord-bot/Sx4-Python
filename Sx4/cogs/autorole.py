@@ -59,9 +59,9 @@ class autorole:
         if not subarg:
             users = server.members
         elif subarg.lower() == "nobots":
-            users = filter(lambda m: not m.bot, server.members)
+            users = list(set(filter(lambda m: not m.bot, server.members)))
         elif subarg.lower() == "bots":
-            users = filter(lambda m: m.bot, server.members)
+            users = list(set(filter(lambda m: m.bot, server.members)))
         role = discord.utils.get(server.roles, id=self.data[str(server.id)]["role"])
         if not role:
             return await ctx.send("You need to set the autorole before you can use this :no_entry:")
@@ -76,9 +76,7 @@ class autorole:
             except:
                 pass
         msg = ", I was unable to add the role to **{}** users".format(members - i)
-        await ctx.send("Added **{}** to **{}** users{} <:done:403285928233402378>".format(role.name, i, msg if members != i else ""))
-            
-            
+        await ctx.send("Added **{}** to **{}** users{} <:done:403285928233402378>".format(role.name, i, msg if members != i else ""))      
         
     @autorole.command()
     @checks.has_permissions("manage_roles")

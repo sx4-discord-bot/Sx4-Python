@@ -141,7 +141,7 @@ class giveaway:
         except asyncio.TimeoutError:
             await ctx.send("Timed out :stopwatch:")
             return
-        await ctx.send("How long do you want your giveaway to last (in seconds, minimum seconds: 30)? (Respond below)")
+        await ctx.send("How long do you want your giveaway to last (in seconds, minimum seconds: 120)? (Respond below)")
         try:
             time2 = await self.bot.wait_for("message", check=check_time, timeout=300)
             if time2.content.lower() == "cancel":

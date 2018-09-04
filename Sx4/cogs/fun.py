@@ -13,9 +13,11 @@ import psutil
 from datetime import datetime, timedelta
 from utils import Token
 from utils import checks
+import html
 from urllib.request import Request, urlopen
 import json
 import urllib
+from iso639 import languages
 import re
 import os
 from random import choice
@@ -40,9 +42,35 @@ class fun:
         self.settings = dataIO.load_json(self.JSON)
         self.settings = defaultdict(lambda: rps_settings, self.settings)
 
+    @commands.command(aliases=["tran", "tr"])
+    async def translate(self, ctx, language, *, text):
+        """Translate one language to another"""
+        if len(language) == 2:
+            try:
+                language = languages.get(part1=language).name
+            except:
+                pass
+        elif len(language) == 3:
+            try:
+                language = languages.get(part3=language).name
+            except:
+                pass
+        elif len(language) > 3:
+            language = language
+        request = requests.get("http://localhost:8080/translate/{}?{}".format(language, urllib.parse.urlencode({"q": text.lower()})))
+        try:
+            await ctx.send(request.json()["message"].replace("'", "`") + " :no_entry:")
+        except:
+            s=discord.Embed(colour=0x4285f4)
+            s.set_author(name="Google Translate", icon_url="https://upload.wikimedia.org/wikipedia/commons/d/db/Google_Translate_Icon.png")
+            s.add_field(name="Input Text ({})".format(languages.get(part1=request.json()["from"]["language"]["iso"]).name), value=html.unescape(request.json()["from"]["text"]["value"]) if request.json()["from"]["text"]["value"] else text, inline=False)
+            s.add_field(name="Output Text ({})".format(language.title()), value=request.json()["text"])
+            await ctx.send(embed=s)
+
     @commands.command(aliases=["calc"])
     async def calculator(self, ctx, *, equation):
-        answer = os.popen('./calc {}'.format(equation.replace(" ", ""))).read()
+        """Calculate simple equations"""
+        answer = os.popen('./calc {}'.format(equation.replace(" ", "").replace("(", "l").replace(")", "r"))).read()
         if answer == "":
             return await ctx.send("Invalid equation :no_entry:")
         await ctx.send(answer)
@@ -55,6 +83,7 @@ class fun:
 
     @commands.command(aliases=["yt"])
     async def youtube(self, ctx, *, search: str):
+        """Search for a youtube video by query"""
         url = "https://www.googleapis.com/youtube/v3/search?key=" + Token.youtube() + "&part=snippet&safeSearch=none&{}".format(urllib.parse.urlencode({"q": search}))
         request = requests.get(url)
         try:
@@ -65,6 +94,7 @@ class fun:
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def shorten(self, ctx, *, url):
+        """Shorten a url"""
         url1 = "https://api.rebrandly.com/v1/links"
         request = requests.post(url1, data=json.dumps({"destination": url}), headers={"Content-Type": "application/json", "apikey": Token.rebrandly()})
         try:
@@ -76,6 +106,7 @@ class fun:
     @commands.command()
     @commands.cooldown(1, 3, commands.BucketType.default)
     async def meme(self, ctx):
+        """Gives you a random meme"""
         number = randint(0, 100)
         url = "https://www.reddit.com/r/dankmemes.json?sort=new&limit=100"
         url2 = "https://www.reddit.com/r/memeeconomy.json?sort=new&limit=100"
@@ -102,7 +133,10 @@ class fun:
     @commands.command(pass_context=True)
     async def google(self, ctx, *, search): 
         """returns the top 5 results from google of your search query"""
-        url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:mm334tqd3kg&{}".format(urllib.parse.urlencode({"q": search}))
+        if ctx.channel.is_nsfw():
+            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:mm334tqd3kg&safeSearch=moderate&{}".format(urllib.parse.urlencode({"q": search}))
+        else:
+            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:mm334tqd3kg&safeSearch=moderate&{}".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
         try:
@@ -117,7 +151,10 @@ class fun:
     @commands.command(pass_context=True)
     async def googleimage(self, ctx, *, search): 
         """returns an image based on your search from google"""
-        url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:klo2euskkae&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
+        if ctx.channel.is_nsfw():
+            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:klo2euskkae&safeSearch=none&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
+        else:
+            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:klo2euskkae&safeSearch=moderate&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
         data = json.loads(urlopen(request).read().decode())
         s=discord.Embed()
@@ -216,6 +253,8 @@ class fun:
     @commands.command(pass_context=True, aliases=["ud"])
     async def urbandictionary(self, ctx, search_term, page: int=None):
         """Look up the definition of a word on the urbandictionary"""
+        if not ctx.channel.is_nsfw():
+            return await ctx.send("You can not use this command in non-nsfw channels :no_entry:")
         if not page:
             page = 0
         else:
@@ -247,6 +286,7 @@ class fun:
 
     @commands.command()
     async def clapify(self, ctx, *, text):
+        """Claps your text"""
         if "@everyone" in text.lower():
             await ctx.send("@Everyone. Ha get pranked :middle_finger:")
             return

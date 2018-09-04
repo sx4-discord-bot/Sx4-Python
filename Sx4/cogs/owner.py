@@ -13,6 +13,20 @@ class owner:
         self.bot = bot
 		
     @commands.command(hidden=True)
+    async def modules(self, ctx):
+        unloaded, loaded = [], []
+        list = [x.replace(".py", "") for x in os.listdir("cogs") if ".py" in x]
+        for x in list:
+            if not self.bot.get_cog(x):
+                unloaded.append(x)
+            else:
+                loaded.append(x)
+        s=discord.Embed(title="Modules ({})".format(len(list)))
+        s.add_field(name="Loaded ({})".format(len(loaded)), value=", ".join(loaded) if loaded != [] else "None", inline=False)
+        s.add_field(name="Unloaded ({})".format(len(unloaded)), value=", ".join(unloaded) if unloaded != [] else "None", inline=False)
+        await ctx.send(embed=s)
+
+    @commands.command(hidden=True)
     @checks.is_owner()
     async def updateavatar(self, ctx, *, url=None):
         if not url:

@@ -12,6 +12,8 @@ import random
 from utils import arghelp
 import time
 
+reinvite = "(?:https://|http://|[\s \S]*|)discord.gg/(?:[\s \S]|[0-9]){1,7}"
+
 
 class antiad:
 
@@ -180,6 +182,8 @@ class antiad:
         serverid = message.guild.id
         author = message.author
         channel = message.channel
+        if message.author == self.bot.user:
+            return
         if self.settings[str(serverid)]["modtoggle"] == False:
             if channel.permissions_for(author).manage_messages:
                 return
@@ -195,7 +199,7 @@ class antiad:
         except:
             pass
         if self.settings[str(serverid)]["toggle"] == True:
-            if ("discord.me/" in message.content.lower()) or ("discord.gg/" in message.content.lower()):
+            if re.match(reinvite, message.content):
                 await message.delete()
                 await channel.send("{}, You are not allowed to send invite links here :no_entry:".format(author.mention))
 				
@@ -203,6 +207,8 @@ class antiad:
         serverid = before.guild.id
         author = before.author
         channel = before.channel
+        if author == self.bot.user:
+            return
         if self.settings[str(serverid)]["modtoggle"] == False:
             if channel.permissions_for(author).manage_messages:
                 return
@@ -218,7 +224,7 @@ class antiad:
         except:
             pass
         if self.settings[str(serverid)]["toggle"] == True:
-            if ("discord.me" in after.content.lower()) or ("discord.gg" in after.content.lower()):
+            if re.match(reinvite, after.content):
                 await after.delete()
                 await channel.send("{}, You are not allowed to send invite links here :no_entry:".format(author.mention))
 
