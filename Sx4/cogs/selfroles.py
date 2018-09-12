@@ -45,7 +45,10 @@ class selfroles:
         """Add a role to be self assignable"""
         if "<" in role and "&" in role and ">" in role and "@" in role:
             role = role.replace("<", "").replace(">", "").replace("@", "").replace("&", "")
-            role = discord.utils.get(ctx.guild.roles, id=int(role))
+            try:
+                role = discord.utils.get(ctx.guild.roles, id=int(role))
+            except:
+                return await ctx.send("Invalid role :no_entry:")
         else:
             try:
                 role = discord.utils.get(ctx.guild.roles, id=int(role))
@@ -73,7 +76,10 @@ class selfroles:
         """Remove a role to be self assignable"""
         if "<" in role and "&" in role and ">" in role and "@" in role:
             role = role.replace("<", "").replace(">", "").replace("@", "").replace("&", "")
-            role = discord.utils.get(ctx.guild.roles, id=int(role))
+            try:
+                role = discord.utils.get(ctx.guild.roles, id=int(role))
+            except:
+                return await ctx.send("Invalid role :no_entry:")
         else:
             try:
                 role = discord.utils.get(ctx.guild.roles, id=int(role))
@@ -122,11 +128,10 @@ class selfroles:
             await message.add_reaction("◀")
             await message.add_reaction("▶")
             def reactioncheck(reaction, user):
-                if user != self.bot.user:
-                    if user == ctx.author:
-                        if reaction.message.channel == ctx.channel:
-                            if reaction.emoji == "▶" or reaction.emoji == "◀":
-                                return True
+                if user == ctx.author:
+                    if reaction.message.id == message.id:
+                        if reaction.emoji == "▶" or reaction.emoji == "◀":
+                            return True
             page2 = True
             while page2:
                 try:
@@ -174,7 +179,10 @@ class selfroles:
         """Self assign a role in the selfrole list"""
         if "<" in role and "&" in role and ">" in role and "@" in role:
             role = role.replace("<", "").replace(">", "").replace("@", "").replace("&", "")
-            role = discord.utils.get(ctx.guild.roles, id=int(role))
+            try:
+                role = discord.utils.get(ctx.guild.roles, id=int(role))
+            except:
+                return await ctx.send("Invalid role :no_entry:")
         else:
             try:
                 role = discord.utils.get(ctx.guild.roles, id=int(role))

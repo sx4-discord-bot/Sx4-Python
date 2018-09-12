@@ -543,7 +543,7 @@ class mod:
         """Add a role to a user"""
         author = ctx.message.author
         server = ctx.message.guild
-        if role.position > author.top_role.position:
+        if role.position > author.top_role.position and ctx.author != ctx.guild.owner:
             if author == server.owner:
                 pass
             else:
@@ -566,7 +566,7 @@ class mod:
         """Remove a role from a user"""
         author = ctx.message.author
         server = ctx.guild
-        if role.position >= author.top_role.position:
+        if role.position >= author.top_role.position and ctx.author != ctx.guild.owner:
             if author == server.owner:
                 pass
             else:
@@ -602,7 +602,7 @@ class mod:
         if author == user:
             await ctx.send("Why would you want to kick yourself, just leave.")
             return
-        if user.top_role.position >= author.top_role.position:
+        if user.top_role.position >= author.top_role.position and ctx.author != ctx.guild.owner:
             if author == server.owner:
                 pass
             else:
@@ -726,7 +726,7 @@ class mod:
             await ctx.send("Why would you want to ban yourself, just leave.")
             return
         if notinserver == False:
-            if user.top_role.position >= author.top_role.position:
+            if user.top_role.position >= author.top_role.position and ctx.author != ctx.guild.owner:
                 if author == server.owner:
                     pass
                 else:
@@ -864,7 +864,7 @@ class mod:
         if not channel.permissions_for(user).send_messages:
             await ctx.send("{} is already muted :no_entry:".format(user))
             return
-        if user.top_role.position >= author.top_role.position:
+        if user.top_role.position >= author.top_role.position and ctx.author != ctx.guild.owner:
             if author == server.owner:
                 pass
             else:
@@ -971,7 +971,7 @@ class mod:
         if channel.permissions_for(user).administrator:
             await ctx.send("That user has administrator perms, why would i even try :no_entry:")
             return
-        if user.top_role.position >= author.top_role.position:
+        if user.top_role.position >= author.top_role.position and ctx.author != ctx.guild.owner:
             if author == server.owner:
                 pass
             else:
@@ -1250,7 +1250,7 @@ class mod:
         if user == author:
             await ctx.send("You can not warn yourself :no_entry:")
             return
-        if user.top_role.position >= author.top_role.position:
+        if user.top_role.position >= author.top_role.position and ctx.author != ctx.guild.owner:
             if author == server.owner:
                 pass
             else:

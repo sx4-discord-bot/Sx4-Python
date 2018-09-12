@@ -26,6 +26,8 @@ def has_permissions(*perms):
     def predicate(ctx):
         if is_owner_check(ctx):
             return True
+        elif ctx.author == ctx.guild.owner:
+            return True
         else:
             return all(getattr(ctx.author.guild_permissions, perm, None) for perm in perms)
     return commands.check(predicate)

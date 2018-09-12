@@ -223,16 +223,20 @@ class logs:
     async def on_guild_role_update(self, before, after):
         server = before.guild
         user = "Unknown"
-        for x in await server.audit_logs(limit=1).flatten():
-            if x.action == discord.AuditLogAction.role_update:
-                user = x.user
-        s=discord.Embed(description="The role **{}** has been renamed by **{}**".format(before.name, user), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
-        s.set_author(name=server, icon_url=server.icon_url)
-        s.add_field(name="Before", value=before)
-        s.add_field(name="After", value=after)
+        for x in await server.audit_logs(limit=1, action=discord.AuditLogAction.role_update).flatten():
+            user = x.user
+        if before.name != after.name:
+            s=discord.Embed(description="The role **{}** has been renamed by **{}**".format(before.name, user), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
+            s.set_author(name=server, icon_url=server.icon_url)
+            s.add_field(name="Before", value=before)
+            s.add_field(name="After", value=after)
+        if before.permissions != after.permissions:
+            permissionadd = list(map(lambda x: "+ " + x[0].replace("_", " ").title(), filter(lambda x: x[0] in map(lambda x: x[0], filter(lambda x: x[1] == True, after.permissions)), filter(lambda x: x[1] == False, before.permissions))))
+            permissionremove = list(map(lambda x: "- " + x[0].replace("_", " ").title(), filter(lambda x: x[0] in map(lambda x: x[0], filter(lambda x: x[1] == False, after.permissions)), filter(lambda x: x[1] == True, before.permissions))))
+            s=discord.Embed(description="The role **{}** has had permission changes made by **{}**\n```diff\n{}\n{}```".format(before.name, user, "\n".join(permissionadd), "\n".join(permissionremove)), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
+            s.set_author(name=server, icon_url=server.icon_url)
         if self.data[str(server.id)]["toggle"] == True:
-            if before.name != after.name:
-                await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
+            await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 				
     async def on_voice_state_update(self, member, before, after):
         server = member.guild
@@ -301,8 +305,11 @@ class logs:
                 await self.webhook_send(self.bot.get_channel(int(self.data[str(server.id)]["channel"])), server, s)
 
     async def webhook_send(self, channel, guild, embed):
-        with open("sx4-byellow.png", "rb") as f:
-            avatar = f.read()
+        try:
+            with open("sx4-byellow.png", "rb") as f:
+                avatar = f.read()
+        except:
+            avatar = None
         webhook = discord.utils.get(await guild.webhooks(), name="Sx4")
         if not webhook:
             webhook = await channel.create_webhook(name="Sx4", avatar=avatar)

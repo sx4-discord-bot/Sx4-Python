@@ -4,6 +4,7 @@ from discord.ext import commands
 from random import choice as randchoice
 import time
 import requests
+from utils.dataIO import dataIO
 import datetime
 from utils import checks
 import os
@@ -11,6 +12,27 @@ import os
 class owner:
     def __init__(self, bot):
         self.bot = bot
+        self._blacklist_file = "data/owner/blacklist.json"
+        self._blacklist = dataIO.load_json(self._blacklist_file)
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def blacklist(self, ctx, user_id: str, boolean: bool):
+        if "users" not in self._blacklist:
+            self._blacklist["users"] = []
+        if boolean == True:
+            if user_id not in self._blacklist["users"]:
+                self._blacklist["users"].append(user_id)
+                await ctx.send("User has been blacklisted.")
+            else:
+                await ctx.send("That user is already blacklisted.")
+        if boolean == False:
+            if user_id not in self._blacklist["users"]:
+                await ctx.send("That user is not blacklisted.")
+            else:
+                self._blacklist["users"].remove(user_id)
+                await ctx.send("That user is no longer blacklisted")
+        dataIO.save_json(self._blacklist_file, self._blacklist)
 		
     @commands.command(hidden=True)
     async def modules(self, ctx):
@@ -66,6 +88,18 @@ class owner:
         await ctx.send("Shutting down...")
         await self.bot.logout()
 
+def check_folders():
+    if not os.path.exists("data/owner"):
+        print("Creating data/owner folder...")
+        os.makedirs("data/owner")
+
+def check_files():
+    f = 'data/owner/blacklist.json'
+    if not dataIO.is_valid_json(f):
+        dataIO.save_json(f, {})
+        print('Creating default blacklist.json...')
 		
 def setup(bot):
+    check_folders()
+    check_files()
     bot.add_cog(owner(bot))

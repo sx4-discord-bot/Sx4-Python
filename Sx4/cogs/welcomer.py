@@ -162,7 +162,7 @@ class welcomer:
 {server.members.prefix} = The amount of members plus a prefix ex 232nd
 **Make sure you keep the {} brackets in the message**
 
-Example: `s?welcomer message {user.mention}, Welcome to **{server}**. We now have **{server.members}** members :tada:`"""
+Example: `s?welcomer joinmessage {user.mention}, Welcome to **{server}**. We now have **{server.members}** members :tada:`"""
             s=discord.Embed(description=desc, colour=ctx.message.author.colour)
             s.set_author(name="Examples on setting your message", icon_url=self.bot.user.avatar_url)
             await ctx.send(embed=s)

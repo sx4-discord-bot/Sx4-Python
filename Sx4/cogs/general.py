@@ -12,6 +12,7 @@ from PIL import Image, ImageFilter, ImageEnhance
 import psutil
 from datetime import datetime, timedelta
 from utils import Token
+from collections import Counter
 from utils import checks
 from urllib.request import Request, urlopen
 import json
@@ -75,6 +76,33 @@ class general:
                 except: 
                     pass
         await ctx.send("https://discordapp.com/oauth2/authorize?client_id={}{}&scope=bot".format(bot.id, "" if not permissions or value == 0 else "&permissions=" + str(value)))
+
+    @commands.command(aliases=["topcmds"])
+    async def topcommands(self, ctx, page: int=None):
+        counter = Counter()
+        for command in self._stats["commandstats"]:
+            counter[command["name"]] += 1
+        
+        listcom = counter.most_common()
+        
+        per_page = 20
+        
+        if not page:
+            page = 1
+        elif page < 1 or page > math.ceil(len(listcom)/per_page):
+            return await ctx.send("Invalid Page :no_entry:")
+        
+        msg = ""
+        
+        i = page * per_page - per_page
+        for command in listcom[page * per_page - per_page:page * per_page]:
+            i += 1
+        
+            name = command[0]
+            used = command[1]
+            
+            msg += "{}. `{}` - {:,} {}\n".format(i, name, used, "use" if used == 1 else "uses")
+        await ctx.send(embed=discord.Embed(description=msg).set_author(name="Top Commands", icon_url=self.bot.user.avatar_url).set_footer(text="Page {}/{}".format(page, math.ceil(len(listcom)/per_page))))
 
 
     @commands.command()
@@ -461,14 +489,14 @@ class general:
             s.set_author(name=data["results"][response]["username"] + "#" + data["results"][response]["discriminator"], icon_url="https://cdn.discordapp.com/avatars/{}/{}".format(data["results"][response]["id"], data["results"][response]["avatar"]), url="https://discordbots.org/bot/{}".format(data["results"][response]["id"]))
             s.set_thumbnail(url="https://cdn.discordapp.com/avatars/{}/{}".format(data["results"][response]["id"], data["results"][response]["avatar"]))
             try:
-                s.add_field(name="Guilds", value=data["results"][response]["server_count"])
+                s.add_field(name="Guilds", value="{:,}".format(data["results"][response]["server_count"]))
             except:
                 s.add_field(name="Guilds", value="N/A")
             s.add_field(name="Prefix", value=data["results"][response]["prefix"])
             s.add_field(name="Library", value=data["results"][response]["lib"])
             s.add_field(name="Approval Date", value=datetime.strptime(data["results"][response]["date"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%d/%m/%Y"))
-            s.add_field(name="Monthly votes", value=str(data["results"][response]["monthlyPoints"]) + " :thumbsup:")
-            s.add_field(name="Total votes", value=str(data["results"][response]["points"]) + " :thumbsup:")
+            s.add_field(name="Monthly votes", value="{:,}".format(data["results"][response]["monthlyPoints"]) + " :thumbsup:")
+            s.add_field(name="Total votes", value="{:,}".format(data["results"][response]["points"]) + " :thumbsup:")
             if "https://" not in data["results"][response]["invite"]:
                 s.add_field(name="Invite", value="**[Invite {} to your server](https://discordapp.com/oauth2/authorize?client_id={}&scope=bot)**".format(data["results"][response]["username"], data["results"][response]["id"]))
             else:
@@ -483,25 +511,25 @@ class general:
         request3 = requests.get("https://discordbots.org/api/bots?sort=points&limit=500&fields=username,id").json()["results"]
         if not user:
             user = self.bot.user
-            url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user.id)
+            url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,owners,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user.id)
         elif "<" in user and "@" in user:
             userid = user.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(userid)
+            url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,owners,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(userid)
             user = discord.utils.get(self.bot.get_all_members(), id=int(userid))
         elif "#" in user: 
             number = len([x for x in user if "#" not in x])
             usernum = number - 4
-            url = "https://discordbots.org/api/bots?search=username:{}&discriminator:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user[:usernum], user[usernum + 1:len(user)])
+            url = "https://discordbots.org/api/bots?search=username:{}&discriminator:{}&fields=shortdesc,username,owners,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user[:usernum], user[usernum + 1:len(user)])
             user = discord.utils.get(self.bot.get_all_members, name=user[:usernum], discriminator=user[usernum + 1:len(user)])
         else:
             try:
                 int(user)
-                url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user)
+                url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,owners,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user)
                 user = discord.utils.get(self.bot.get_all_members(), id=int(user))
             except:
                 username = user
                 user = urllib.parse.quote(user)
-                url = "https://discordbots.org/api/bots?search=username:{}&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&limit=1&sort=points".format(user)
+                url = "https://discordbots.org/api/bots?search=username:{}&fields=shortdesc,username,owners,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&limit=1&sort=points".format(user)
                 try:
                     user = [x for x in list(set(self.bot.get_all_members())) if x.bot and str(x.id) == [x["id"] for x in request3 if username.lower() in x["username"].lower()][0]][0]
                 except:
@@ -541,6 +569,10 @@ class general:
             s.add_field(name="Invite", value="**[Invite {} to your server](https://discordapp.com/oauth2/authorize?client_id={}&scope=bot)**".format(data["username"], data["id"]))
         else:
             s.add_field(name="Invite", value="**[Invite {} to your server]({})**".format(data["username"], data["invite"]))
+        owner = discord.utils.get(self.bot.get_all_members(), id=data["owners"][0])
+        if not owner:
+            owner = await self.bot.get_user_info(data["owners"][0])
+        s.set_footer(text="Primary Owner: {}".format(owner), icon_url=owner.avatar_url)
 
         await ctx.send(embed=s)
         
@@ -592,11 +624,10 @@ class general:
         await message.add_reaction("◀")
         await message.add_reaction("▶")
         def reactioncheck(reaction, user):
-            if user != self.bot.user:
-                if user == ctx.author:
-                    if reaction.message.channel == ctx.channel:
-                        if reaction.emoji == "▶" or reaction.emoji == "◀":
-                            return True
+            if user == ctx.author:
+                if reaction.message.id == message.id:
+                    if reaction.emoji == "▶" or reaction.emoji == "◀":
+                        return True
         page2 = True
         while page2:
             try:
@@ -732,7 +763,7 @@ class general:
     async def servers(self, ctx):
         """View all the servers i'm in"""
         page = 1
-        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][0:20])
+        msg = "\n".join(["`{}` - {} members".format(x.name, x.member_count) for x in sorted(sorted(self.bot.guilds, key=lambda x: x.name.lower()), key=lambda x: x.member_count, reverse=True)][0:20])
         s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
         s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
@@ -740,11 +771,10 @@ class general:
         await message.add_reaction("◀")
         await message.add_reaction("▶")
         def reactioncheck(reaction, user):
-            if user != self.bot.user:
-                if user == ctx.author:
-                    if reaction.message.channel == ctx.channel:
-                        if reaction.emoji == "▶" or reaction.emoji == "◀":
-                            return True
+            if user == ctx.author:
+                if reaction.message.id == message.id:
+                    if reaction.emoji == "▶" or reaction.emoji == "◀":
+                        return True
         page2 = True
         while page2:
             try:
@@ -752,14 +782,14 @@ class general:
                 if reaction.emoji == "▶":
                     if page != math.ceil(len(list(set(self.bot.guilds))) / 20):
                         page += 1
-                        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][page*20-20:page*20])
+                        msg = "\n".join(["`{}` - {} members".format(x.name, x.member_count) for x in sorted(sorted(self.bot.guilds, key=lambda x: x.name.lower()), key=lambda x: x.member_count, reverse=True)][page*20-20:page*20])
                         s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
                         s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
                         s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
                         await message.edit(embed=s)
                     else:
                         page = 1
-                        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][page*20-20:page*20])
+                        msg = "\n".join(["`{}` - {} members".format(x.name, x.member_count) for x in sorted(sorted(self.bot.guilds, key=lambda x: x.name.lower()), key=lambda x: x.member_count, reverse=True)][page*20-20:page*20])
                         s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
                         s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
                         s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
@@ -767,14 +797,14 @@ class general:
                 if reaction.emoji == "◀":
                     if page != 1:
                         page -= 1
-                        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][page*20-20:page*20])
+                        msg = "\n".join(["`{}` - {} members".format(x.name, x.member_count) for x in sorted(sorted(self.bot.guilds, key=lambda x: x.name.lower()), key=lambda x: x.member_count, reverse=True)][page*20-20:page*20])
                         s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
                         s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
                         s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
                         await message.edit(embed=s)
                     else:
                         page = math.ceil(len(list(set(self.bot.guilds)))/ 20)
-                        msg = "\n".join(["`{}` - {} members".format(x.name, len(x.members)) for x in sorted(self.bot.guilds, key=lambda x: len(x.members), reverse=True)][page*20-20:page*20])
+                        msg = "\n".join(["`{}` - {} members".format(x.name, x.member_count) for x in sorted(sorted(self.bot.guilds, key=lambda x: x.name.lower()), key=lambda x: x.member_count, reverse=True)][page*20-20:page*20])
                         s=discord.Embed(description=msg, colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
                         s.set_author(name="Servers ({})".format(len(self.bot.guilds)), icon_url=self.bot.user.avatar_url)
                         s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(set(self.bot.guilds))) / 20)))
@@ -826,11 +856,10 @@ class general:
         await message.add_reaction("◀")
         await message.add_reaction("▶")
         def reactioncheck(reaction, user):
-            if user != self.bot.user:
-                if user == ctx.author:
-                    if reaction.message.channel == ctx.channel:
-                        if reaction.emoji == "▶" or reaction.emoji == "◀":
-                            return True
+            if user == ctx.author:
+                if reaction.message.id == message.id:
+                    if reaction.emoji == "▶" or reaction.emoji == "◀":
+                        return True
         page2 = True
         while page2:
             try:
@@ -875,16 +904,11 @@ class general:
         """Get all the numbers about a server"""
         server = ctx.guild
         members = set(server.members)
-        bots = filter(lambda m: m.bot, members)
-        bots = set(bots)
-        online = filter(lambda m: m.status is discord.Status.online, members)
-        online = set(online)
-        idle = filter(lambda m: m.status is discord.Status.idle, members)
-        idle = set(idle)
-        dnd = filter(lambda m: m.status is discord.Status.do_not_disturb, members)
-        dnd = set(dnd)
-        offline = filter(lambda m: m.status is discord.Status.offline, members)
-        offline = set(offline)
+        bots = set(filter(lambda m: m.bot, members))
+        online = set(filter(lambda m: m.status is discord.Status.online, members))
+        idle = set(filter(lambda m: m.status is discord.Status.idle, members))
+        dnd = set(filter(lambda m: m.status is discord.Status.do_not_disturb, members))
+        offline = set(filter(lambda m: m.status is discord.Status.offline, members))
         sn = server.name
         users = members - bots
         colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
@@ -1203,7 +1227,10 @@ class general:
         else:
             if "<" in user_arg and "@" in user_arg:
                 user = user_arg.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-                user = discord.utils.get(ctx.guild.members, id=int(user))
+                try:
+                    user = discord.utils.get(ctx.guild.members, id=int(user))
+                except:
+                    return await ctx.send("Invalid user :no_entry:")
             elif "#" in user_arg:
                 number = len([x for x in user_arg if "#" not in x])
                 usernum = number - 4
@@ -1584,6 +1611,12 @@ class general:
         
     async def on_command(self, ctx):
         self._stats["commands"] += 1
+        process = psutil.Process(os.getpid())
+        command = {}
+        command["name"] = str(ctx.command)
+        command["ram"] = str(round(process.memory_info().rss/1000000)) + " MB"
+        command["timestamp"] = ctx.message.created_at.timestamp()
+        self._stats["commandstats"].append(command)
 
     async def checktime(self):
         while not self.bot.is_closed():
@@ -1600,7 +1633,7 @@ class general:
                 self._stats["servers"] = 0
                 self._stats["commands"] = 0
                 self._stats["messages"] = 0
-                for serverid in [x for x in self._stats if x != "commands" and x != "servers" and x != "messages"]:
+                for serverid in [x for x in self._stats if x != "commands" and x != "servers" and x != "messages" and x != "commandstats"]:
                     self._stats[serverid]["members"] = 0
                     self._stats[serverid]["messages"] = 0
                 dataIO.save_json(self._stats_file, self._stats) 

@@ -11,6 +11,7 @@ from utils import arghelp
 from copy import deepcopy
 from utils import checks
 from enum import Enum
+from collections import Counter
 import time
 import logging
 import re
@@ -149,6 +150,7 @@ class economy:
         "`amount_of_money | amount_of_materials name_of_material, amount_of_materials name_of_material,... etc` "
         "If you're not trading money just put 0 and if you're not trading materials don't put the dash. Respond with cancel to cancel the trade (The user you want to trade with has to be online to accept your trade)",
         embed=discord.Embed(title="Example").set_image(url="https://cdn.discordapp.com/attachments/344091594972069888/481118196481523712/2018-08-20_16-10-29.gif"))
+        tradeableitems = self._factories["factory"] + self._shop["miners"] + self._mine["items"] + self._shop["boosters"]
         def user_check(m):
             return m.author == ctx.author and m.channel == ctx.channel
         try:
@@ -177,7 +179,7 @@ class economy:
                             return await ctx.send("Follow the format given above :no_entry:")
                     if amount > 0:
                         i = 0
-                        for x in self._mine["items"]:
+                        for x in tradeableitems:
                             if materialname.lower() == x["name"].lower():
                                 i += 1    
                                 useramount = self.settings["user"][str(author.id)]["items"].count(x["name"])
@@ -185,23 +187,7 @@ class economy:
                                     return await ctx.send("You don't have that much `{}` to trade :no_entry:".format(x["name"])) 
                                 materials2.append("{} {}".format(amount, x["name"]))
                         if i == 0:
-                            for x in self._factories["factory"]:
-                                if materialname.lower() == x["name"].lower():
-                                    i += 1
-                                    useramount = self.settings["user"][str(author.id)]["items"].count(x["name"])
-                                    if useramount < amount:
-                                        return await ctx.send("You don't have that much `{}` to trade :no_entry:".format(x["name"])) 
-                                    materials2.append("{} {}".format(amount, x["name"]))
-                            if i == 0:
-                                for x in self._shop["miners"]:
-                                    if materialname.lower() == x["name"].lower():
-                                        i += 1
-                                        useramount = self.settings["user"][str(author.id)]["items"].count(x["name"])
-                                        if useramount < amount:
-                                            return await ctx.send("You don't have that much `{}` to trade :no_entry:".format(x["name"])) 
-                                        materials2.append("{} {}".format(amount, x["name"]))
-                                if i == 0:
-                                    return await ctx.send("One of the materials you offered doesn't exist check your spelling :no_entry:")
+                            return await ctx.send("One of the materials you offered doesn't exist check your spelling :no_entry:")
                 try:
                     money = int(responsesplit[0])
                 except:
@@ -261,31 +247,15 @@ class economy:
                             return await ctx.send("Follow the format given above :no_entry:")
                     if amount > 0:
                         i = 0
-                        for x in self._mine["items"]:
+                        for x in tradeableitems:
                             if materialname.lower() == x["name"].lower():
                                 i += 1    
                                 useramount = self.settings["user"][str(user.id)]["items"].count(x["name"])
                                 if useramount < amount:
-                                    return await ctx.send("That user doesn't have that much `{}` to trade :no_entry:".format(x["name"])) 
+                                    return await ctx.send("The user doesn't have that much `{}` to trade :no_entry:".format(x["name"])) 
                                 materials2.append("{} {}".format(amount, x["name"]))
                         if i == 0:
-                            for x in self._factories["factory"]:
-                                if materialname.lower() == x["name"].lower():
-                                    i += 1
-                                    useramount = self.settings["user"][str(user.id)]["items"].count(x["name"])
-                                    if useramount < amount:
-                                        return await ctx.send("That user doesn't have that much `{}` to trade :no_entry:".format(x["name"])) 
-                                    materials2.append("{} {}".format(amount, x["name"]))
-                            if i == 0:
-                                for x in self._shop["miners"]:
-                                    if materialname.lower() == x["name"].lower():
-                                        i += 1
-                                        useramount = self.settings["user"][str(user.id)]["items"].count(x["name"])
-                                        if useramount < amount:
-                                            return await ctx.send("That user doesn't have that much `{}` to trade :no_entry:".format(x["name"])) 
-                                        materials2.append("{} {}".format(amount, x["name"]))
-                                if i == 0:
-                                    return await ctx.send("One of the materials you offered doesn't exist check your spelling :no_entry:")
+                            return await ctx.send("One of the materials you offered doesn't exist check your spelling :no_entry:")
                 try:
                     money = int(responsesplit[0])
                 except:
@@ -369,8 +339,84 @@ class economy:
         except asyncio.TimeoutError:
             return await ctx.send("Timed out :stopwatch:")
 
+    @commands.group()
+    async def booster(self, ctx):
+        """Buy and activate boosters here"""
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            await self._set_bank(ctx.author)
+
+    @booster.command(name="shop")
+    async def _shop_(self, ctx):
+        """Check what boosters you can buy"""
+        s=discord.Embed(description="You can buy boosters to avoid annoying things like cooldowns on commands", colour=0xfff90d)
+        s.set_author(name="Booster Shop", icon_url=self.bot.user.avatar_url)
+        for item in self._shop["boosters"]:
+            s.add_field(name=item["name"], value="Price: ${:,}\nDescription: {}".format(item["price"], item["description"]))
+        try:    
+            s.set_footer(text="Use s?booster buy <item> to buy an item. | Your balance: ${:,}".format(self.settings["user"][str(ctx.author.id)]["balance"]))
+        except:
+            s.set_footer(text="Use s?booster buy <item> to buy an item. | Your balance: $0")
+        
+        await ctx.send(embed=s)
+
+    @booster.command(name="buy")
+    async def _buy_(self, ctx, *, booster):
+        """Buy booster here"""
+        for x in self._shop["boosters"]:
+            if x["name"].lower() == booster.lower():
+                if x["price"] <= self.settings["user"][str(ctx.author.id)]["balance"]:
+                    self.settings["user"][str(ctx.author.id)]["balance"] -= x["price"]
+                    self.settings["user"][str(ctx.author.id)]["items"].append(x["name"])
+                    dataIO.save_json(self.location, self.settings)
+                    return await ctx.send("You just bought the booster `{}` for **${:,}** :ok_hand:".format(x["name"], x["price"]))
+                else:
+                    return await ctx.send("You don't have enough money to buy that booster :no_entry:")
+        await ctx.send("That booster does not exist :no_entry:")
+
+    @booster.command()
+    async def activate(self, ctx, *, booster):
+        """Activate booster which say they needed to be activated here"""
+        if booster.lower() == "lended pickaxe":
+            if booster.title() in self.settings["user"][str(ctx.author.id)]["items"]:
+                has_pick = False
+                for item in self.settings["user"][str(ctx.author.id)]["items"]:
+                    for pick in self._shop["picitems"]:
+                        if pick["name"] == item:
+                            has_pick = True
+                            break
+                if has_pick:
+                    self.settings["user"][str(ctx.author.id)]["picktime"] = None
+                    self.settings["user"][str(ctx.author.id)]["items"].remove(booster.title())
+                    await ctx.send("Your booster `{}` has been activated :ok_hand:".format(booster.title()))
+                else:
+                    await ctx.send("You do not own a pickaxe you should probably own one to use this booster :no_entry:")
+            else:
+                await ctx.send("You do not own that booster :no_entry:")
+        elif booster.lower() == "miner repair":
+            if booster.title() in self.settings["user"][str(ctx.author.id)]["items"]:
+                has_miner = False
+                for item in self.settings["user"][str(ctx.author.id)]["items"]:
+                    for miner in self._shop["miners"]:
+                        if miner["name"] == item:
+                            has_miner = True
+                            break
+                if has_miner:
+                    self.settings["user"][str(ctx.author.id)]["minertime"] = None
+                    self.settings["user"][str(ctx.author.id)]["items"].remove(booster.title())
+                    await ctx.send("Your booster `{}` has been activated :ok_hand:".format(booster.title()))
+                else:
+                    await ctx.send("You do not own a miner you should probably own one to use this booster :no_entry:")
+            else:
+                await ctx.send("You do not own that booster :no_entry:")
+        else:
+            await ctx.send("That booster doesn't exist or isn't activatable :no_entry:")
+        dataIO.save_json(self.location, self.settings)
+
     @commands.command(aliases=["referralurl"])
     async def referral(self, ctx, user: discord.Member=None):
+        """Get given your referral urls for votes"""
         if not user:
             user = ctx.author
         await ctx.send("__**{}'s** referral urls__\n<https://discordbots.org/bot/440996323156819968/vote?referral={}> (Sx4)\n<https://discordbots.org/bot/411916947773587456/vote?referral={}> (Jockie Music)".format(user, user.id, user.id))
@@ -379,9 +425,12 @@ class economy:
     async def votebonus(self, ctx):
         """Get some extra credits by simply upvoting the bot on dbl"""
         author = ctx.author
-        
-        request = requests.get("http://localhost:8080/440996323156819968/votes/user/{}/unused/use".format(author.id), headers={"Authorization": Token.jockie()}).json()
-        requestjockie = requests.get("http://localhost:8080/411916947773587456/votes/user/{}/unused/use".format(author.id), headers={"Authorization": Token.jockie_music()}).json()
+        try:
+            request = requests.get("http://localhost:8080/440996323156819968/votes/user/{}/unused/use".format(author.id), headers={"Authorization": Token.jockie()}).json()
+            requestjockie = requests.get("http://localhost:8080/411916947773587456/votes/user/{}/unused/use".format(author.id), headers={"Authorization": Token.jockie_music()}).json()
+            weekend = requests.get("http://discordbots.org/api/weekend").json()["is_weekend"]
+        except:
+            return await ctx.send("Vote Bonus is currently disabled as the webhook/discord bot list api the bot uses is currently down so it just returns errors, sorry for the inconvenience :no_entry:")
         if request["success"] or requestjockie["success"]:
             amount, votes, votes2 = 0, None, None
             try:
@@ -464,9 +513,9 @@ class economy:
                 s=discord.Embed()
                 s.set_author(name="Vote Bonus", icon_url=self.bot.user.avatar_url)
                 s.add_field(name="Sx4", value="{}".format("**[You have voted recently you can vote for the bot again in {}](https://discordbots.org/bot/440996323156819968/vote)**".format(timesx4)
-                if timesx4 else "**[You can vote for Sx4 for an extra $250](https://discordbots.org/bot/440996323156819968/vote)**"), inline=False)
+                if timesx4 else "**[You can vote for Sx4 for an extra ${}](https://discordbots.org/bot/440996323156819968/vote)**".format(500 if weekend else 250)), inline=False)
                 s.add_field(name="Jockie Music", value="{}".format("**[You have voted recently you can vote for the bot again in {}](https://discordbots.org/bot/411916947773587456/vote)**".format(timejockie)
-                if timejockie else "**[You can vote for Jockie Music for an extra $150](https://discordbots.org/bot/411916947773587456/vote)**"), inline=False)
+                if timejockie else "**[You can vote for Jockie Music for an extra ${}](https://discordbots.org/bot/411916947773587456/vote)**".format(300 if weekend else 150)), inline=False)
                 await ctx.send(embed=s)
             else:
                 await ctx.send("Ops, something unexpected happened")
@@ -883,7 +932,7 @@ class economy:
             check = True
         colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
         colour = int(colour, 16)
-        all_items = self._shop["picitems"] + self._shop["items"] + self._mine["items"] + self._shop["roditems"] + self._shop["miners"]
+        all_items = self._shop["picitems"] + self._shop["items"] + self._mine["items"] + self._shop["roditems"] + self._shop["miners"] + self._shop["boosters"]
         if str(user.id) in self.settings["user"]:
             user_data = self.settings["user"][str(user.id)] 
             worth = 0
@@ -1033,24 +1082,13 @@ class economy:
                                     number = round(mat["rand_max"] * miner["multiplier"])
                                 chance = randint(0, number)
                                 if chance == 0:
-                                    try:
-                                        if mat["name"] in [x["name"] for x in materials]:
-                                            l = 0
-                                            for x in materials:
-                                                if x["name"] == mat["name"]:
-                                                    materials[l]["amount"] += 1
-                                                l += 1
-                                        else:
-                                            materials.append({"name": mat["name"], "emote": mat["emote"], "amount": 1})
-                                    except:
-                                        materials.append({"name": mat["name"], "emote": mat["emote"], "amount": 1})
-            msg = ", ".join(["{} x{}{}".format(x["name"], x["amount"], x["emote"]) for x in materials]) if materials != [] else "Absolutely nothing"
+                                    materials.append({"name": mat["name"], "emote": mat["emote"]})
+            msg = ", ".join(set(map(lambda x: x["name"] + " x" + str(list(map(lambda x: x["name"], materials)).count(x["name"])) + x["emote"], materials))) if materials != [] else "Absolutely nothing"
             s=discord.Embed(colour=ctx.author.colour, description="You used your miners and gathered these materials: {}".format(msg)) 
             s.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
             await ctx.send(embed=s)  
             for x in materials:
-                for y in range(x["amount"]):
-                    self.settings["user"][str(author.id)]["items"].append(x["name"])
+                self.settings["user"][str(author.id)]["items"].append(x["name"])
             self.settings["user"][str(author.id)]["minertime"] = ctx.message.created_at.timestamp()
             dataIO.save_json(self.location, self.settings)
         else:
@@ -1077,21 +1115,13 @@ class economy:
                                     else:
                                         number = round(mat["rand_max"] * miner["multiplier"])
                                     if randint(0, number) == 0:
-                                        if materials != []:
-                                            l = 0
-                                            for x in materials:
-                                                if x["name"] == mat["name"]:
-                                                    materials[l]["amount"] += 1
-                                                l += 1
-                                        else:
-                                            materials.append({"name": mat["name"], "emote": mat["emote"], "amount": 1})
-                msg = ", ".join(["{} x{}{}".format(x["name"], x["amount"], x["emote"]) for x in materials]) if materials != [] else "Absolutely nothing"
+                                        materials.append({"name": mat["name"], "emote": mat["emote"]})
+                msg = ", ".join(set(map(lambda x: x["name"] + " x" + str(list(map(lambda x: x["name"], materials)).count(x["name"])) + x["emote"], materials))) if materials != [] else "Absolutely nothing"
                 s=discord.Embed(colour=ctx.author.colour, description="You used your miners and gathered these materials: {}".format(msg)) 
                 s.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
                 await ctx.send(embed=s)    
                 for x in materials:
-                    for y in range(x["amount"]):
-                        self.settings["user"][str(author.id)]["items"].append(x["name"])
+                    self.settings["user"][str(author.id)]["items"].append(x["name"])
                 self.settings["user"][str(author.id)]["minertime"] = ctx.message.created_at.timestamp()
                 dataIO.save_json(self.location, self.settings)
 
@@ -1214,16 +1244,22 @@ class economy:
         if amount < 1:
             await ctx.send("You can't give them less than a dollar, too mean :no_entry:")
             return
-        if user != self.bot.user:
-            self.settings["user"][str(user.id)]["balance"] += round(amount * 0.95)
-            self.settings["tax"] += round(amount * 0.05)
+        fullamount = amount
+        if self.bot.user != user:
+            amount = fullamount if "Tax Avoider" in self.settings["user"][str(author.id)]["items"] else round(amount * 0.95)
+            tax = 0 if "Tax Avoider" in self.settings["user"][str(author.id)]["items"] else round(amount * 0.05)
+            self.settings["user"][str(user.id)]["balance"] += amount
         else:
-            self.settings["tax"] += amount
-        self.settings["user"][str(author.id)]["balance"] -= amount
+            tax = fullamount
+            amount = fullamount
+        self.settings["tax"] += tax
+        self.settings["user"][str(author.id)]["balance"] -= fullamount
+        if "Tax Avoider" in self.settings["user"][str(author.id)]["items"]:
+            self.settings["user"][str(author.id)]["items"].remove("Tax Avoider")
         dataIO.save_json(self.location, self.settings)
-        s=discord.Embed(description="You have gifted **${}** to **{}**\n\n{}'s new balance: **${}**\n{}'s new balance: **${}**".format(round(amount*0.95) if user != self.bot.user else amount, user.name, author.name, self.settings["user"][str(author.id)]["balance"], user.name, self.settings["user"][str(user.id)]["balance"] if user != self.bot.user else self.settings["tax"]), colour=author.colour)
+        s=discord.Embed(description="You have gifted **${:,}** to **{}**\n\n{}'s new balance: **${:,}**\n{}'s new balance: **${:,}**".format(amount, user.name, author.name, self.settings["user"][str(author.id)]["balance"], user.name, self.settings["user"][str(user.id)]["balance"] if user != self.bot.user else self.settings["tax"]), colour=author.colour)
         s.set_author(name="{} → {}".format(author.name, user.name), icon_url="https://png.kisspng.com/20171216/8cb/5a355146d99f18.7870744715134436548914.png")
-        s.set_footer(text="{}".format("${} (5%) tax was taken".format(round(amount*0.05)) if user != self.bot.user else "The tax bot can't be taxed"))
+        s.set_footer(text="{}".format("${:,} ({}%) tax was taken".format(tax, round((tax/fullamount)*100))))
         await ctx.send(embed=s)
 		
     @commands.command(aliases=["givemats"])
@@ -1562,6 +1598,10 @@ class economy:
                 if item.lower() == item2["name"].lower():
                     auction["durability"] = self.settings["user"][str(author.id)]["pickdur"]
                     self.settings["user"][str(author.id)]["pickdur"] = None
+            for item2 in self._shop["roditems"]:
+                if item.lower() == item2["name"].lower():
+                    auction["durability"] = self.settings["user"][str(author.id)]["roddur"]
+                    self.settings["user"][str(author.id)]["roddur"] = None
             for item2 in self._shop["items"] + self._mine["items"]:
                 if item.lower() == item2["name"].lower():
                     auction["durability"] = None
@@ -1585,12 +1625,20 @@ class economy:
         await self._set_bank(author)
         i = 0;
         items = [item for item in self._shop["picitems"] if item["name"] in self.settings["user"][str(author.id)]["items"]]
+        itemsrod = [item for item in self._shop["roditems"] if item["name"] in self.settings["user"][str(author.id)]["items"]]
         for item2 in self._shop["picitems"]:
             if item2["name"].lower() == auction_item.lower():
                 for item in items:
                     i = i + 1
                 if i >= 1:
                     await ctx.send("You already own a pickaxe, sell your pickaxe and try again :no_entry:")
+                    return
+        for item2 in self._shop["roditems"]:
+            if item2["name"].lower() == auction_item.lower():
+                for item in itemsrod:
+                    i = i + 1
+                if i >= 1:
+                    await ctx.send("You already own a rod, sell your rod and try again :no_entry:")
                     return
         filtered = filter(lambda x: x["name"].lower() == auction_item.lower(), self._auction["items"]) 
         filtered = sorted(filtered, key=lambda x: x["price"])
@@ -2029,8 +2077,6 @@ class economy:
                         materials = "Absolutely nothing"
                         
                     
-                    dataIO.save_json(self.location, self.settings)
-                    
                     if author_data["pickdur"] > 0:
                         s=discord.Embed(description="You mined recourses and made **${}** :pick:\nMaterials found: {}".format(amount, materials), colour=colour)
                     else:
@@ -2039,7 +2085,7 @@ class economy:
                         
                     s.set_author(name=author.name, icon_url=author.avatar_url)
                     await ctx.send(embed=s)
-
+                    dataIO.save_json(self.location, self.settings)
                     return
                 
                 m, s = divmod(self.settings["user"][str(author.id)]["picktime"] - ctx.message.created_at.timestamp() + 900, 60)
@@ -2070,7 +2116,6 @@ class economy:
                     materials = materials[:-2]
                     if materials == "":
                         materials = "Absolutely nothing"
-                    dataIO.save_json(self.location, self.settings)
                     if author_data["pickdur"] > 0:
                         s=discord.Embed(description="You mined recourses and made **${}** :pick:\nMaterials found: {}".format(amount, materials), colour=colour)
                     else:
@@ -2078,17 +2123,22 @@ class economy:
                         author_data["items"].remove(item["name"])
                     s.set_author(name=author.name, icon_url=author.avatar_url)
                     await ctx.send(embed=s)
+                    dataIO.save_json(self.location, self.settings)
                 
                 return
         
         await ctx.send("You don't have a pickaxe, buy one at the shop.")
         
-    @commands.command()
+    @commands.command(aliases=["inventory"])
     async def items(self, ctx, *, user: discord.Member=None): 
         """View your current items"""
+        counter = Counter()
         if not user:
             user = ctx.author
-        items = "\n".join(["{} x{}".format(x, self.settings["user"][str(user.id)]["items"].count(x)) for x in sorted(set(self.settings["user"][str(user.id)]["items"]), key=lambda x: self.settings["user"][str(user.id)]["items"].count(x))])
+        for item in self.settings["user"][str(user.id)]["items"]:
+            counter[item] += 1
+        items = counter.most_common()
+        items = "\n".join(["{} x{}".format(x[0], x[1]) for x in items])
         if items == "":
             items = "None"
         s=discord.Embed(description=items, colour=user.colour)
@@ -2228,6 +2278,35 @@ class economy:
             await arghelp.send(self.bot, ctx)
         else:
             pass
+
+    @leaderboard.command(name="items")
+    async def _items(self, ctx, item: str, page: int=None):
+        if not page:
+            page = 1
+        counter = Counter()
+        for y in self.settings["user"]:
+            for item in [x for x in self.settings["user"][y]["items"] if x.lower() == item.lower()]:
+                counter[y] += 1
+        if len(counter) == 0:
+            return await ctx.send("No one has that item or it doesn't exist :no_entry:")
+        users = counter.most_common()
+        userspg = counter.most_common()[page*10-10:page*10]
+        if page < 1 or page > math.ceil(len(users)/10):
+            return await ctx.send("Invalid Page :no_entry:")
+        i, msg, n = page*10-10, "", 0
+        for x in users:
+            n += 1
+            if str(ctx.author.id) == x[0]:
+                break
+        for x in userspg:
+            i += 1
+            user = discord.utils.get(self.bot.get_all_members(), id=int(x[0]))
+            if not user:
+                user = "Unknown User"
+            msg += "{}. `{}` - {:,} {}\n".format(i, user, x[1], item.title())
+        s=discord.Embed(title="{} Leaderboard".format(item.title()), description=msg, colour=0xfff90d)
+        s.set_footer(text="{}'s Rank: {} | Page {}/{}".format(ctx.author.name, "#{}".format(n) if n != len(users) else "Unranked", page, math.ceil(len(users)/10)), icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=s)
         
     @leaderboard.command(aliases=["rep"])
     async def reputation(self, ctx, page: int=None):
@@ -2241,8 +2320,8 @@ class economy:
             await ctx.send("Invalid page :no_entry:") 
             return                
         msg = ""
-        i = page*10-10;
-        n = 0;
+        i = page*10-10
+        n = 0
         sortedrep2 = sorted(self.settings["user"].items(), key=lambda x: x[1]["rep"], reverse=True)
         sortedrep = sorted([x for x in self.settings["user"].items() if x[1]["rep"] != 0], key=lambda x: x[1]["rep"], reverse=True)[page*10-10:page*10]
         for x in sortedrep2:
@@ -2256,7 +2335,7 @@ class economy:
                 user = "Unknown User"
             msg+= "{}. `{}` - {} reputation\n".format(i, user, x[1]["rep"])
         s=discord.Embed(title="Reputation Leaderboard", description=msg, colour=0xfff90d)
-        s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.author.name, n, page, math.ceil(len([x for x in self.settings["user"].items() if x[1]["rep"] != 0])/10)), icon_url=ctx.author.avatar_url)
+        s.set_footer(text="{}'s Rank: {} | Page {}/{}".format(ctx.author.name, "#{}".format(n) if n != len(sortedrep2) else "Unranked", page, math.ceil(len([x for x in self.settings["user"].items() if x[1]["rep"] != 0])/10)), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=s)
         
     @leaderboard.command()
@@ -2286,7 +2365,7 @@ class economy:
                 user = "Unknown User"
             msg+= "{}. `{}` - ${:,}\n".format(i, user, x[1]["winnings"])
         s=discord.Embed(title="Winnings Leaderboard", description=msg, colour=0xfff90d)
-        s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.author.name, n, page, math.ceil(len(self.settings["user"])/10)), icon_url=ctx.author.avatar_url)
+        s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.author.name, "#{}".format(n) if n != len(sortedwin2) else "Unranked", page, math.ceil(len(self.settings["user"])/10)), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=s)
         
     @leaderboard.command()
@@ -2316,7 +2395,7 @@ class economy:
                 user = "Unknown User"
             msg+= "{}. `{}` - ${:,}\n".format(i, user, x[1]["balance"])
         s=discord.Embed(title="Bank Leaderboard", description=msg, colour=0xfff90d)
-        s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.author.name, n, page, math.ceil(len([x for x in self.settings["user"].items() if x[1]["balance"] != 0])/10)), icon_url=ctx.author.avatar_url)
+        s.set_footer(text="{}'s Rank: #{} | Page {}/{}".format(ctx.author.name, "#{}".format(n) if n != len(sortedbank2) else "Unranked", page, math.ceil(len([x for x in self.settings["user"].items() if x[1]["balance"] != 0])/10)), icon_url=ctx.author.avatar_url)
         await ctx.send(embed=s)
         
     @commands.command(hidden=True)
@@ -2368,7 +2447,7 @@ class economy:
         
         entries = []
         
-        all_items = self._shop["picitems"] + self._shop["items"] + self._mine["items"] + self._shop["roditems"] + self._shop["miners"]
+        all_items = self._shop["picitems"] + self._shop["items"] + self._mine["items"] + self._shop["roditems"] + self._shop["miners"] + self._shop["boosters"]
         for member in list(set(self.bot.get_all_members())):
             if str(member.id) in self.settings["user"]:
                 user_data = self.settings["user"][str(member.id)]
@@ -2474,12 +2553,6 @@ class economy:
         if "marriedto" not in self.data["user"][str(author.id)]:
             self.data["user"][str(author.id)]["marriedto"] = {}
             dataIO.save_json(self.file_path, self.data)
-        if "pending" not in self.data["user"][str(author.id)]:
-            self.data["user"][str(author.id)]["pending"] = {}
-            dataIO.save_json(self.file_path, self.data)
-        if str(user.id) in self.data["user"][str(author.id)]["pending"]:
-            await ctx.send("You already have a pending request to marry this user :no_entry:")
-            return
         if len(self.data["user"][str(author.id)]["marriedto"]) >= 5:
             await ctx.send("You are married to the max amount of users possible (5 users) you need to divorce someone to marry this user :no_entry:")
             return
@@ -2492,9 +2565,6 @@ class economy:
         if str(user.id) in self.data["user"][str(author.id)]["marriedto"]:
             await ctx.send("Don't worry, You're already married to that user.")
             return
-        if str(user.id) not in self.data["user"][str(author.id)]["pending"]:
-            self.data["user"][str(author.id)]["pending"][str(user.id)] = {}
-            dataIO.save_json(self.file_path, self.data)
         if user == author:
             await ctx.send("So you want to be lonely, that's fine.\nJust say **yes** well you can say **no** but are you going to reject yourself?")
         else:
@@ -2504,23 +2574,13 @@ class economy:
                 return m.author == user and m.channel == ctx.channel
             msg = await self.bot.wait_for("message", check=marry, timeout=1800)
         except asyncio.TimeoutError:
-            await ctx.send("{}, You can always try someone else. (Response timed out :stopwatch:)".format(author.mention))
-            if str(user.id) in self.data["user"][str(author.id)]["pending"]:
-                del self.data["user"][str(author.id)]["pending"][str(user.id)]
-                dataIO.save_json(self.file_path, self.data)
-            return
+            return await ctx.send("{}, You can always try someone else. (Response timed out :stopwatch:)".format(author.mention))
         if ("yes" in msg.content.lower()):
             await ctx.send("Congratulations **{}** and **{}** :heart: :tada:".format(author.name, user.name))
             await self._create_marriage_user(ctx, user)
             await self._create_marriage_author(ctx, user)
-            if str(user.id) in self.data["user"][str(author.id)]["pending"]:
-                del self.data["user"][str(author.id)]["pending"][str(user.id)]
-                dataIO.save_json(self.file_path, self.data)
         else:
             await ctx.send("{}, You can always try someone else.".format(author.mention))
-            if str(user.id) in self.data["user"][str(author.id)]["pending"]:
-                del self.data["user"][str(author.id)]["pending"][str(user.id)]
-                dataIO.save_json(self.file_path, self.data)
             
     @commands.command() 
     async def divorce(self, ctx, user: str):
@@ -2588,9 +2648,9 @@ class economy:
         list = []
         try:
             for x in self.data["user"][str(user.id)]["marriedto"]:
-                user = await self.bot.get_user_info(x)
-                if user:
-                    list.append(str(user) + " ({})".format(x))
+                user2 = await self.bot.get_user_info(x)
+                if user2:
+                    list.append(str(user2) + " ({})".format(x))
                 else:
                     list.append(x)
         except:
@@ -2762,7 +2822,10 @@ class economy:
                         return await ctx.send("I failed to download that image, I recommend a discord image or imgur as they are bound to work :no_entry:")
                 except:
                     pass
-            os.remove("profile-images/{}.png".format(ctx.author.id))
+            try:
+                os.remove("profile-images/{}.png".format(ctx.author.id))
+            except:
+                pass
             await ctx.send("Your background has been reset.")
             return
         image_url = image_url.replace(".gif", ".png").replace(".webp", ".png")

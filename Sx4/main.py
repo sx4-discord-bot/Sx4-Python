@@ -29,7 +29,6 @@ async def prefix_function(bot, message):
    
 bot = commands.AutoShardedBot(command_prefix=prefix_function, case_insensitive=False)
 wrap = "```py\n{}\n```"
-blacklisted_users = [296343513430360064, 277398577934893056, 146974226988007424]
 modules = ["cogs." + x.replace(".py", "") for x in os.listdir("cogs") if ".py" in x]
 
 @bot.event
@@ -45,14 +44,12 @@ async def on_ready():
             await bot.get_channel(439745234285625355).send(e)
             pass
     setattr(bot, "uptime", datetime.datetime.utcnow().timestamp())
-    dblpayloadservers = {"server_count"  : len(bot.guilds), "shard_count": bot.shard_count}
-    payloadservers = {"server_count"  : len(bot.guilds)}
 		
 @bot.event 
 async def on_message(message):
     if message.author.bot:
         return
-    elif message.author.id in blacklisted_users:
+    elif str(message.author.id) in dataIO.load_json("data/owner/blacklist.json")["users"]:
         return
     elif isinstance(message.channel, discord.abc.PrivateChannel) and message.content.startswith("s?"):
         await message.channel.send("You can't use commands in private messages :no_entry:")
@@ -64,7 +61,7 @@ async def on_message(message):
 async def on_message_edit(before, after):
     if after.author.bot:
         return
-    elif after.author.id in blacklisted_users:
+    elif str(after.author.id) in dataIO.load_json("data/owner/blacklist.json")["users"]:
         return
     elif before.content == after.content:
         return
@@ -200,7 +197,11 @@ async def reload(ctx, *, module: str):
     except Exception as e:
         e=discord.Embed(description="Error:" + wrap.format(type(e).name + ': ' + str(e)), colour=discord.Colour.red())
         await ctx.send(embed=e)
-		
+
+async def on_error(event_method, *args, **kwargs):
+    pass
+
+bot.on_error = on_error
 		
 bot.add_cog(Main(bot))
 

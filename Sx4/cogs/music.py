@@ -81,7 +81,7 @@ class music:
     async def play(self, ctx, *, query):
         """Play something by query or link"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        query = query.strip('<>')
+        query = query.strip('<>').replace("music.", "")
         if player.is_connected:
             if not ctx.author.voice or not ctx.author.voice.channel or player.connected_channel.id != ctx.author.voice.channel.id:
                 return await ctx.send("I'm already in a voice channel :no_entry:")
@@ -130,6 +130,7 @@ class music:
 
     @commands.command()
     async def playlist(self, ctx, *, query):
+        """Search for an play a playlist from youtube"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if player.is_connected:
             if not ctx.author.voice or not ctx.author.voice.channel or player.connected_channel.id != ctx.author.voice.channel.id:
@@ -173,8 +174,11 @@ class music:
                     player.add(requester=ctx.author.id, track=track)
                 s=discord.Embed()
                 s.description = "Enqueued {} with **{}** tracks <:done:403285928233402378>".format(results['playlistInfo']['name'], len(tracks))
-                await message.delete()
-                await response.delete()
+                try:
+                    await message.delete()
+                    await response.delete()
+                except:
+                    pass
                 await self.bot.get_channel(player.fetch('channel')).send(embed=s)
                 if not player.is_playing:
                     await player.play()
@@ -254,7 +258,7 @@ class music:
             return await ctx.send("I'm not currently connected to a voice channel :no_entry:")
         if not ctx.author.voice or (player.is_connected and player.connected_channel.id != ctx.author.voice.channel.id):
             return await ctx.send("You have to be in my voice channel to disconnect :no_entry:")
-        if player.fetch("sessionowner") == ctx.author.id:
+        if player.fetch("sessionowner") == ctx.author.id or player.fetch("sessionowner") not in map(lambda x: x.id, player.connected_channel.members):
             player.queue.clear()
             await player.disconnect()
             player.delete("votes")
@@ -319,6 +323,7 @@ class music:
 
     @commands.command()
     async def rewind(self, ctx):
+        """Rewind the current track to the start again"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if not player.is_connected:
             return await ctx.send("I'm not connected to a voice channel :no_entry:")
