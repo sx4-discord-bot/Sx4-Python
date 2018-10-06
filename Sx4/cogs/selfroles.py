@@ -10,7 +10,7 @@ from utils import arghelp
 import os
 import math
 from random import choice
-from utils.dataIO import dataIO
+import rethinkdb as r
 from random import randint
 from copy import deepcopy
 from collections import namedtuple, defaultdict, deque
@@ -22,8 +22,6 @@ from difflib import get_close_matches
 class selfroles:
     def __init__(self, bot):
         self.bot = bot
-        self.file_path = 'data/general/selfroles.json'
-        self.data = dataIO.load_json(self.file_path)
 	
     @commands.group()
     async def selfrole(self, ctx): 
@@ -32,12 +30,7 @@ class selfroles:
         if ctx.invoked_subcommand is None:
             await arghelp.send(self.bot, ctx)
         else:
-            if str(server.id) not in self.data:
-                self.data[str(server.id)] = {}
-                dataIO.save_json(self.file_path, self.data)
-            if "role" not in self.data[str(server.id)]:
-                self.data[str(server.id)]["role"] = {}
-                dataIO.save_json(self.file_path, self.data)
+            r.table("selfroles").insert({"id": str(server.id), "roles": []}).run()
 			
     @selfrole.command() 
     @checks.has_permissions("manage_roles")
@@ -60,14 +53,14 @@ class selfroles:
         if not role:
             return await ctx.send("I could not find that role :no_entry:")
         server = ctx.message.guild
+        data = r.table("selfroles").get(str(server.id))
         try:
-            if str(role.id) in self.data[str(server.id)]["role"]:
+            if str(role.id) in data["roles"].run():
                 await ctx.send("That role is already a self role :no_entry:")
                 return
         except: 
             pass
         await self._create_role(server, role)
-        dataIO.save_json(self.file_path, self.data)
         await ctx.send("Added **{}** to the self roles list <:done:403285928233402378>".format(role.name))
 		
     @selfrole.command() 
@@ -91,11 +84,11 @@ class selfroles:
         if not role:
             return await ctx.send("I could not find that role :no_entry:")
         server = ctx.message.guild
-        if str(role.id) not in self.data[str(server.id)]["role"]:
+        data = r.table("selfroles").get(str(server.id))
+        if str(role.id) not in data["roles"].run():
             await ctx.send("That role isn't a self role :no_entry:")
             return
-        del self.data[str(server.id)]["role"][str(role.id)]
-        dataIO.save_json(self.file_path, self.data)
+        data.update({"roles": r.row["roles"].difference([str(role.id)])}).run()
         await ctx.send("Removed **{}** from the self roles list <:done:403285928233402378>".format(role.name))
 		
     @selfrole.command() 
@@ -103,16 +96,17 @@ class selfroles:
     async def reset(self, ctx):
         """Reset all the selfroles"""
         server = ctx.message.guild
-        self.data[str(server.id)] = {}
-        dataIO.save_json(self.file_path, self.data)
+        data = r.table("selfroles").get(str(server.id))
+        data.update({"roles": []}).run()
         await ctx.send("All self roles have been deleted <:done:403285928233402378>")
 		
     @selfrole.command() 
     async def list(self, ctx): 
         """List all the selfroles"""
         server = ctx.message.guild
+        data = r.table("selfroles").get(str(server.id)).run()
         i = 0
-        for roleid in self.data[str(server.id)]["role"]:
+        for roleid in data["roles"]:
             role = discord.utils.get(server.roles, id=int(roleid))
             if role:
                 i += 1
@@ -195,13 +189,8 @@ class selfroles:
             return await ctx.send("I could not find that role :no_entry:")
         author = ctx.message.author
         server = ctx.message.guild
-        if str(server.id) not in self.data:
-            self.data[str(server.id)] = {}
-            dataIO.save_json(self.file_path, self.data)
-        if "role" not in self.data[str(server.id)]:
-            self.data[str(server.id)]["role"] = {}
-            dataIO.save_json(self.file_path, self.data)
-        if str(role.id) in self.data[str(server.id)]["role"]:
+        data = r.table("selfroles").get(str(server.id)).run()
+        if str(role.id) in data["roles"]:
             if role in author.roles:
                 await author.remove_roles(role)
                 await ctx.send("{}, You no longer have **{}**".format(author.mention, role.name))
@@ -214,19 +203,12 @@ class selfroles:
             await ctx.send("That role is not self assignable :no_entry:")
 			
     async def _create_role(self, server, role):
-        if str(server.id) not in self.data:
-            self.data[str(server.id)] = {}
-            dataIO.save_json(self.file_path, self.data)
-        if "role" not in self.data[str(server.id)]:
-            self.data[str(server.id)]["role"] = {}
-            dataIO.save_json(self.file_path, self.data)
-        if str(role.id) not in self.data[str(server.id)]["role"]:
-            self.data[str(server.id)]["role"][str(role.id)] = {}
-            dataIO.save_json(self.file_path, self.data)
+        r.table("selfroles").get(str(server.id)).update({"roles": r.row["roles"].append(str(role.id))}).run()
 			
     async def _list(self, server, page):   
         msg = []
-        for roleid in list(self.data[str(server.id)]["role"])[page*20-20:page*20]:
+        data = r.table("selfroles").get(str(server.id)).run()
+        for roleid in list(data["roles"])[page*20-20:page*20]:
             role = discord.utils.get(server.roles, id=int(roleid))
             if role:
                 msg.append(role)
@@ -235,16 +217,9 @@ class selfroles:
 		 
     async def on_server_role_delete(self, role):
         server = role.guild
-        if str(role.id) in self.data[str(server.id)]["role"]:
-            del self.data[str(server.id)]["role"][str(role.id)]
-
-			
-def check_files():
-    f = 'data/general/selfroles.json'
-    if not dataIO.is_valid_json(f):
-        dataIO.save_json(f, {})
-        print('Creating default selfroles.json...')
+        data = r.table("selfroles").get(str(server.id))
+        if str(role.id) in data["roles"].run():
+            data.update({"roles": r.row["roles"].difference([str(role.id)])}).run()
 		
 def setup(bot):
-    check_files()
     bot.add_cog(selfroles(bot))

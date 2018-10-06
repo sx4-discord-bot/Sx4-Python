@@ -7,6 +7,7 @@ from collections import namedtuple, defaultdict, deque
 from datetime import datetime
 from random import randint
 from copy import deepcopy
+import inspect
 from utils import checks
 from enum import Enum
 import time
@@ -44,21 +45,28 @@ class help:
         elif not subcommand and commandname:
             msg = ""
             try:
-               self.bot.all_commands[commandname.lower()] 
+                self.bot.all_commands[commandname.lower()] 
+                try:
+                    perms = self.bot.all_commands[commandname.lower()].checks[0]
+                except:
+                    perms = None
             except:
                 try: 
                     cogcommandsnum = len("\n".join(["`{}` - {}".format(x, self.bot.cogs[commandname.lower()].bot.all_commands[x].help) for x in self.bot.cogs[commandname.lower()].bot.all_commands if self.bot.all_commands[x].module[5:].lower() == commandname.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases]))
                     pages = math.ceil(cogcommandsnum / 2000)
-                    commandnumber = len(["`{}` - {}".format(x, self.bot.cogs[commandname.lower()].bot.all_commands[x].help) for x in self.bot.cogs[commandname.lower()].bot.all_commands if self.bot.all_commands[x].module[5:].lower() == commandname.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases])
+                    commandnumber = len([x for x in self.bot.cogs[commandname.lower()].bot.all_commands if self.bot.all_commands[x].module[5:].lower() == commandname.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases])
                     cogcommands = "\n".join(["`{}` - {}".format(x, self.bot.cogs[commandname.lower()].bot.all_commands[x].help) for x in self.bot.cogs[commandname.lower()].bot.all_commands if self.bot.all_commands[x].module[5:].lower() == commandname.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases])
-                    s=discord.Embed(colour=0xffff00, description=cogcommands[:2000])
-                    s.set_author(name=commandname.title() + " ({} Commands)".format(commandnumber), icon_url=self.bot.user.avatar_url)
-                    s.set_footer(text="s?help <command> for more info", icon_url=ctx.message.author.avatar_url)
-                    await ctx.send(embed=s)
-                    n = 2000
-                    m = 4000
-                    for x in range(pages-1):
+                    n = 0
+                    m = 2000
+                    for x in range(pages):
+                        if n != 0:
+                            while cogcommands[n-1:n] != "\n":
+                                n -= 1
+                        while cogcommands[m-1:m] != "\n":
+                            m -= 1
                         s=discord.Embed(colour=0xffff00, description=cogcommands[n:m])
+                        if n == 0:
+                            s.set_author(name=commandname.title() + " ({} Commands)".format(commandnumber), icon_url=self.bot.user.avatar_url)
                         s.set_footer(text="s?help <command> for more info", icon_url=ctx.message.author.avatar_url)
                         n += 2000
                         m += 2000
@@ -78,7 +86,11 @@ class help:
                 aliases = "None"
             else:
                 aliases = ", ".join([x for x in self.bot.all_commands[commandname.lower()].aliases])
-            msg = "Usage: {}{} {}\nCommand aliases: {}\nCommand description: {}".format(ctx.prefix, self.bot.all_commands[commandname.lower()].name, msg, aliases, self.bot.all_commands[commandname.lower()].help)
+            if not perms:
+                msg = "Usage: {}{} {}\nCommand aliases: {}\nRequired permissions: None\nCommand description: {}".format(ctx.prefix, self.bot.all_commands[commandname.lower()], msg, aliases, self.bot.all_commands[commandname.lower()].help)
+            else:
+                msg = "Usage: {}{} {}\nCommand aliases: {}\nRequired permissions: {}\nCommand description: {}".format(ctx.prefix, self.bot.all_commands[commandname.lower()], msg, aliases, 
+                ", ".join(inspect.getclosurevars(perms).nonlocals["perms"]) if perms.__name__ != "is_owner_check" and str(perms).split(" ")[1].split(".")[0] != "is_main_owner" else "Bot Owner", self.bot.all_commands[commandname.lower()].help)
             try:
                 msg += "\n\nSub commands: {}".format(", ".join([x for x in self.bot.all_commands[commandname.lower()].all_commands if x not in self.bot.all_commands[commandname.lower()].all_commands[x].aliases]))
             except:
@@ -89,7 +101,11 @@ class help:
         else:
             msg = ""
             try:
-               self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()] 
+                self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()] 
+                try:
+                    perms = self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].checks[0]
+                except:
+                    perms = None
             except:
                await ctx.send("That is not a command :no_entry:")
                return
@@ -104,7 +120,11 @@ class help:
                 aliases = "None"
             else:
                 aliases = ", ".join([x for x in self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].aliases])
-            msg = "Usage: {}{} {} {}\nCommand aliases: {}\nCommand description: {}".format(ctx.prefix, self.bot.all_commands[commandname.lower()].name, self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].name, msg, aliases, self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].help)
+            if not perms:
+                msg = "Usage: {}{} {}\nCommand aliases: {}\nRequired permissions: None\nCommand description: {}".format(ctx.prefix, self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()], msg, aliases, self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].help)
+            else:
+                msg = "Usage: {}{} {}\nCommand aliases: {}\nRequired permissions: {}\nCommand description: {}".format(ctx.prefix, self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()], msg, aliases, 
+                ", ".join(inspect.getclosurevars(perms).nonlocals["perms"]) if perms.__name__ != "is_owner_check" and str(perms).split(" ")[1].split(".")[0] != "is_main_owner" else "Bot Owner", self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].help)
             s=discord.Embed(description=msg)
             s.set_author(name=self.bot.all_commands[commandname.lower()].name + " " + self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].name, icon_url=self.bot.user.avatar_url)
             await ctx.send(embed=s)

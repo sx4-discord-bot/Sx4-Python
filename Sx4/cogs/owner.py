@@ -4,35 +4,85 @@ from discord.ext import commands
 from random import choice as randchoice
 import time
 import requests
-from utils.dataIO import dataIO
 import datetime
+import rethinkdb as r
+import math
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from utils import checks
 import os
 
 class owner:
     def __init__(self, bot):
         self.bot = bot
-        self._blacklist_file = "data/owner/blacklist.json"
-        self._blacklist = dataIO.load_json(self._blacklist_file)
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def collage(self, ctx):
+        pixels = 64
+        width = math.ceil(math.sqrt(ctx.guild.member_count)*pixels)
+        height = math.ceil(math.sqrt(ctx.guild.member_count)*pixels)
+        background = Image.new("RGBA", (width+pixels, height+pixels), (0, 0, 0, 0))
+        x, y, i = 0, 0, 0
+        await ctx.send("Creating collage...")
+        t1 = time.perf_counter()
+        for member in ctx.guild.members:
+            i += 1
+            print(str(member) + " ({}/{})".format(i, ctx.guild.member_count))
+            try:
+                with open("avatar.png", "wb") as f:
+                    f.write(requests.get(member.avatar_url).content)
+                image = Image.open("avatar.png").convert("RGBA")
+                image = image.resize((pixels, pixels))
+                background.paste(image, (x, y))
+                x += pixels
+                if x >= width:
+                    y += pixels
+                    x = 0
+                print("Successful") 
+            except Exception as e:
+                print(e)
+        background.save("collage.png")
+        t2 = time.perf_counter()
+        try:
+            await ctx.send(content="Executed in **{}ms**".format(round((t2-t1)*1000)), file=discord.File("collage.png", "collage.png"))
+        except:
+            await ctx.send("Executed in **{}ms**\n\nImage saved in hosters files".format(round((t2-t1)*1000)))
+            return os.remove("avatar.png")
+        try:
+            os.remove("collage.png")
+            os.remove("avatar.png")
+        except: 
+            pass
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def disable(self, ctx, command: str, boolean: bool=False):
+        try:
+            self.bot.all_commands[command].enabled = boolean
+            if boolean == False:
+                await ctx.send("`{}` has been disabled.".format(command))
+            else:
+                await ctx.send("`{}` has been enabled.".format(command))
+        except KeyError:
+            return await ctx.send("Invalid command :no_entry:")
 
     @commands.command(hidden=True)
     @checks.is_owner()
     async def blacklist(self, ctx, user_id: str, boolean: bool):
-        if "users" not in self._blacklist:
-            self._blacklist["users"] = []
+        r.table("blacklist").insert({"id": "owner", "users": []}).run()
+        data = r.table("blacklist").get("owner")
         if boolean == True:
-            if user_id not in self._blacklist["users"]:
-                self._blacklist["users"].append(user_id)
+            if user_id not in data["users"].run():
+                data.update({"users": r.row["users"].append(user_id)}).run()
                 await ctx.send("User has been blacklisted.")
             else:
                 await ctx.send("That user is already blacklisted.")
         if boolean == False:
-            if user_id not in self._blacklist["users"]:
+            if user_id not in data["users"].run():
                 await ctx.send("That user is not blacklisted.")
             else:
-                self._blacklist["users"].remove(user_id)
+                data.update({"users": r.row["users"].difference([user_id])}).run()
                 await ctx.send("That user is no longer blacklisted")
-        dataIO.save_json(self._blacklist_file, self._blacklist)
 		
     @commands.command(hidden=True)
     async def modules(self, ctx):
@@ -88,18 +138,19 @@ class owner:
         await ctx.send("Shutting down...")
         await self.bot.logout()
 
-def check_folders():
-    if not os.path.exists("data/owner"):
-        print("Creating data/owner folder...")
-        os.makedirs("data/owner")
+    async def on_guild_join(self, guild):
+        guilds = len(self.bot.guilds)
+        if guilds % 100 == 0:
+            channel = self.bot.get_channel(493439822682259497)
+            await channel.send("{:,} servers :tada:".format(guilds))
 
-def check_files():
-    f = 'data/owner/blacklist.json'
-    if not dataIO.is_valid_json(f):
-        dataIO.save_json(f, {})
-        print('Creating default blacklist.json...')
+    async def on_guild_remove(self, guild):
+        guilds = len(self.bot.guilds)
+        if guilds % 100 != 0:
+            channel = self.bot.get_channel(493439822682259497)
+            for x in await channel.history(limit=1).flatten():
+                if int(x.content.split(" ")[0].replace(",", "")) > guilds:
+                    await x.delete()  
 		
 def setup(bot):
-    check_folders()
-    check_files()
     bot.add_cog(owner(bot))

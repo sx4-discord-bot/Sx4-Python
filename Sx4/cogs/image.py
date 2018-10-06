@@ -18,6 +18,7 @@ from urllib.request import Request, urlopen
 import re
 import json
 import urllib.request
+from utils import data
 import requests
 from utils.PagedResult import PagedResult
 from utils.PagedResult import PagedResultData
@@ -26,13 +27,13 @@ from random import choice
 import asyncio
 from difflib import get_close_matches
 
+colours = data.read_json("data/colours/colournames.json")
+
 class image:
     """Fun image commands"""
       
     def __init__(self, bot):  
         self.bot = bot
-        self.colours_file = "data/colours/colournames.json"
-        self.colours = dataIO.load_json(self.colours_file)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -626,8 +627,8 @@ class image:
             colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
             colour = discord.Colour(int(colour, 16))
             colourname = str(colour)
-            for x in self.colours:
-                if str(colour).lower() == self.colours[x].lower():
+            for x in colours:
+                if str(colour).lower() == colours[x].lower():
                     if not re.match("(?:[a-f A-F]|[0-9]){6}" if "#" not in colour else "#(?:[a-f A-F]|[0-9]){6}", colour):
                         return await ctx.send("Invalid hex :no_entry:")
                     colourname = x.title()
@@ -643,11 +644,11 @@ class image:
                 pass
             return
         colourname = colour
-        for x in self.colours:
+        for x in colours:
             if x.title() == colour.title():
-                colourname = self.colours[x].lower()
-                colour = self.colours[x].lower()
-            elif "#" + str(colour).replace("#", "").lower() == self.colours[x].lower():
+                colourname = colours[x].lower()
+                colour = colours[x].lower()
+            elif "#" + str(colour).replace("#", "").lower() == colours[x].lower():
                 if not re.match("(?:[a-f A-F]|[0-9]){6}" if "#" not in colour else "#(?:[a-f A-F]|[0-9]){6}", colour):
                     return await ctx.send("Invalid hex :no_entry:")
                 colourname = x.title()

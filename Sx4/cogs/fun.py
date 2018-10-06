@@ -17,7 +17,7 @@ import html
 from urllib.request import Request, urlopen
 import json
 import urllib
-from iso639 import languages
+#from iso639 import languages
 import re
 import os
 from random import choice
@@ -29,6 +29,7 @@ from random import randint
 from copy import deepcopy
 from collections import namedtuple, defaultdict, deque
 from copy import deepcopy
+import rethinkdb as r
 from enum import Enum
 import asyncio
 from difflib import get_close_matches
@@ -38,9 +39,6 @@ rps_settings = {"rps_wins": 0, "rps_draws": 0, "rps_losses": 0}
 class fun:
     def __init__(self, bot):
         self.bot = bot
-        self.JSON = 'data/general/rps.json'
-        self.settings = dataIO.load_json(self.JSON)
-        self.settings = defaultdict(lambda: rps_settings, self.settings)
 
     @commands.command(aliases=["tran", "tr"])
     async def translate(self, ctx, language, *, text):
@@ -134,10 +132,11 @@ class fun:
     async def google(self, ctx, *, search): 
         """returns the top 5 results from google of your search query"""
         if ctx.channel.is_nsfw():
-            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:mm334tqd3kg&safeSearch=moderate&{}".format(urllib.parse.urlencode({"q": search}))
+            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:mm334tqd3kg&safe=off&{}".format(urllib.parse.urlencode({"q": search}))
         else:
-            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:mm334tqd3kg&safeSearch=moderate&{}".format(urllib.parse.urlencode({"q": search}))
+            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:mm334tqd3kg&safe=active&{}".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
+        request.add_header('User-Agent', 'Mozilla/5.0')
         data = json.loads(urlopen(request).read().decode())
         try:
             results = "\n\n".join(["**[{}]({})**\n{}".format(x["title"], x["link"], x["snippet"]) for x in data["items"]][:5])
@@ -152,10 +151,11 @@ class fun:
     async def googleimage(self, ctx, *, search): 
         """returns an image based on your search from google"""
         if ctx.channel.is_nsfw():
-            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:klo2euskkae&safeSearch=none&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
+            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:klo2euskkae&safe=off&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
         else:
-            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:klo2euskkae&safeSearch=moderate&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
+            url = "https://www.googleapis.com/customsearch/v1?key=" + Token.google() + "&cx=014023765838117903829:klo2euskkae&safe=active&searchType=image&{}".format(urllib.parse.urlencode({"q": search}))
         request = Request(url)
+        request.add_header('User-Agent', 'Mozilla/5.0')
         data = json.loads(urlopen(request).read().decode())
         s=discord.Embed()
         s.set_author(name="Google", icon_url="https://images-ext-1.discordapp.net/external/UsMM0mPPHEKn6WMst8WWG9qMCX_A14JL6Izzr47ucOk/http/i.imgur.com/G46fm8J.png", url="https://www.google.co.uk/search?{}".format(urllib.parse.urlencode({"q": search})))
@@ -284,6 +284,25 @@ class fun:
         s.set_footer(text="{} 👍 | {} 👎 | Page {}/{}".format(data["list"][page]["thumbs_up"], data["list"][page]["thumbs_down"], page + 1, len(data["list"])))
         await ctx.send(embed=s)
 
+    @commands.command(pass_context=True)
+    async def say(self, ctx, *, text):
+        """Say something with the bot"""
+        if "@everyone" in text.lower():
+            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
+            return
+        if "@here" in text.lower():
+            await ctx.send("@Here. Ha get pranked :middle_finger:")
+            return
+        await ctx.send(text[:2000])
+        
+    @commands.command(pass_context=True, aliases=["embed"])
+    async def esay(self, ctx, *, text):
+        """Say something with the bot in a embed"""
+        author = ctx.message.author
+        s=discord.Embed(description=text[:2000], colour=author.colour)
+        s.set_author(name=author.name, icon_url=author.avatar_url)
+        await ctx.send(embed=s)
+
     @commands.command()
     async def clapify(self, ctx, *, text):
         """Claps your text"""
@@ -362,6 +381,7 @@ class fun:
     async def rps(self, ctx, your_choice):
         """Play rock paper scissors with the bot"""
         author = ctx.message.author
+        authordata = r.table("rps").get(str(author.id))
         if your_choice == "rock" or your_choice == "scissors" or your_choice == "paper" or your_choice == "r" or your_choice == "s" or your_choice == "p":
             if your_choice == "rock" or your_choice == "r":
                 your_choice = 1
@@ -401,12 +421,11 @@ class fun:
             your_choice = "**Scissors :scissors:**"
         await ctx.send("{}: {}\nSx4: {}\n\n{}".format(author.name, your_choice, bot_choice, end))
         if end == "You lose, better luck next time.":
-            self.settings[str(author.id)]["rps_losses"] = self.settings[str(author.id)]["rps_losses"] + 1
+            authordata.update({"rps_losses": r.row["rps_losses"] + 1}).run()
         if end == "Draw, let's go again!":
-            self.settings[str(author.id)]["rps_draws"] = self.settings[str(author.id)]["rps_draws"] + 1
+            authordata.update({"rps_draws": r.row["rps_draws"] + 1}).run()
         if end == "You win! :trophy:":
-            self.settings[str(author.id)]["rps_wins"] = self.settings[str(author.id)]["rps_wins"] + 1
-        dataIO.save_json(self.JSON, self.settings)
+            authordata.update({"rps_wins": r.row["rps_wins"] + 1}).run()
          
     @commands.command(pass_context=True, aliases=["rpss"])
     async def rpsstats(self, ctx, *, user: discord.Member=None): 
@@ -414,26 +433,13 @@ class fun:
         author = ctx.message.author
         if not user:
             user = author
+        userdata = r.table("rps").get(str(user.id))
         s=discord.Embed(colour=user.colour)
         s.set_author(name="{}'s RPS Stats".format(user.name), icon_url=user.avatar_url)
-        s.add_field(name="Wins", value=self.settings[str(author.id)]["rps_wins"])
-        s.add_field(name="Draws", value=self.settings[str(author.id)]["rps_draws"])
-        s.add_field(name="Losses", value=self.settings[str(author.id)]["rps_losses"])
+        s.add_field(name="Wins", value=userdata["rps_wins"].run())
+        s.add_field(name="Draws", value=userdata["rps_draws"].run())
+        s.add_field(name="Losses", value=userdata["rps_losses"].run())
         await ctx.send(embed=s)
-
-def check_folders():
-    if not os.path.exists("data/general"):
-        print("Creating data/general folder...")
-        os.makedirs("data/general")
-
-
-def check_files():
-    f = 'data/general/rps.json'
-    if not dataIO.is_valid_json(f):
-        dataIO.save_json(f, {})
-        print('Creating default rps.json...')
         
 def setup(bot):
-    check_folders()
-    check_files()
     bot.add_cog(fun(bot))

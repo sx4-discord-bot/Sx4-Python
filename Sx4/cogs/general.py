@@ -17,12 +17,14 @@ from utils import checks
 from urllib.request import Request, urlopen
 import json
 import urllib
+import sys
 import re
 import os
+from utils import arg
 from random import choice
 from threading import Timer
 import requests
-from utils.dataIO import dataIO
+import rethinkdb as r
 from random import randint
 from copy import deepcopy
 from collections import namedtuple, defaultdict, deque
@@ -40,22 +42,13 @@ class general:
     def __init__(self, bot):
         self.bot = bot
         self._stats_task = bot.loop.create_task(self.checktime())
-        self._stats_save = bot.loop.create_task(self.save_stats())
-        self.file = "data/general/triggers.json"
-        self.d = dataIO.load_json(self.file)
-        self._shop_file = 'data/economy/shop.json'
-        self._shop = dataIO.load_json(self._shop_file)
-        self._stats_file = 'data/general/stats.json'
-        self._stats = dataIO.load_json(self._stats_file)
-        self._status_file = 'data/general/statuscheck.json'
-        self._status = dataIO.load_json(self._status_file)
 
     def __unload(self):
         self._stats_task.cancel()
-        self._stats_save.cancel()
 
     @commands.command()
     async def invitegenerator(self, ctx, bot: str, *permissions):
+        "Generates an invite for any specific bot with permissions of your choice"
         if re.search("<@!(.*)>" if "!" in bot else "<@(.*)>", bot):
             bot = discord.utils.get(self.bot.get_all_members(), id=int(re.search("<@!(.*)>" if "!" in bot else "<@(.*)>", bot).group(1)))
         elif "#" in bot and bot[len(bot)-4:].isdigit():
@@ -79,27 +72,20 @@ class general:
 
     @commands.command(aliases=["topcmds"])
     async def topcommands(self, ctx, page: int=None):
-        counter = Counter()
-        for command in self._stats["commandstats"]:
-            counter[command["name"]] += 1
-        
-        listcom = counter.most_common()
-        
+        """View the top commands used on the bot"""
         per_page = 20
-        
+        listcom = sorted(r.table("botstats").get("stats")["commandcounter"].run(), key=lambda x: x["amount"], reverse=True) 
         if not page:
             page = 1
         elif page < 1 or page > math.ceil(len(listcom)/per_page):
-            return await ctx.send("Invalid Page :no_entry:")
-        
-        msg = ""
-        
+            return await ctx.send("Invalid Page :no_entry:")   
+        msg = ""   
         i = page * per_page - per_page
         for command in listcom[page * per_page - per_page:page * per_page]:
             i += 1
         
-            name = command[0]
-            used = command[1]
+            name = command["name"]
+            used = command["amount"]
             
             msg += "{}. `{}` - {:,} {}\n".format(i, name, used, "use" if used == 1 else "uses")
         await ctx.send(embed=discord.Embed(description=msg).set_author(name="Top Commands", icon_url=self.bot.user.avatar_url).set_footer(text="Page {}/{}".format(page, math.ceil(len(listcom)/per_page))))
@@ -107,6 +93,7 @@ class general:
 
     @commands.command()
     async def decode(self, ctx):
+        """Decode any text file (Supports languages and will use markdown)"""
         if ctx.message.attachments:
             with open("test.txt", "wb") as f:
                 f.write(requests.get(ctx.message.attachments[0].url).content)
@@ -127,6 +114,7 @@ class general:
 
     @commands.command(aliases=["updates"])
     async def changes(self, ctx):
+        """View changes which have recently happened on the bot"""
         message = list(await self.bot.get_channel(455806567577681921).history(limit=1).flatten())[0]
         bugfixes = message.content.split("\n\n")[2]
         updates = message.content.split("\n\n")[4]
@@ -163,6 +151,7 @@ class general:
 
     @commands.command()
     async def invites(self, ctx, *, user: str=None):
+        """View how many invites you have or a user has"""
         if not user:
             user = ctx.author
         elif "<" in user and "@" in user:
@@ -228,10 +217,58 @@ class general:
         await ctx.send("{} has **{}** invites which means they have the **{}** most invites. They have invited **{}%** of all users.".format(user, amount, await self.prefixfy(place), percent))
         del entries
 
+    @commands.command(aliases=["ilb", "inviteslb"])
+    async def invitesleaderboard(self, ctx, page: int=None):
+        """View a leaderboard sorted by the users with the most invites"""
+        if not page:
+            page = 1
+        entries, total = {}, 0
+        for x in await ctx.guild.invites():
+            if x.uses > 0:
+                if "user" not in entries:
+                    entries["user"] = {}
+                if str(x.inviter.id) not in entries["user"]:
+                    entries["user"][str(x.inviter.id)] = {}
+                if "uses" not in entries["user"][str(x.inviter.id)]:
+                    entries["user"][str(x.inviter.id)]["uses"] = 0
+                entries["user"][str(x.inviter.id)]["uses"] += x.uses
+                total += x.uses
+        try: 
+            entries["user"]
+        except:
+            return await ctx.send("No-one has made an invite in this server :no_entry:")
+        if page < 1 or page > math.ceil(len(entries["user"])/10):
+            return await ctx.send("Invalid Page :no_entry:")
+        sorted_invites = sorted(entries["user"].items(), key=lambda x: x[1]["uses"], reverse=True)
+        msg, i, place = "", page*10-10, 0
+        for x in sorted_invites:
+            if str(ctx.author.id) in map(lambda x: x[0], sorted_invites):
+                place += 1
+                if x[0] == str(ctx.author.id):
+                    break 
+            else:
+                place = None
+        for x in sorted_invites[page*10-10:page*10]:
+            i += 1
+            percent = (x[1]["uses"]/total)*100
+            if percent < 1:
+                percent = "<1"
+            else:
+                percent = round(percent)
+            user = discord.utils.get(ctx.guild.members, id=int(x[0]))
+            if not user:
+                user = "Unknown user"
+            msg += "{}. `{}` - {:,} {} ({}%)\n".format(i, user, x[1]["uses"], "invite" if x[1]["uses"] == 1 else "invites", percent)
+        s=discord.Embed(title="Invites Leaderboard", description=msg, colour=0xfff90d)
+        s.set_footer(text="{}'s Rank: {} | Page {}/{}".format(ctx.author.name, "#{}".format(place) if place else "Unranked", page, math.ceil(len(entries["user"])/10)), icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=s)
+
     @commands.command(name="await")
     async def _await(self, ctx, *users: discord.Member):
         """The bot will notify you when a certain user or users come online"""
         author = ctx.author
+        authordata = r.table("await").get(str(author.id))
+        r.table("await").insert({"id": str(author.id), "users": []}).run()
         if not users:
             await ctx.send("At least one user is required as an argument :no_entry:")
             return
@@ -242,19 +279,14 @@ class general:
         if userlist == [] and len(users) == 1:
             await ctx.send("That user is already online :no_entry:")
             return
-        if str(author.id) not in self._status:
-            self._status[str(author.id)] = {}
-        if "users" not in self._status[str(author.id)]:
-            self._status[str(author.id)]["users"] = {}
-        for user in userlist:
-            if str(user.id) not in self._status[str(author.id)]["users"]:
-                self._status[str(author.id)]["users"][str(user.id)] = {}
-        dataIO.save_json(self._status_file, self._status)
+        for x in userlist:
+            authordata.update({"users": r.row["users"].append(str(x.id))}).run()
         await ctx.send("You will be notified when {} comes online.".format(", ".join(["`" + str(x) + "`" for x in userlist])))
 
 
     @commands.command()
     async def joinposition(self, ctx, user_or_number=None):
+        """See what you or a users join position is or what user joined at a specific join position"""
         author = ctx.author
         if not user_or_number:
             user = author
@@ -674,14 +706,14 @@ class general:
     @commands.command()
     async def donate(self, ctx):
         """Get my donation link"""
-        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
+        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\n[Support Server](https://discord.gg/PqJNcfB)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
         s.set_author(name="Donate!", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=s)
         
     @commands.command()
     async def invite(self, ctx):
         """Get my invite link"""
-        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\n[Support Server](https://discord.gg/f2K7FxX)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
+        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\n[Support Server](https://discord.gg/PqJNcfB)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/SheaBots)", colour=0xfff90d)
         s.set_author(name="Invite!", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=s)
         
@@ -702,7 +734,7 @@ class general:
         s.set_author(name="Info!", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Stats", value="Ping: {}ms\nServers: {}\nUsers: {}".format(ping, servers, users))
         s.add_field(name="Credits", value="[Victor#6359 (Host)](https://vjserver.ddns.net/discordbots.html)\n[Nexus](https://discord.gg/t2umQq3)\n[Lavalink (Music)](https://github.com/Devoxin/Lavalink.py/)\n[Python](https://www.python.org/downloads/release/python-352/)\n[discord.py](https://pypi.python.org/pypi/discord.py/)")
-        s.add_field(name="Sx4", value="Developers: {}, {}, {}\nInvite: [Click Here](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\nSupport: [Click Here](https://discord.gg/p5cWHjS)\nDonate: [PayPal](https://paypal.me/SheaCartwright), [Patreon](https://www.patreon.com/SheaBots)".format(shea, legacy, joakim))
+        s.add_field(name="Sx4", value="Developers: {}, {}, {}\nInvite: [Click Here](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\nSupport: [Click Here](https://discord.gg/PqJNcfB)\nDonate: [PayPal](https://paypal.me/SheaCartwright), [Patreon](https://www.patreon.com/SheaBots)".format(shea, legacy, joakim))
         await ctx.send(embed=s)
 
     @commands.command(aliases=["shards"])
@@ -732,9 +764,11 @@ class general:
             user = await self.bot.get_user_info(user_id)
         except discord.errors.NotFound:
             await ctx.send("The user was not found :no_entry:")
+            ctx.command.reset_cooldown(ctx)
             return
         except discord.errors.HTTPException:
             await ctx.send("The ID specified does not exist :no_entry:")
+            ctx.command.reset_cooldown(ctx)
             return
         s=discord.Embed(title="You received a Message :mailbox_with_mail:", colour=0xfff90d)
         s.add_field(name="Message", value=text, inline=False)
@@ -749,14 +783,25 @@ class general:
         await ctx.send("I have sent a message to **{}** <:done:403285928233402378>".format(user))
         
         
-    @commands.command(pass_context=True, aliases=["shared"])
-    async def sharedservers(self, ctx, *, user: discord.Member=None):
+    @commands.command(aliases=["shared"])
+    async def sharedservers(self, ctx, user=None, page: int=None):
         """Find out what mutual servers i'm in with another user or yourself"""
+        if not page:
+            page = 1
         if not user:
             user = ctx.message.author
-        shared = "\n".join([x.name for x in self.bot.guilds if user in x.members])
-        s=discord.Embed(description=shared, colour=user.colour)
+        else:
+            user = await arg.get_member(self.bot, ctx, user)
+            if user == self.bot.user:
+                return await ctx.send("You can check `s?servers` for that :no_entry:")
+            if not user:
+                return await ctx.send("Invalid user :no_entry:")
+        shared = ["{}. `{}`".format(i, x.name) for i, x in enumerate(filter(lambda x: user in x.members, self.bot.guilds), start=1)]
+        if page < 1 or page > math.ceil(len(shared)/20):
+            return await ctx.send("Invalid page :no_entry:")
+        s=discord.Embed(description="\n".join(shared[page*20-20:page*20]) if shared else "None", colour=user.colour)
         s.set_author(name="Shared servers with {}".format(user), icon_url=user.avatar_url)
+        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(shared)/20)))
         await ctx.send(embed=s)
     
     @commands.command(pass_context=True)
@@ -998,7 +1043,7 @@ class general:
             return
         msg = "\n".join(["{}#{}".format(x.name, x.discriminator) for x in sorted(list(set(self.bot.get_all_members())), key=lambda x: x.name.lower()) if x.discriminator == discriminator][page*20-20:page*20])
         if number == 0: 
-            await ctx.send("There's no one with the discriminator of **{}** or it's not a valid discriminator :no_entry:".format(discriminator))
+            await ctx.send("There's no one with that discriminator or it's not a valid discriminator :no_entry:")
             return
         s=discord.Embed(title="{} users in the Discriminator #{}".format(number, discriminator), description=msg, colour=0xfff90d)
         s.set_footer(text="Page {}/{}".format(page, math.ceil(number / 20)))
@@ -1026,25 +1071,6 @@ class general:
         s.set_image(url=server.icon_url.replace("webp", "png"))
         await ctx.send(embed=s)
         
-    @commands.command(pass_context=True)
-    async def say(self, ctx, *, text):
-        """Say something with the bot"""
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
-        await ctx.send(text[:2000])
-        
-    @commands.command(pass_context=True, aliases=["embed"])
-    async def esay(self, ctx, *, text):
-        """Say something with the bot in a embed 0w0"""
-        author = ctx.message.author
-        s=discord.Embed(description=text[:2000], colour=author.colour)
-        s.set_author(name=author.name, icon_url=author.avatar_url)
-        await ctx.send(embed=s)
-        
     @commands.group(pass_context=True)
     async def trigger(self, ctx): 
         """Make the bot say something after a certain word is said"""
@@ -1052,15 +1078,7 @@ class general:
         if ctx.invoked_subcommand is None:
             await arghelp.send(self.bot, ctx)
         else:
-            if str(server.id) not in self.d:
-                self.d[str(server.id)] = {}
-                dataIO.save_json(self.file, self.d)
-            if "case" not in self.d[str(server.id)]:
-                self.d[str(server.id)]["case"] = True
-                dataIO.save_json(self.file, self.d)
-            if "toggle" not in self.d[str(server.id)]:
-                self.d[str(server.id)]["toggle"] = True
-                dataIO.save_json(self.file, self.d)
+            r.table("triggers").insert({"id": str(server.id), "case": True, "toggle": True, "triggers": []}).run()
         
         
     @trigger.command(pass_context=True)
@@ -1068,20 +1086,13 @@ class general:
     async def toggle(self, ctx):
         """Toggle triggers on or off"""
         server = ctx.guild 
-        if str(server.id) not in self.d:
-            self.d[str(server.id)] = {}
-            dataIO.save_json(self.file, self.d)
-        if "toggle" not in self.d[str(server.id)]:
-            self.d[str(server.id)]["toggle"] = True
-            dataIO.save_json(self.file, self.d)
-        if self.d[str(server.id)]["toggle"] == True:
-            self.d[str(server.id)]["toggle"] = False
-            dataIO.save_json(self.file, self.d)
+        serverdata = r.table("triggers").get(str(server.id))
+        if serverdata["toggle"].run() == True:
+            serverdata.update({"toggle": False}).run()
             await ctx.send("Triggers are now disabled on this server.")
             return
-        if self.d[str(server.id)]["toggle"] == False:
-            self.d[str(server.id)]["toggle"] = True
-            dataIO.save_json(self.file, self.d)
+        if serverdata["toggle"].run() == False:
+            serverdata.update({"toggle": True}).run()
             await ctx.send("Triggers are now enabled on this server.")
             return
             
@@ -1089,17 +1100,13 @@ class general:
     async def case(self, ctx):
         """Toggles your triggers between case sensitive and not"""
         server = ctx.guild 
-        if "case" not in self.d[str(server.id)]:
-            self.d[str(server.id)]["case"] = True
-            dataIO.save_json(self.file, self.d)
-        if self.d[str(server.id)]["case"] == True:
-            self.d[str(server.id)]["case"] = False
-            dataIO.save_json(self.file, self.d)
+        serverdata = r.table("triggers").get(str(server.id))
+        if serverdata["case"].run() == True:
+            serverdata.update({"case": False}).run()
             await ctx.send("Triggers are no longer case sensitive.")
             return
-        if self.d[str(server.id)]["case"] == False:
-            self.d[str(server.id)]["case"] = True
-            dataIO.save_json(self.file, self.d)
+        if serverdata["case"].run() == False:
+            serverdata.update({"case": True}).run()
             await ctx.send("Triggers are now case sensitive.")
             return
             
@@ -1108,24 +1115,23 @@ class general:
         """List all your triggers"""
         msg = ""
         server = ctx.guild
-        try:
-            self.d[str(server.id)]["trigger"]
-        except:
+        serverdata = r.table("triggers").get(str(server.id))
+        if serverdata["triggers"].run() == []:
             return await ctx.send("This server has no triggers :no_entry:")
         if not page: 
             page = 1
         if page < 1:
             await ctx.send("Invalid Page :no_entry:")
             return
-        if page - 1 > len(self.d[str(server.id)]["trigger"]) / 5:
+        if page - 1 > len(serverdata["triggers"].run()) / 5:
             await ctx.send("Invalid Page :no_entry:")
             return
-        data = list(self.d[str(server.id)]["trigger"])[(page * 5) - 5:page * 5]
-        for trigger in data:
-            msg += "Trigger: {}\nResponse: {}\n\n".format(trigger, self.d[str(server.id)]["trigger"][trigger]["response"])
+        data = serverdata["triggers"].run()[page*5-5:page*5]
+        for x in data:
+            msg += "Trigger: {}\nResponse: {}\n\n".format(x["trigger"], x["response"])
         s=discord.Embed(description=msg, colour=0xfff90d)
         s.set_author(name="Server Triggers", icon_url=server.icon_url)
-        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(self.d[str(server.id)]["trigger"]) / 5)))
+        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(serverdata["triggers"].run()) / 5)))
         await ctx.send(embed=s)
     
 
@@ -1134,27 +1140,13 @@ class general:
     async def add(self, ctx, trigger, *, response):
         """Add a trigger to the server"""
         server = ctx.guild
-        if str(server.id) not in self.d:
-            self.d[str(server.id)] = {}
-            dataIO.save_json(self.file, self.d)
-        if "trigger" not in self.d[str(server.id)]:
-            self.d[str(server.id)]["trigger"] = {}
-            dataIO.save_json(self.file, self.d)
+        serverdata = r.table("triggers").get(str(server.id))
         if trigger == response:
             await ctx.send("You can't have a trigger and a response with the same content :no_entry:")
             return
-        for trigger2 in self.d[str(server.id)]["trigger"]:
-            if trigger2.lower() == trigger.lower():
-                await ctx.send("There is already a trigger with that name :no_entry:")
-                return
-        if trigger not in self.d[str(server.id)]["trigger"]:
-            self.d[str(server.id)]["trigger"][trigger] = {}
-            dataIO.save_json(self.file, self.d)
-        if "response" not in self.d[str(server.id)]["trigger"][trigger]:
-            self.d[str(server.id)]["trigger"][trigger]["response"] = {}
-            dataIO.save_json(self.file, self.d)
-        self.d[str(server.id)]["trigger"][trigger]["response"] = response
-        dataIO.save_json(self.file, self.d)
+        if trigger in serverdata["triggers"].map(lambda x: x["trigger"]).run():
+            return await ctx.send("There is already a trigger with that name :no_entry:")
+        serverdata.update({"triggers": r.row["triggers"].append({"trigger": trigger, "response": response})}).run()
         await ctx.send("The trigger **{}** has been created <:done:403285928233402378>".format(trigger))
         
     @trigger.command(pass_context=True)  
@@ -1162,34 +1154,35 @@ class general:
     async def remove(self, ctx, *, trigger):
         """Remove a trigger to the server"""
         server = ctx.guild
-        try:
-            del self.d[str(server.id)]["trigger"][trigger]
-            dataIO.save_json(self.file, self.d)
-        except:
+        serverdata = r.table("triggers").get(str(server.id))
+        if trigger in serverdata["triggers"].map(lambda x: x["trigger"]).run():
+            serverdata.update({"triggers": r.row["triggers"].difference(serverdata["triggers"].filter(lambda x: x["trigger"] == trigger).run())}).run()
+        else:
             await ctx.send("Invalid trigger name :no_entry:")
             return
         await ctx.send("The trigger **{}** has been removed <:done:403285928233402378>".format(trigger))
         
     async def on_message(self, message):
         server = message.guild
+        statsdata = r.table("botstats").get("stats")
+        r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run()
+        serverstatsdata = r.table("stats").get(str(server.id))
+        triggerdata = r.table("triggers").get(str(server.id))
         if message.author == self.bot.user:
-            self._stats["messages"] += 1
-        if str(server.id) not in self._stats:
-            self._stats[str(server.id)] = {}
-        if "messages" not in self._stats[str(server.id)]:
-            self._stats[str(server.id)]["messages"] = 0
-        self._stats[str(server.id)]["messages"] += 1
-        if message.author.id == self.bot.user.id:
+            statsdata.update({"messages": r.row["messages"] + 1}).run()
+        serverstatsdata.update({"messages": r.row["messages"] + 1}).run()
+        if message.author == self.bot.user:
             return
-        if self.d[str(server.id)]["toggle"] == False:
+        if triggerdata["toggle"].run() == False:
             return 
-        if self.d[str(server.id)]["case"] == True:
-            if message.content in self.d[str(server.id)]["trigger"]:
-                await message.channel.send(self.d[str(server.id)]["trigger"][message.content]["response"])
+        if triggerdata["case"].run() == True:
+            for x in triggerdata["triggers"].run():
+                if message.content == x["trigger"]:
+                    await message.channel.send(x["response"].decode() if type(x["response"]) == r.ast.RqlBinary else x["response"])
         else:
-            for trigger in self.d[str(server.id)]["trigger"]:
-                if message.content.lower() == trigger.lower():
-                    await message.channel.send(self.d[str(server.id)]["trigger"][trigger]["response"])
+            for x in triggerdata["triggers"].run():
+                if message.content.lower() == x["trigger"].lower():
+                    await message.channel.send(x["response"].decode() if type(x["response"]) == r.ast.RqlBinary else x["response"])
             
     @commands.command(pass_context=True, aliases=["uid"])
     async def userid(self, ctx, *, user: discord.Member=None):
@@ -1218,152 +1211,53 @@ class general:
     
         
     @commands.command(pass_context=True, aliases=["uinfo", "user"])
-    async def userinfo(self, ctx, *, user_arg: str=None):
+    async def userinfo(self, ctx, *, user: str=None):
         """Get some info on a user in the server"""
         author = ctx.message.author
         server = ctx.guild
-        if not user_arg:
+        if not user:
             user = author
         else:
-            if "<" in user_arg and "@" in user_arg:
-                user = user_arg.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-                try:
-                    user = discord.utils.get(ctx.guild.members, id=int(user))
-                except:
-                    return await ctx.send("Invalid user :no_entry:")
-            elif "#" in user_arg:
-                number = len([x for x in user_arg if "#" not in x])
-                usernum = number - 4
-                user = discord.utils.get(ctx.guild.members, name=user_arg[:usernum], discriminator=user_arg[usernum + 1:len(user_arg)])
-                if not user:
-                    description = ""
-                    status = None
-                    user = discord.utils.get(self.bot.get_all_members(), name=user_arg[:usernum], discriminator=user_arg[usernum + 1:len(user_arg)])
-                    if not user:
-                        return await ctx.send("I could not find that user :no_entry:")
-                    if user.status == discord.Status.online:
-                        status="Online<:online:361440486998671381>"
-                    if user.status == discord.Status.idle:
-                        status="Idle<:idle:361440487233814528>"
-                    if user.status == discord.Status.do_not_disturb:
-                        status="DND<:dnd:361440487179157505>"
-                    if user.status == discord.Status.offline:
-                        status="Offline<:offline:361445086275567626>"
-                    if not user.activity:
-                        pass
-                    elif isinstance(user.activity, discord.Spotify):
-                        m, s = divmod(user.activity.duration.total_seconds(), 60)
-                        duration = "%d:%02d" % (m, s)
-                        description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
-                    elif user.activity:
-                        description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
-                    elif user.activity.url:
-                        description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
-                    if user.bot:
-                        bot = "Yes"
-                    else:
-                        bot = "No"
-                    joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
-                    s=discord.Embed(description=description, timestamp=datetime.utcnow())
-                    s.set_author(name=user, icon_url=user.avatar_url)
-                    s.set_thumbnail(url=user.avatar_url)
-                    s.add_field(name="User ID", value=user.id)
-                    s.add_field(name="Joined Discord", value=joined_discord)
-                    if status:
-                        s.add_field(name="Status", value=status)
-                    s.add_field(name="Bot", value=bot)
-                    await ctx.send(embed=s)
-                    return
-            else:
-                try:
-                    user = discord.utils.get(ctx.guild.members, id=int(user_arg))
-                    if not user:
-                        user = discord.utils.get(self.bot.get_all_members(), id=int(user_arg))
-                        description = ""
-                        status = None
-                        if user:
-                            if user.status == discord.Status.online:
-                                status="Online<:online:361440486998671381>"
-                            if user.status == discord.Status.idle:
-                                status="Idle<:idle:361440487233814528>"
-                            if user.status == discord.Status.do_not_disturb:
-                                status="DND<:dnd:361440487179157505>"
-                            if user.status == discord.Status.offline:
-                                status="Offline<:offline:361445086275567626>"
-                            if not user.activity:
-                                pass
-                            elif isinstance(user.activity, discord.Spotify):
-                                m, s = divmod(user.activity.duration.total_seconds(), 60)
-                                duration = "%d:%02d" % (m, s)
-                                description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
-                            elif user.activity:
-                                description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
-                            elif user.activity.url:
-                                description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
-                        if not user:
-                            user = await self.bot.get_user_info(int(user_arg))
-                        if user.bot:
-                            bot = "Yes"
-                        else:
-                            bot = "No"
-                        joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
-                        s=discord.Embed(description=description, timestamp=datetime.utcnow())
-                        s.set_author(name=user, icon_url=user.avatar_url)
-                        s.set_thumbnail(url=user.avatar_url)
-                        s.add_field(name="User ID", value=user.id)
-                        s.add_field(name="Joined Discord", value=joined_discord)
-                        if status:
-                            s.add_field(name="Status", value=status)
-                        s.add_field(name="Bot", value=bot)
-                        await ctx.send(embed=s)
-                        return
-                except:
-                    user = discord.utils.get(ctx.guild.members, name=user_arg)
-                    if not user:
-                        try:
-                            description = ""
-                            status = None
-                            user = discord.utils.get(self.bot.get_all_members(), name=user_arg)
-                            if not user:
-                                return await ctx.send("I could not find that user :no_entry:")
-                            if user.status == discord.Status.online:
-                                status="Online<:online:361440486998671381>"
-                            if user.status == discord.Status.idle:
-                                status="Idle<:idle:361440487233814528>"
-                            if user.status == discord.Status.do_not_disturb:
-                                status="DND<:dnd:361440487179157505>"
-                            if user.status == discord.Status.offline:
-                                status="Offline<:offline:361445086275567626>"
-                            if not user.activity:
-                                pass
-                            elif isinstance(user.activity, discord.Spotify):
-                                m, s = divmod(user.activity.duration.total_seconds(), 60)
-                                duration = "%d:%02d" % (m, s)
-                                description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
-                            elif user.activity:
-                                description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
-                            elif user.activity.url:
-                                description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
-                            if user.bot:
-                                bot = "Yes"
-                            else:
-                                bot = "No"
-                            joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
-                            s=discord.Embed(description=description, timestamp=datetime.utcnow())
-                            s.set_author(name=user, icon_url=user.avatar_url)
-                            s.set_thumbnail(url=user.avatar_url)
-                            s.add_field(name="User ID", value=user.id)
-                            s.add_field(name="Joined Discord", value=joined_discord)
-                            if status:
-                                s.add_field(name="Status", value=status)
-                            s.add_field(name="Bot", value=bot)
-                            await ctx.send(embed=s)
-                            return
-                        except: 
-                            pass
+            user = await arg.get_member(self.bot, ctx, user)
             if not user:
-                await ctx.send("I could not find that user :no_entry:")
-                return
+                return await ctx.send("Invalid user :no_entry:")
+        if user not in ctx.guild.members:
+            description = ""
+            status = None
+            if not isinstance(user, discord.User):
+                if user.status == discord.Status.online:
+                    status="Online<:online:361440486998671381>"
+                if user.status == discord.Status.idle:
+                    status="Idle<:idle:361440487233814528>"
+                if user.status == discord.Status.do_not_disturb:
+                    status="DND<:dnd:361440487179157505>"
+                if user.status == discord.Status.offline:
+                    status="Offline<:offline:361445086275567626>"
+                if not user.activity:
+                    pass
+                elif isinstance(user.activity, discord.Spotify):
+                    m, s = divmod(user.activity.duration.total_seconds(), 60)
+                    duration = "%d:%02d" % (m, s)
+                    description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
+                elif user.activity:
+                    description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
+                elif user.activity.url:
+                    description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
+            if user.bot:
+                bot = "Yes"
+            else:
+                bot = "No"
+            joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
+            s=discord.Embed(description=description, timestamp=datetime.utcnow())
+            s.set_author(name=user, icon_url=user.avatar_url)
+            s.set_thumbnail(url=user.avatar_url)
+            s.add_field(name="User ID", value=user.id)
+            s.add_field(name="Joined Discord", value=joined_discord)
+            if status:
+                s.add_field(name="Status", value=status)
+            s.add_field(name="Bot", value=bot)
+            await ctx.send(embed=s)
+            return
         joined_server = user.joined_at.strftime("%d %b %Y %H:%M")
         joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
         if user.status == discord.Status.online:
@@ -1481,33 +1375,20 @@ class general:
     @commands.command(pass_context=True)
     async def serverstats(self, ctx):
         server = ctx.guild
-        if str(server.id) not in self._stats:
-            self._stats[str(server.id)] = {}
-            dataIO.save_json(self._stats_file, self._stats)
-        if "messages" not in self._stats[str(server.id)]:
-            self._stats[str(server.id)]["messages"] = 0
-            dataIO.save_json(self._stats_file, self._stats)
-        if "members" not in self._stats[str(server.id)]:
-            self._stats[str(server.id)]["members"] = 0
-            dataIO.save_json(self._stats_file, self._stats)
+        serverdata = r.table("stats").get(str(server.id)).run()
         s=discord.Embed()
         s.set_author(name=server.name + " Stats", icon_url=server.icon_url)
-        s.add_field(name="Users Joined Today", value=self._stats[str(server.id)]["members"])
-        s.add_field(name="Messages Sent Today", value=self._stats[str(server.id)]["messages"])
+        s.add_field(name="Users Joined Today", value=serverdata["members"])
+        s.add_field(name="Messages Sent Today", value=serverdata["messages"])
         await ctx.send(embed=s)
         
     @commands.command(pass_context=True)
     async def stats(self, ctx):
         """View the bots live stats"""
-        if "servers" not in self._stats:
-            self._stats["servers"] = 0
-            dataIO.save_json(self._stats_file, self._stats)
-        if "commands" not in self._stats:
-            self._stats["commands"] = 0
-            dataIO.save_json(self._stats_file, self._stats)
-        if "messages" not in self._stats:
-            self._stats["messages"] = 0
-            dataIO.save_json(self._stats_file, self._stats)
+        server = ctx.guild
+        r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run()
+        r.table("botstats").insert({"id": "stats", "messages": 0, "commands": 0, "servers": 0, "users": [], "commandcounter": []}).run()
+        botdata = r.table("botstats").get("stats").run()
         m, s = divmod(ctx.message.created_at.timestamp() - self.bot.uptime, 60)
         h, m = divmod(m, 60)
         d, h = divmod(h, 24)
@@ -1542,19 +1423,19 @@ class general:
         s=discord.Embed(description="Bot ID: {}".format(self.bot.user.id))
         s.set_author(name=self.bot.user.name + " Stats", icon_url=self.bot.user.avatar_url)
         s.set_thumbnail(url=self.bot.user.avatar_url)
-        s.set_footer(text="Uptime: {} | Python 3.5.3".format(uptime))
+        s.set_footer(text="Uptime: {} | Python {}.{}.{}".format(uptime, sys.version_info.major, sys.version_info.minor, sys.version_info.micro))
         s.add_field(name="Developer", value=str(discord.utils.get(self.bot.get_all_members(), id=402557516728369153)))
         s.add_field(name="Library", value="Discord.py {}".format(discord.__version__))
-        s.add_field(name="Memory Usage", value=str(round(process.memory_info().rss/1000000)) + " MB")
+        s.add_field(name="Memory Usage", value="{:,}".format(round(process.memory_info().rss/1000000)) + " MB")
         s.add_field(name="CPU Usage", value=str(psutil.cpu_percent()) + "%")
-        s.add_field(name="Text Channels", value=len([x for x in self.bot.get_all_channels() if isinstance(x, discord.TextChannel)]))
-        s.add_field(name="Voice Channels", value=len([x for x in self.bot.get_all_channels() if isinstance(x, discord.VoiceChannel)]))
-        s.add_field(name="Servers Joined Today", value=self._stats["servers"])
-        s.add_field(name="Commands Used Today", value=self._stats["commands"])
-        s.add_field(name="Messages Sent Today", value=self._stats["messages"])
-        s.add_field(name="Connected Channels", value=len(set(filter(lambda x: x[1].connected_channel, self.bot.lavalink.players))))
-        s.add_field(name="Servers", value=len(self.bot.guilds))
-        s.add_field(name="Users ({} total)".format(len(members)), value="{} Online\n{} Offline".format(online, offline))
+        s.add_field(name="Text Channels", value="{:,}".format(len([x for x in self.bot.get_all_channels() if isinstance(x, discord.TextChannel)])))
+        s.add_field(name="Voice Channels", value="{:,}".format(len([x for x in self.bot.get_all_channels() if isinstance(x, discord.VoiceChannel)])))
+        s.add_field(name="Servers Joined Today", value="{:,}".format(botdata["servers"]))
+        s.add_field(name="Commands Used Today", value="{:,}".format(botdata["commands"]))
+        s.add_field(name="Messages Sent Today", value="{:,}".format(botdata["messages"]))
+        #s.add_field(name="Connected Channels", value=len(set(filter(lambda x: x[1].connected_channel, self.bot.lavalink.players))))
+        s.add_field(name="Servers", value="{:,}".format(len(self.bot.guilds)))
+        s.add_field(name="Users ({:,} total)".format(len(members)), value="{:,} Online\n{:,} Offline\n{:,} use the bot".format(online, offline, len(botdata["users"])))
         await ctx.send(embed=s)
         
     async def prefixfy(self, input):
@@ -1588,96 +1469,62 @@ class general:
             return "{} {}".format(round(s), "second" if round(s) == 1 else "seconds")
         
     async def on_guild_join(self, guild):
-        self._stats["servers"] += 1
+        r.table("botstats").get("stats").update({"servers": r.row["servers"] + 1}).run()
         
     async def on_guild_remove(self, guild):
-        self._stats["servers"] -= 1
+        r.table("botstats").get("stats").update({"servers": r.row["servers"] - 1}).run()
         
     async def on_member_join(self, member):
         server = member.guild
-        if str(server.id) not in self._stats:
-            self._stats[str(server.id)] = {}
-        if "members" not in self._stats[str(server.id)]:
-            self._stats[str(server.id)]["members"] = 0
-        self._stats[str(server.id)]["members"] += 1
+        r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run()
+        r.table("stats").get(str(server.id)).update({"members": r.row["members"] + 1}).run()
         
     async def on_member_remove(self, member):
         server = member.guild
-        if str(server.id) not in self._stats:
-            self._stats[str(server.id)] = {}
-        if "members" not in self._stats[str(server.id)]:
-            self._stats[str(server.id)]["members"] = 0
-        self._stats[str(server.id)]["members"] -= 1
+        r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run()
+        r.table("stats").get(str(server.id)).update({"members": r.row["members"] + 1}).run()
         
     async def on_command(self, ctx):
-        self._stats["commands"] += 1
-        process = psutil.Process(os.getpid())
-        command = {}
-        command["name"] = str(ctx.command)
-        command["ram"] = str(round(process.memory_info().rss/1000000)) + " MB"
-        command["timestamp"] = ctx.message.created_at.timestamp()
-        self._stats["commandstats"].append(command)
+        botdata = r.table("botstats").get("stats")
+        botdata.update({"commands": r.row["commands"] + 1}).run()
+        if str(ctx.author.id) not in botdata["users"].run():
+            botdata.update({"users": r.row["users"].append(str(ctx.author.id))}).run()
+        if str(ctx.command) not in botdata["commandcounter"].map(lambda x: x["name"]).run():
+            counter = {}
+            counter["name"] = str(ctx.command)
+            counter["amount"] = 1
+            botdata.update({"commandcounter": r.row["commandcounter"].append(counter)}).run()
+        else:
+            r.table("botstats").get("stats").update({"commandcounter": r.row["commandcounter"].map(lambda x: r.branch(x["name"] == str(ctx.command), x.merge({"amount": x["amount"] + 1}), x))}).run()
+
+
 
     async def checktime(self):
         while not self.bot.is_closed():
             if datetime.utcnow().strftime("%H") == "23":
+                botdata = r.table("botstats").get("stats")
                 s=discord.Embed(colour=0xffff00, timestamp=datetime.utcnow())
                 s.set_author(name="Bot Logs", icon_url=self.bot.user.avatar_url)
-                if 86400/self._stats["commands"] >= 1:
-                    s.add_field(name="Average Command Usage", value="1 every {}s".format(round(86400/self._stats["commands"])))
+                if 86400/botdata["commands"].run() >= 1:
+                    s.add_field(name="Average Command Usage", value="1 every {}s".format(round(86400/botdata["commands"].run())))
                 else:
-                    s.add_field(name="Average Command Usage", value="{} every second".format(round(self._stats["commands"]/86400)))
-                s.add_field(name="Servers", value="{} ({})".format(len(self.bot.guilds), "+" + str(self._stats["servers"]) if self._stats["servers"] >= 0 else self._stats["servers"]), inline=False)
+                    s.add_field(name="Average Command Usage", value="{} every second".format(round(botdata["commands"].run()/86400)))
+                s.add_field(name="Servers", value="{} ({})".format(len(self.bot.guilds), "+" + str(botdata["servers"].run()) if botdatastats["servers"].run() >= 0 else botdata["servers"].run()), inline=False)
                 s.add_field(name="Users (No Bots)", value=len(set(filter(lambda m: not m.bot, list(set(self.bot.get_all_members()))))))
                 await self.bot.get_channel(445982429522690051).send(embed=s)
-                self._stats["servers"] = 0
-                self._stats["commands"] = 0
-                self._stats["messages"] = 0
-                for serverid in [x for x in self._stats if x != "commands" and x != "servers" and x != "messages" and x != "commandstats"]:
-                    self._stats[serverid]["members"] = 0
-                    self._stats[serverid]["messages"] = 0
-                dataIO.save_json(self._stats_file, self._stats) 
+                botdata.update({"servers": 0, "commands": 0, "messages": 0}).run()
+                for x in r.table("stats").run():
+                    r.table("stats").get(x["id"]).update({"messages": 0, "members": 0}).run()
             await asyncio.sleep(3540)
 
-    async def save_stats(self):
-        while not self.bot.is_closed():
-            dataIO.save_json(self._stats_file, self._stats) 
-            await asyncio.sleep(360)
-
     async def on_member_update(self, before, after):
+        data = r.table("await")
         if after.status != discord.Status.offline and before.status == discord.Status.offline:
-            for x in list(self._status)[:len(self._status)]:
-                if str(after.id) in self._status[x]["users"]:
-                    author = discord.utils.get(self.bot.get_all_members(), id=int(x))
-                    del self._status[str(author.id)]["users"][str(after.id)]
-                    dataIO.save_json(self._status_file, self._status)
+            for x in data.run():
+                if str(after.id) in x["users"]:
+                    author = discord.utils.get(self.bot.get_all_members(), id=int(x["id"]))
+                    data.update({"users": r.row["users"].difference([str(after.id)])}).run()
                     await author.send("**{}** is now online<:online:361440486998671381>".format(after))
         
-def check_folders():
-    if not os.path.exists("data/general"):
-        print("Creating data/general folder...")
-        os.makedirs("data/general")
-
-
-def check_files():
-    f = 'data/general/rps.json'
-    if not dataIO.is_valid_json(f):
-        dataIO.save_json(f, {})
-        print('Creating default rps.json...')
-    f = 'data/general/triggers.json'
-    if not dataIO.is_valid_json(f):
-        dataIO.save_json(f, {})
-        print('Creating default triggers.json...')
-    f = 'data/general/stats.json'
-    if not dataIO.is_valid_json(f):
-        dataIO.save_json(f, {})
-        print('Creating default stats.json...')
-    f = 'data/general/statuscheck.json'
-    if not dataIO.is_valid_json(f):
-        dataIO.save_json(f, {})
-        print('Creating default statuscheck.json...')
-        
 def setup(bot):
-    check_folders()
-    check_files()
     bot.add_cog(general(bot))

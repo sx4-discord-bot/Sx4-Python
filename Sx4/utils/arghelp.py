@@ -2,9 +2,14 @@ from discord.ext import commands
 import discord
 import discord.utils
 import json
+import inspect
 
 async def send(bot, ctx):
         msg = ""
+        try:
+            perms = ctx.command.checks[0]
+        except:
+            perms = None
         for x in ctx.command.params:
             if x != "ctx":
                 if x != "self":
@@ -16,7 +21,11 @@ async def send(bot, ctx):
             aliases = "None"
         else:
             aliases = ", ".join([x for x in ctx.command.aliases])
-        msg = "Usage: {}{} {}\nCommand aliases: {}\nCommand description: {}".format(ctx.prefix, ctx.command, msg, aliases, ctx.command.help)
+        if not perms:
+            msg = "Usage: {}{} {}\nCommand aliases: {}\nRequired permissions: None\nCommand description: {}".format(ctx.prefix, ctx.command, msg, aliases, ctx.command.help)
+        else:
+            msg = "Usage: {}{} {}\nCommand aliases: {}\nRequired permissions: {}\nCommand description: {}".format(ctx.prefix, ctx.command, msg, aliases, 
+            ", ".join(inspect.getclosurevars(perms).nonlocals["perms"]) if perms.__name__ != "is_owner_check" and str(perms).split(" ")[1].split(".")[0] != "is_main_owner" else "Bot Owner", ctx.command.help)
         try:
             msg += "\n\nSub commands: {}".format(", ".join([x for x in ctx.command.all_commands if x not in ctx.command.all_commands[x].aliases]))
         except:
