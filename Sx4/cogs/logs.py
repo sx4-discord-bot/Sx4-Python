@@ -28,7 +28,7 @@ class logs:
         if ctx.invoked_subcommand is None:
             await arghelp.send(self.bot, ctx)
         else:
-            r.table("logs").insert({"id": str(server.id), "channel": None, "toggle": False}).run()
+            r.table("logs").insert({"id": str(server.id), "channel": None, "toggle": False}).run(durability="soft")
 		
     @logs.command()
     @checks.has_permissions("manage_guild")
@@ -38,7 +38,7 @@ class logs:
         serverdata = r.table("logs").get(str(server.id))
         if not channel:
             channel = ctx.message.channel
-        serverdata.update({"channel": str(channel.id)}).run()
+        serverdata.update({"channel": str(channel.id)}).run(durability="soft")
         await ctx.send("Logs will be recorded in <#{}> if toggled on <:done:403285928233402378>".format(channel.id))
 		
     @logs.command()
@@ -47,19 +47,19 @@ class logs:
         """Toggle logs on or off"""
         server = ctx.guild
         serverdata = r.table("logs").get(str(server.id))
-        if serverdata["toggle"].run() == False:
-            serverdata.update({"toggle": True}).run()
+        if serverdata["toggle"].run(durability="soft") == False:
+            serverdata.update({"toggle": True}).run(durability="soft")
             await ctx.send("Logs have been toggled **on** <:done:403285928233402378>")
             return
-        if serverdata["toggle"].run() == True:
-            serverdata.update({"toggle": False}).run()
+        if serverdata["toggle"].run(durability="soft") == True:
+            serverdata.update({"toggle": False}).run(durability="soft")
             await ctx.send("Logs have been toggled **off** <:done:403285928233402378>")
             return
 
     @logs.command()
     async def stats(self, ctx):
         server = ctx.guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         s=discord.Embed(colour=0xffff00)
         s.set_author(name="Logs Settings", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Status", value="Enabled" if serverdata["toggle"] else "Disabled")
@@ -69,7 +69,7 @@ class logs:
     async def on_message_delete(self, message):
         author = message.author
         server = message.guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         channel = message.channel
         s=discord.Embed(description="The message sent by **{}** was deleted in <#{}>".format(author.name, channel.id), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=author, icon_url=author.avatar_url)
@@ -80,7 +80,7 @@ class logs:
     async def on_message_edit(self, before, after):
         author = before.author
         server = before.guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         channel = before.channel
         if before.content == after.content:
             return
@@ -94,7 +94,7 @@ class logs:
     async def on_guild_channel_delete(self, channel):
         server = channel.guild
         deletedby = "Unknown"
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         for x in await server.audit_logs(limit=1).flatten():
             if x.action == discord.AuditLogAction.channel_delete:
                 deletedby = x.user
@@ -117,7 +117,7 @@ class logs:
     async def on_guild_channel_create(self, channel):
         server = channel.guild
         createdby = "Unknown"
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         for x in await server.audit_logs(limit=5).flatten():
             if x.action == discord.AuditLogAction.channel_create:
                 createdby = x.user
@@ -140,7 +140,7 @@ class logs:
     async def on_guild_channel_update(self, before, after):
         server = before.guild
         editedby = "Unknown"
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         if isinstance(before, discord.TextChannel):
             if before.name != after.name:
                 for x in await server.audit_logs(limit=1).flatten():
@@ -150,6 +150,14 @@ class logs:
                 s.set_author(name=server, icon_url=server.icon_url)
                 s.add_field(name="Before", value="`{}`".format(before))
                 s.add_field(name="After", value="`{}`".format(after))
+            if before.slowmode_delay != after.slowmode_delay:
+                for x in await server.audit_logs(limit=1).flatten():
+                    if x.action == discord.AuditLogAction.channel_update:
+                        editedby = x.user
+                s=discord.Embed(description="The slowmode in {} has been changed by **{}**".format(after.mention, editedby), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
+                s.set_author(name=server, icon_url=server.icon_url)
+                s.add_field(name="Before", value="{} {}".format(before.slowmode_delay, "second" if before.slowmode_delay == 1 else "seconds") if before.slowmode_delay != 0 else "Disabled")
+                s.add_field(name="After", value="{} {}".format(after.slowmode_delay, "second" if after.slowmode_delay == 1 else "seconds") if after.slowmode_delay != 0 else "Disabled")
         elif isinstance(before, discord.VoiceChannel):
             if before.name != after.name:
                 for x in await server.audit_logs(limit=1).flatten():
@@ -173,7 +181,7 @@ class logs:
 			
     async def on_member_join(self, member):
         server = member.guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         s=discord.Embed(description="**{}** just joined the server".format(member.name), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=member, icon_url=member.avatar_url)
         s.set_footer(text="User ID: {}".format(member.id))
@@ -182,7 +190,7 @@ class logs:
 			 
     async def on_member_remove(self, member):
         server = member.guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         s=discord.Embed(description="**{}** just left the server".format(member.name), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
         s.set_author(name=member, icon_url=member.avatar_url)
         s.set_footer(text="User ID: {}".format(member.id))
@@ -191,7 +199,7 @@ class logs:
 			
     async def on_member_ban(self, guild, user):
         server = guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         moderator = "Unknown"
         for x in await server.audit_logs(limit=1).flatten():
             if x.action == discord.AuditLogAction.ban:
@@ -204,7 +212,7 @@ class logs:
 			
     async def on_member_unban(self, guild, user):
         server = guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         moderator = "Unknown"
         for x in await server.audit_logs(limit=1).flatten():
             if x.action == discord.AuditLogAction.unban:
@@ -217,7 +225,7 @@ class logs:
 			
     async def on_guild_role_create(self, role): 
         server = role.guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         for x in await server.audit_logs(limit=1).flatten():
             if x.action == discord.AuditLogAction.role_create:
                 user = x.user
@@ -228,7 +236,7 @@ class logs:
 			 
     async def on_guild_role_delete(self, role):
         server = role.guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         for x in await server.audit_logs(limit=1).flatten():
             if x.action == discord.AuditLogAction.role_delete:
                 user = x.user
@@ -240,7 +248,7 @@ class logs:
     async def on_guild_role_update(self, before, after):
         server = before.guild
         user = "Unknown"
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         for x in await server.audit_logs(limit=1, action=discord.AuditLogAction.role_update).flatten():
             user = x.user
         if before.name != after.name:
@@ -260,7 +268,7 @@ class logs:
 				
     async def on_voice_state_update(self, member, before, after):
         server = member.guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         for x in await server.audit_logs(limit=1).flatten():
             if x.action == discord.AuditLogAction.member_update:
                 if x.before.mute:
@@ -291,7 +299,7 @@ class logs:
 			
     async def on_member_update(self, before, after):
         server = before.guild
-        serverdata = r.table("logs").get(str(server.id)).run()
+        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
         user1 = "Unknown"
         user2 = "Unknown"
         user = "Unknown"

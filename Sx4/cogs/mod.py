@@ -23,6 +23,8 @@ from random import randint
 from random import choice as randchoice
 from discord.ext.commands import CommandNotFound
 
+permsjson = {'change_nickname': 67108864, 'use_vad': 33554432, 'manage_channels': 16, 'manage_guild': 32, 'connect': 1048576, 'read_message_history': 65536, 'view_channel': 1024, 'move_members': 16777216, 'mention_everyone': 131072, 'manage_nicknames': 134217728, 'view_audit_log': 128, 'use_external_emojis': 262144, 'add_reactions': 64, 'manage_roles': 268435456, 'speak': 2097152, 'ban_members': 4, 'manage_webhooks': 536870912, 'send_messages': 2048, 'manage_messages': 8192, 'create_instant_invite': 1, 'embed_links': 16384, 'priority_speaker': 256, 'read_messages': 1024, 'manage_emojis': 1073741824, 'attach_files': 32768, 'mute_members': 4194304, 'administrator': 8, 'deafen_members': 8388608, 'send_tts_messages': 4096, 'kick_members': 2}
+
 class mod:
     def __init__(self, bot):
         self.bot = bot
@@ -30,7 +32,251 @@ class mod:
 
     def __unload(self):
         self._task.cancel()
-		
+
+    @commands.group(aliases=["imgperms", "imgpermissions", "imaginaryperms", "imaginarypermissions", "fakeperms"])
+    async def fakepermissions(self, ctx):
+        """Allow users or roles to have permissions on the bot but not anywhere else"""
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            r.table("fakeperms").insert({"id": str(ctx.guild.id), "users": [], "roles": []}).run(durability="soft")
+
+    @fakepermissions.command()
+    @checks.has_permissions("administrator")
+    async def add(self, ctx, user_or_role: str, *permissions):
+        """Add permissions to a user or role"""
+        role_mention = re.compile("<@&([0-9]*)>")
+        id = re.compile("(^[0-9]*$)")
+        user_mention = re.compile("<@(?:!|)([0-9]*)>")
+        user_discrim = re.compile("([\s \S]{2,32})#([0-9]{4})")
+        data = r.table("fakeperms").get(str(ctx.guild.id))
+        value, successfulperms = 0, []
+        user = None
+        role = None
+        if role_mention.match(user_or_role):
+            role = discord.utils.get(ctx.guild.roles, id=int(role_mention.match(user_or_role).group(1)))
+            if not role:
+                return await ctx.send("Invalid Role :no_entry:")
+        elif user_mention.match(user_or_role):
+            user = discord.utils.get(ctx.guild.members, id=int(user_mention.match(user_or_role).group(1)))
+            if not user:
+                return await ctx.send("Invalid User :no_entry:")
+        elif user_discrim.match(user_or_role):
+            user = discord.utils.get(ctx.guild.members, name=user_discrim.match(user_or_role).group(1), discriminator=user_discrim.match(user_or_role).group(2))
+            if not user:
+                return await ctx.send("Invalid User :no_entry:")
+        elif id.match(user_or_role):
+            role = discord.utils.get(ctx.guild.roles, id=int(id.match(user_or_role).group(1)))
+            if not role:
+                user = discord.utils.get(ctx.guild.members, id=int(id.match(user_or_role).group(1)))
+                if not user:
+                    return await ctx.send("Invalid ID :no_entry:")
+        else:
+            role = discord.utils.get(ctx.guild.roles, name=user_or_role)
+            if not role:
+                user = discord.utils.get(ctx.guild.members, name=user_or_role)
+                if not user:
+                    return await ctx.send("Invalid role/user :no_entry:")
+        if user:
+            if permissions:
+                for x in permissions:
+                    if data["users"].filter(lambda x: x["id"] == str(user.id)).run(durability="soft"):
+                        if x in map(lambda x: x[0], filter(lambda x: x[1] == True, discord.Permissions(data["users"].filter(lambda x: x["id"] == str(user.id))[0]["perms"].run(durability="soft")))):
+                            pass
+                        else:
+                            try:
+                                value += permsjson[x]
+                                successfulperms.append(x)
+                            except: 
+                                pass
+                    else:
+                        try:
+                            value += permsjson[x]
+                            successfulperms.append(x)
+                        except: 
+                            pass
+                if value == 0:
+                    return await ctx.send("None of the permissions you gave in the argument were valid/the user or role didn't have them, make sure they are formatted like so `manage_messages`, `manage_guild` :no_entry:")
+            if str(user.id) not in data["users"].map(lambda x: x["id"]).run(durability="soft"):
+                perms = {"id": str(user.id), "perms": value}
+                data.update({"users": r.row["users"].append(perms)}).run(durability="soft")
+            else:
+                data.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"perms": x["perms"] + value}), x))}).run(durability="soft")
+            await ctx.send("**{}** now can use commands with the required permissions of {}".format(user, ", ".join(successfulperms)))
+        if role:
+            if permissions:
+                for x in permissions:
+                    if data["roles"].filter(lambda x: x["id"] == str(role.id)).run(durability="soft"):
+                        try:
+                            if x in map(lambda x: x[0], filter(lambda x: x[1] == True, discord.Permissions(data["roles"].filter(lambda x: x["id"] == str(role.id))[0]["perms"].run(durability="soft")))):
+                                pass
+                        except:
+                            pass
+                        else:
+                            try:
+                                value += permsjson[x]
+                                successfulperms.append(x)
+                            except: 
+                                pass
+                    else:
+                        try:
+                            value += permsjson[x]
+                            successfulperms.append(x)
+                        except: 
+                            pass
+                if value == 0:
+                    return await ctx.send("None of the permissions you gave in the argument were valid/the user or role didn't have them, make sure they are formatted like so `manage_messages`, `manage_guild` :no_entry:")
+            if str(role.id) not in data["roles"].map(lambda x: x["id"]).run(durability="soft"):
+                perms = {"id": str(role.id), "perms": value}
+                data.update({"roles": r.row["roles"].append(perms)}).run(durability="soft")
+            else:
+                data.update({"roles": r.row["roles"].map(lambda x: r.branch(x["id"] == str(role.id), x.merge({"perms": x["perms"] + value}), x))}).run(durability="soft")
+            await ctx.send("**{}** now can use commands with the required permissions of {}".format(role, ", ".join(successfulperms)))
+
+    @fakepermissions.command()
+    @checks.has_permissions("administrator")
+    async def remove(self, ctx, user_or_role: str, *permissions):
+        """Remove permissions from a user or role"""
+        role_mention = re.compile("<@&([0-9]*)>")
+        id = re.compile("(^[0-9]*$)")
+        user_mention = re.compile("<@(?:!|)([0-9]*)>")
+        user_discrim = re.compile("([\s \S]{2,32})#([0-9]{4})")
+        data = r.table("fakeperms").get(str(ctx.guild.id))
+        value, successfulperms = 0, []
+        user = None
+        role = None
+        if role_mention.match(user_or_role):
+            role = discord.utils.get(ctx.guild.roles, id=int(role_mention.match(user_or_role).group(1)))
+            if not role:
+                return await ctx.send("Invalid Role :no_entry:")
+        elif user_mention.match(user_or_role):
+            user = discord.utils.get(ctx.guild.members, id=int(user_mention.match(user_or_role).group(1)))
+            if not user:
+                return await ctx.send("Invalid User :no_entry:")
+        elif user_discrim.match(user_or_role):
+            user = discord.utils.get(ctx.guild.members, name=user_discrim.match(user_or_role).group(1), discriminator=user_discrim.match(user_or_role).group(2))
+            if not user:
+                return await ctx.send("Invalid User :no_entry:")
+        elif id.match(user_or_role):
+            role = discord.utils.get(ctx.guild.roles, id=int(id.match(user_or_role).group(1)))
+            if not role:
+                user = discord.utils.get(ctx.guild.members, id=int(id.match(user_or_role).group(1)))
+                if not user:
+                    return await ctx.send("Invalid ID :no_entry:")
+        else:
+            role = discord.utils.get(ctx.guild.roles, name=user_or_role)
+            if not role:
+                user = discord.utils.get(ctx.guild.members, name=user_or_role)
+                if not user:
+                    return await ctx.send("Invalid role/user :no_entry:")
+        if user:
+            if not data["users"].filter(lambda x: x["id"] == str(user.id)).run(durability="soft"):
+                return await ctx.send("This user does not have any set permissions to remove :no_entry:")
+            if permissions:
+                for x in permissions:
+                    if x not in map(lambda x: x[0], filter(lambda x: x[1] == True, discord.Permissions(data["users"].filter(lambda x: x["id"] == str(user.id))[0]["perms"].run(durability="soft")))):
+                        pass
+                    else:
+                        try:
+                            value += permsjson[x]
+                            successfulperms.append(x)
+                        except: 
+                            pass
+                if value == 0:
+                    return await ctx.send("None of the permissions you gave in the argument were valid/the user or role didn't have them, make sure they are formatted like so `manage_messages`, `manage_guild` :no_entry:")
+            else:
+                return await ctx.send("Permissions are a required argument :no_entry:")
+            if str(user.id) not in data["users"].map(lambda x: x["id"]).run(durability="soft"):
+                perms = {"id": str(user.id), "perms": value}
+                data.update({"users": r.row["users"].append(perms)}).run(durability="soft")
+            else:
+                data.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"perms": x["perms"] - value}), x))}).run(durability="soft")
+            await ctx.send("**{}** now can't use commands with the required permissions of {}".format(user, ", ".join(successfulperms)))
+        if role:
+            if not data["roles"].filter(lambda x: x["id"] == str(role.id)).run(durability="soft"):
+                return await ctx.send("This user does not have any set permissions to remove :no_entry:")
+            if permissions:
+                for x in permissions:
+                    if x not in map(lambda x: x[0], filter(lambda x: x[1] == True, discord.Permissions(data["roles"].filter(lambda x: x["id"] == str(role.id))[0]["perms"].run(durability="soft")))):
+                        pass
+                    else:
+                        try:
+                            value += permsjson[x]
+                            successfulperms.append(x)
+                        except: 
+                            pass
+                if value == 0:
+                    return await ctx.send("None of the permissions you gave in the argument were valid/the user or role didn't have them, make sure they are formatted like so `manage_messages`, `manage_guild` :no_entry:")
+            else:
+                return await ctx.send("Permissions are a required argument :no_entry:")
+            if str(role.id) not in data["roles"].map(lambda x: x["id"]).run(durability="soft"):
+                perms = {"id": str(role.id), "perms": value}
+                data.update({"roles": r.row["roles"].append(perms)}).run(durability="soft")
+            else:
+                data.update({"roles": r.row["roles"].map(lambda x: r.branch(x["id"] == str(role.id), x.merge({"perms": x["perms"] - value}), x))}).run(durability="soft")
+            await ctx.send("**{}** now can't use commands with the required permissions of {}".format(role, ", ".join(successfulperms)))
+
+    @fakepermissions.command()
+    async def info(self, ctx, user_or_role: str):
+        """Get the fake permissions of a user or role"""
+        role_mention = re.compile("<@&([0-9]*)>")
+        id = re.compile("(^[0-9]*$)")
+        user_mention = re.compile("<@(?:!|)([0-9]*)>")
+        user_discrim = re.compile("([\s \S]{2,32})#([0-9]{4})")
+        data = r.table("fakeperms").get(str(ctx.guild.id))
+        value, successfulperms = 0, []
+        user = None
+        role = None
+        if role_mention.match(user_or_role):
+            role = discord.utils.get(ctx.guild.roles, id=int(role_mention.match(user_or_role).group(1)))
+            if not role:
+                return await ctx.send("Invalid Role :no_entry:")
+        elif user_mention.match(user_or_role):
+            user = discord.utils.get(ctx.guild.members, id=int(user_mention.match(user_or_role).group(1)))
+            if not user:
+                return await ctx.send("Invalid User :no_entry:")
+        elif user_discrim.match(user_or_role):
+            user = discord.utils.get(ctx.guild.members, name=user_discrim.match(user_or_role).group(1), discriminator=user_discrim.match(user_or_role).group(2))
+            if not user:
+                return await ctx.send("Invalid User :no_entry:")
+        elif id.match(user_or_role):
+            role = discord.utils.get(ctx.guild.roles, id=int(id.match(user_or_role).group(1)))
+            if not role:
+                user = discord.utils.get(ctx.guild.members, id=int(id.match(user_or_role).group(1)))
+                if not user:
+                    return await ctx.send("Invalid ID :no_entry:")
+        else:
+            role = discord.utils.get(ctx.guild.roles, name=user_or_role)
+            if not role:
+                user = discord.utils.get(ctx.guild.members, name=user_or_role)
+                if not user:
+                    return await ctx.send("Invalid role/user :no_entry:")
+        if user:
+            if data["users"].filter(lambda x: x["id"] == str(user.id)).run(durability="soft"):
+                perms = "\n".join(map(lambda x: x[0].replace("_", " ").title(), filter(lambda x: x[1] == True, discord.Permissions(data["users"].filter(lambda x: x["id"] == str(user.id))[0]["perms"].run(durability="soft") | user.guild_permissions.value))))
+            else:
+                perms = None
+            s=discord.Embed(colour=user.colour)
+            s.set_author(name=user.name, icon_url=user.avatar_url)
+            s.add_field(name="Permissions", value=perms if perms else "None")
+        if role:
+            if data["roles"].filter(lambda x: x["id"] == str(role.id)).run(durability="soft"):
+                perms = "\n".join(map(lambda x: x[0].replace("_", " ").title(), filter(lambda x: x[1] == True, discord.Permissions(data["roles"].filter(lambda x: x["id"] == str(role.id))[0]["perms"].run(durability="soft") | role.permissions.value))))
+            else:
+                perms = None
+            s=discord.Embed(colour=role.colour)
+            s.set_author(name=role.name, icon_url=ctx.guild.icon_url)
+            s.add_field(name="Permissions", value=perms if perms else "None")
+        await ctx.send(embed=s)
+
+    @fakepermissions.command(name="list")
+    async def _list(self, ctx):
+        """Lists all supported permissions you can use"""
+        s=discord.Embed(description="\n".join(list(map(lambda x: x[0], discord.Permissions()))))
+        s.set_author(name="Supported Permissions", icon_url=self.bot.user.avatar_url)
+        s.set_footer(text="manage_guild is equivilant to manage_server")
+        await ctx.send(embed=s)
+
     @commands.command()
     @checks.has_permissions("manage_channels")
     async def slowmode(self, ctx, time_interval):
@@ -45,10 +291,7 @@ class mod:
         if int(time_interval) > 120:
             time_interval = 120
         channel = ctx.channel
-        client = self.bot.http
-        r = discord.http.Route('PATCH', '/channels/{channel_id}', channel_id=channel.id)
-        request = client.request(r, json={"rate_limit_per_user": time_interval})
-        await request
+        await channel.edit(slowmode_delay=time_interval)
         if time_interval != 0:
             await ctx.send("Set the current channels slowmode to **{} {}** <:done:403285928233402378>".format(time_interval, "second" if time_interval == 1 else "seconds"))
         else:
@@ -109,17 +352,17 @@ class mod:
             s.set_author(name="Prefix Settings", icon_url=ctx.author.avatar_url)
             s.add_field(name="Default Prefixes", value="{}".format(", ".join(['sx4 ', 's?', 'S?', '<@440996323156819968> '])), inline=False)
             try:
-                s.add_field(name="Server Prefixes", value="{}".format(", ".join(serverdata["prefixes"].run() if serverdata["prefixes"].run() else "None")), inline=False)
+                s.add_field(name="Server Prefixes", value="{}".format(", ".join(serverdata["prefixes"].run(durability="soft")) if serverdata["prefixes"].run(durability="soft") else "None"), inline=False)
             except:
                 s.add_field(name="Server Prefixes", value="None", inline=False)
             try:
-                s.add_field(name="{}'s Prefixes".format(ctx.author.name), value="{}".format(", ".join(authordata["prefixes"].run() if authordata["prefixes"].run() else "None")), inline=False)
+                s.add_field(name="{}'s Prefixes".format(ctx.author.name), value="{}".format(", ".join(authordata["prefixes"].run(durability="soft") if authordata["prefixes"].run(durability="soft") else "None")), inline=False)
             except:
                 s.add_field(name="{}'s Prefixes".format(ctx.author.name), value="None", inline=False)
             await ctx.send(embed=s, content="For help on setting the prefix use `{}help prefix`".format(ctx.prefix))
         else:
-            r.table("prefix").insert({"id": str(ctx.author.id), "prefixes": []}).run()
-            r.table("prefix").insert({"id": str(ctx.guild.id), "prefixes": []}).run()
+            r.table("prefix").insert({"id": str(ctx.author.id), "prefixes": []}).run(durability="soft")
+            r.table("prefix").insert({"id": str(ctx.guild.id), "prefixes": []}).run(durability="soft")
 
     @prefix.command()
     async def self(self, ctx, *prefixes):
@@ -127,10 +370,10 @@ class mod:
         prefixes = [x for x in prefixes if x != ""]
         authordata = r.table("prefix").get(str(ctx.author.id))
         if len(prefixes) == 0:
-            authordata.update({"prefixes": []}).run()
+            authordata.update({"prefixes": []}).run(durability="soft")
             await ctx.send("Your prefixes have been reset <:done:403285928233402378>")
         else:
-            authordata.update({"prefixes": prefixes}).run()
+            authordata.update({"prefixes": list(set(prefixes))}).run(durability="soft")
             if len(prefixes) > 1:
                 await ctx.send("Your prefixes have been set to `{}` <:done:403285928233402378>".format(", ".join(prefixes)))
             else:
@@ -143,10 +386,10 @@ class mod:
         prefixes = [x for x in prefixes if x != ""]
         serverdata = r.table("prefix").get(str(ctx.guild.id))
         if len(prefixes) == 0:
-            serverdata.update({"prefixes": []}).run()
+            serverdata.update({"prefixes": []}).run(durability="soft")
             await ctx.send("The server prefixes have been reset <:done:403285928233402378>")
         else:
-            serverdata.update({"prefixes": prefixes}).run()
+            serverdata.update({"prefixes": list(set(prefixes))}).run(durability="soft")
             if len(prefixes) > 1:
                 await ctx.send("The server prefixes have been set to `{}` <:done:403285928233402378>".format(", ".join(prefixes)))
             else:
@@ -271,18 +514,20 @@ class mod:
         server = ctx.guild
         has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await ctx.send("I do not have the `MANAGE_MESSAGES` permission")
+            await ctx.send("I do not have the `manage_messages` permission")
             return
         if amount is None:
             amount = 100
         elif amount > 100:
             amount = 100
-        await ctx.message.delete()
         try:
             deleted = await channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author == user)
+            await ctx.message.delete()
         except discord.HTTPException:
             await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
+        except:
+            pass
         
     @commands.command(aliases=["bc"])
     @checks.has_permissions("manage_messages")
@@ -292,18 +537,20 @@ class mod:
         server = ctx.guild
         has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await ctx.send("I do not have the `MANAGE_MESSAGES` permission")
+            await ctx.send("I do not have the `manage_messages` permission")
             return
         if limit is None:
             limit = 100
         elif limit > 100:
             limit = 100
-        await ctx.message.delete()
         try:
             deleted = await channel.purge(limit=limit, before=ctx.message, check=lambda e: e.author.bot)
+            await ctx.message.delete()
         except discord.HTTPException:
             await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
+        except:
+            pass
 
     @commands.command()
     @checks.has_permissions("manage_messages")
@@ -312,20 +559,22 @@ class mod:
         server = ctx.guild
         has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await ctx.send("I do not have the `MANAGE_MESSAGES` permission")
+            await ctx.send("I do not have the `manage_messages` permission")
             return
         if limit is None:
             limit = 100
         elif limit > 100:
             limit = 100
-        await ctx.message.delete()
         def check(m):
             return word.lower() in m.content.lower()
         try:
             deleted = await channel.purge(limit=limit, before=ctx.message, check=check)
+            await ctx.message.delete()
         except discord.HTTPException:
             await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
+        except:
+            pass
         
     @commands.command(aliases=["prune"])
     @checks.has_permissions("manage_messages")
@@ -335,18 +584,20 @@ class mod:
         server = ctx.guild
         has_permissions = channel.permissions_for(ctx.me).manage_messages
         if not has_permissions:
-            await ctx.send("I do not have the `MANAGE_MESSAGES` permission")
+            await ctx.send("I do not have the `manage_messages` permission")
             return
         if limit is None:
             limit = 10
         elif limit > 100:
             limit = 100
-        await ctx.message.delete()
         try:
             deleted = await channel.purge(limit=limit, before=ctx.message)
+            await ctx.message.delete()
         except discord.HTTPException:
             await ctx.send("I cannot delete messages 14 days or older :no_entry:")
             return
+        except:
+            pass
             
     @commands.group()
     async def modlog(self, ctx):
@@ -355,7 +606,7 @@ class mod:
         if ctx.invoked_subcommand is None:
             await arghelp.send(self.bot, ctx)
         else:
-            r.table("modlogs").insert({"id": str(server.id), "channel": None, "toggle": False, "case#": 0, "case": []}).run()
+            r.table("modlogs").insert({"id": str(server.id), "channel": None, "toggle": False, "case#": 0, "case": []}).run(durability="soft")
         
             
     @modlog.command()
@@ -364,12 +615,12 @@ class mod:
         """Toggle modlogs on or off"""
         server = ctx.guild
         serverdata = r.table("modlogs").get(str(server.id))
-        if serverdata["toggle"].run() == True:
-            serverdata.update({"toggle": False}).run()
+        if serverdata["toggle"].run(durability="soft") == True:
+            serverdata.update({"toggle": False}).run(durability="soft")
             await ctx.send("Modlogs are now disabled.")
             return
-        if serverdata["toggle"].run() == False:
-            serverdata.update({"toggle": True}).run()
+        if serverdata["toggle"].run(durability="soft") == False:
+            serverdata.update({"toggle": True}).run(durability="soft")
             await ctx.send("Modlogs are now enabled.")
             return
             
@@ -379,7 +630,7 @@ class mod:
         """Set the channel where you want modlogs to be posted"""
         server = ctx.guild
         serverdata = r.table("modlogs").get(str(server.id))
-        serverdata.update({"channel": str(channel.id)}).run() 
+        serverdata.update({"channel": str(channel.id)}).run(durability="soft") 
         await ctx.send("<#{}> has been set as the modlog channel".format(str(channel.id)))
         
     @modlog.command()
@@ -391,32 +642,32 @@ class mod:
         serverdata = r.table("modlogs").get(str(server.id))
         case = serverdata["case"].filter({"id": case_number})[0]
         try:
-            case.run()
+            case.run(durability="soft")
         except:
             await ctx.send("Invalid case number :no_entry:")
             return
-        if case["mod"].run() is not None and case["mod"].run() != str(author.id):
+        if case["mod"].run(durability="soft") is not None and case["mod"].run(durability="soft") != str(author.id):
             await ctx.send("You do not have ownership of that log :no_entry:")
             return
         try:
-            channel = self.bot.get_channel(int(serverdata["channel"].run()))
+            channel = self.bot.get_channel(int(serverdata["channel"].run(durability="soft")))
         except:
             await ctx.send("The modlog channel no longer exists :no_entry:")
             return
         try:
-            message = await channel.get_message(int(case["message"].run()))
+            message = await channel.get_message(int(case["message"].run(durability="soft")))
         except:
             await ctx.send("I am unable to find that case :no_entry:")
             return
         try:
-            s=discord.Embed(title="Case {} | {}".format(case_number, case["action"].run()), timestamp=datetime.datetime.fromtimestamp(case["time"].run()))
+            s=discord.Embed(title="Case {} | {}".format(case_number, case["action"].run(durability="soft")), timestamp=datetime.datetime.fromtimestamp(case["time"].run(durability="soft")))
         except:
-            s=discord.Embed(title="Case {} | {}".format(case_number, case["action"].run()))
-        s.add_field(name="User", value=await self.bot.get_user_info(int(case["user"].run())))
+            s=discord.Embed(title="Case {} | {}".format(case_number, case["action"].run(durability="soft")))
+        s.add_field(name="User", value=await self.bot.get_user_info(int(case["user"].run(durability="soft"))))
         s.add_field(name="Moderator", value=author, inline=False)
-        serverdata.update({"case": r.row["case"].map(lambda x: r.branch(x["id"] == case_number, x.merge({"mod": str(author.id)}), x))}).run()
+        serverdata.update({"case": r.row["case"].map(lambda x: r.branch(x["id"] == case_number, x.merge({"mod": str(author.id)}), x))}).run(durability="soft")
         s.add_field(name="Reason", value=reason)
-        serverdata.update({"case": r.row["case"].map(lambda x: r.branch(x["id"] == case_number, x.merge({"reason": reason}), x))}).run()
+        serverdata.update({"case": r.row["case"].map(lambda x: r.branch(x["id"] == case_number, x.merge({"reason": reason}), x))}).run(durability="soft")
         try:
             await message.edit(embed=s)
             await ctx.send("Case #{} has been updated <:done:403285928233402378>".format(case_number))
@@ -431,16 +682,16 @@ class mod:
         serverdata = r.table("modlogs").get(str(server.id))
         case = serverdata["case"].filter({"id": case_number})[0]
         try:
-            if case["reason"].run() is None:
+            if case["reason"].run(durability="soft") is None:
                 reason = "None (Update using `s?modlog case {} <reason>`)".format(case_number)
             else:
-                reason = case["reason"].run()
-            if case["mod"].run() is None:
+                reason = case["reason"].run(durability="soft")
+            if case["mod"].run(durability="soft") is None:
                 author = "Unknown"
             else:
-                author = await self.bot.get_user_info(case["mod"].run())
-            s=discord.Embed(title="Case {} | {}".format(case_number, case["action"].run()), timestamp=datetime.datetime.fromtimestamp(case["time"].run()))
-            s.add_field(name="User", value=await self.bot.get_user_info(int(case["user"].run())))
+                author = await self.bot.get_user_info(case["mod"].run(durability="soft"))
+            s=discord.Embed(title="Case {} | {}".format(case_number, case["action"].run(durability="soft")), timestamp=datetime.datetime.fromtimestamp(case["time"].run(durability="soft")))
+            s.add_field(name="User", value=await self.bot.get_user_info(int(case["user"].run(durability="soft"))))
             s.add_field(name="Moderator", value=author, inline=False)
             s.add_field(name="Reason", value=reason)
             await ctx.send(embed=s)
@@ -453,51 +704,19 @@ class mod:
         """Reset all the cases in the modlog"""
         server = ctx.guild
         serverdata = r.table("modlogs").get(str(server.id))
-        serverdata.update({"case#": 0, "case": []}).run()
+        serverdata.update({"case#": 0, "case": []}).run(durability="soft")
         await ctx.send("All cases have been reset <:done:403285928233402378>")
 
     @modlog.command()
     async def stats(self, ctx):
         server = ctx.guild
-        serverdata = r.table("modlogs").get(str(server.id)).run()
+        serverdata = r.table("modlogs").get(str(server.id)).run(durability="soft")
         s=discord.Embed(colour=0xffff00)
         s.set_author(name="Mod-Log Settings", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Status", value="Enabled" if serverdata["toggle"] else "Disabled")
         s.add_field(name="Channel", value=self.bot.get_channel(int(serverdata["channel"])).mention if serverdata["channel"] else "Not set")
         s.add_field(name="Number of Cases", value=serverdata["case#"])
         await ctx.send(embed=s)
-
-    async def _log(self, author, server, action, reason, user):
-        if author == self.bot.user and action != "Unmute (Automatic)":
-            return
-        r.table("modlogs").insert({"id": str(server.id), "channel": None, "toggle": False, "case#": 0, "case": []}).run()
-        serverdata = r.table("modlogs").get(str(server.id))
-        channel = self.bot.get_channel(int(serverdata["channel"].run()))
-        if serverdata["toggle"].run() == True and channel is not None:
-            serverdata.update({"case#": r.row["case#"] + 1}).run() 
-            number = serverdata["case#"].run()
-            if not author:
-                authortext = "Unknown (Update using `s?modlog case {} <reason>`)".format(number)
-            else:
-                authortext = str(author)
-            if not reason: 
-                reasontext = "None (Update using `s?modlog case {} <reason>`)".format(number)
-            else:
-                reasontext = reason
-            s=discord.Embed(title="Case {} | {}".format(number, action), timestamp=datetime.datetime.utcnow())
-            s.add_field(name="User", value=user)
-            s.add_field(name="Moderator", value=authortext, inline=False)
-            s.add_field(name="Reason", value=reasontext)
-            message = await channel.send(embed=s)
-            case2 = {}
-            case2["id"] = number
-            case2["action"] = action
-            case2["user"] = str(user.id)
-            case2["mod"] = str(author.id) if author else None
-            case2["reason"] = reason if reason else None
-            case2["time"] = datetime.datetime.utcnow().timestamp()
-            case2["message"] = str(message.id)
-            serverdata.update({"case": r.row["case"].append(case2)}).run()
         
     @commands.command(aliases=["cr"])
     @checks.has_permissions("manage_roles")
@@ -603,7 +822,7 @@ class mod:
             await server.kick(user, reason="Kick made by {}".format(author))
             await ctx.send("**{}** has been kicked <:done:403285928233402378>:ok_hand:".format(user))
             try:
-                await self._log(author, server, action, reason, user)
+                await _log(self.bot, author, server, action, reason, user)
             except:
                 pass
         except discord.errors.Forbidden:
@@ -668,7 +887,7 @@ class mod:
             await server.ban(user, reason="Ban made by {}".format(author))
             await ctx.send("**{}** has been banned <:done:403285928233402378>:ok_hand:".format(user))
             try:
-                await self._log(author, server, action, reason, user)
+                await _log(self.bot, author, server, action, reason, user)
             except:
                 pass
         except discord.errors.Forbidden:
@@ -735,7 +954,7 @@ class mod:
             return
         await ctx.send("**{}** has been unbanned <:done:403285928233402378>:ok_hand:".format(user))
         try:
-            await self._log(author, server, action, reason, user)
+            await _log(self.bot, author, server, action, reason, user)
         except:
             pass
         try:
@@ -745,31 +964,33 @@ class mod:
             
     async def on_member_ban(self, guild, user):
         author = None
-        for x in await guild.audit_logs(limit=1, action=discord.AuditLogAction.ban).flatten():
-            author = x.user
-            if x.reason != "":
-                reason = x.reason
-            else:
-                reason = None
+        for x in await guild.audit_logs(limit=1).flatten():
+            if x.action == discord.AuditLogAction.ban:
+                author = x.user
+                if x.reason != "":
+                    reason = x.reason
+                else:
+                    reason = None
         action = "Ban"
         server = guild
         try:
-            await self._log(author, server, action, reason, user)
+            await _log(self.bot, author, server, action, reason, user)
         except:
             pass
                 
     async def on_member_unban(self, guild, user):
         author = None
-        for x in await guild.audit_logs(limit=1, action=discord.AuditLogAction.unban).flatten():
-            author = x.user
-            if x.reason != "":
-                reason = x.reason
-            else:
-                reason = None
+        for x in await guild.audit_logs(limit=1).flatten():
+            if x.action == discord.AuditLogAction.unban:
+                author = x.user
+                if x.reason != "":
+                    reason = x.reason
+                else:
+                    reason = None
         action = "Unban"
         server = guild
         try:
-            await self._log(author, server, action, reason, user)
+            await _log(self.bot, author, server, action, reason, user)
         except:
             pass
         
@@ -802,7 +1023,7 @@ class mod:
             return
         await ctx.send("**{}** has been muted <:done:403285928233402378>".format(user))
         try:
-            await self._log(author, server, action, reason, user)
+            await _log(self.bot, author, server, action, reason, user)
         except:
             pass
         try:
@@ -842,18 +1063,16 @@ class mod:
             pass
         await ctx.send("**{}** has been unmuted <:done:403285928233402378>".format(user))
         try:
-            await self._log(author, server, action, reason, user)
+            await _log(self.bot, author, server, action, reason, user)
         except:
             pass
 
     async def on_member_join(self, member):
         server = member.guild
-        role = discord.utils.get(server.roles, name="Muted - Sx4")
-        serverdata = r.table("mute").get(str(server.id)).run()
-        overwrite = discord.PermissionOverwrite()
-        overwrite.send_messages = False
+        serverdata = r.table("mute").get(str(server.id))
         try:
-            if serverdata["toggle"] == True:
+            if serverdata["users"].filter(lambda x: x["id"] == str(member.id))[0]["toggle"].run() == True:
+                role = discord.utils.get(server.roles, name="Muted - Sx4")
                 await member.add_roles(role, reason="Mute evasion")
         except:
             pass
@@ -866,7 +1085,7 @@ class mod:
         server = ctx.message.guild
         channel = ctx.message.channel
         author = ctx.message.author
-        r.table("mute").insert({"id": str(server.id), "users": []}).run()
+        r.table("mute").insert({"id": str(server.id), "users": []}).run(durability="soft")
         serverdata = r.table("mute").get(str(server.id))
         if author == user:
             await ctx.send("You can't mute yourself :no_entry:")
@@ -962,18 +1181,18 @@ class mod:
             return
         await ctx.send("**{}** has been muted for {} {} <:done:403285928233402378>".format(user, time, unit))
         try:
-            await self._log(author, server, action, reason, user)
+            await _log(self.bot, author, server, action, reason, user)
         except:
             pass
-        if str(user.id) not in serverdata["users"].map(lambda x: x["id"]).run():
+        if str(user.id) not in serverdata["users"].map(lambda x: x["id"]).run(durability="soft"):
             userobj = {}
             userobj["id"] = str(user.id)
             userobj["toggle"] = True
             userobj["amount"] = time2
             userobj["time"] = ctx.message.created_at.timestamp()
-            serverdata.update({"users": r.row["users"].append(userobj)}).run()
+            serverdata.update({"users": r.row["users"].append(userobj)}).run(durability="soft")
         else:
-            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": ctx.message.created_at.timestamp(), "amount": time2, "toggle": True}), x))}).run()
+            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": ctx.message.created_at.timestamp(), "amount": time2, "toggle": True}), x))}).run(durability="soft")
         try:
             s=discord.Embed(title="You have been muted in {} :speak_no_evil:".format(server.name), colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
             s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)), inline=False)
@@ -1007,10 +1226,10 @@ class mod:
             return
         await ctx.send("**{}** has been unmuted <:done:403285928233402378>".format(user))
         try:
-            await self._log(author, server, action, reason, user)
+            await _log(self.bot, author, server, action, reason, user)
         except:
             pass
-        serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": None, "amount": None, "toggle": False}), x))}).run()
+        serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": None, "amount": None, "toggle": False}), x))}).run(durability="soft")
         try:
             s=discord.Embed(title="You have been unmuted early in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.utcnow())
             s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)))
@@ -1026,7 +1245,7 @@ class mod:
         i = 0;
         serverdata = r.table("mute").get(str(server.id))
         try:
-            for data in serverdata["users"].run():
+            for data in serverdata["users"].run(durability="soft"):
                 if data["toggle"] == True:
                     i += 1
         except: 
@@ -1035,7 +1254,7 @@ class mod:
         if i == 0:   
             await ctx.send("No one is muted in this server :no_entry:")
             return
-        for data in serverdata["users"].run():
+        for data in serverdata["users"].run(durability="soft"):
             if data["time"] == None or data["time"] - ctx.message.created_at.timestamp() + data["amount"] <= 0:
                 time = "Infinite" 
             else:
@@ -1069,15 +1288,15 @@ class mod:
         reason = None
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         if role in before.roles and role not in after.roles:
-            if str(user.id) not in serverdata["users"].map(lambda x: x["id"]).run():
+            if str(user.id) not in serverdata["users"].map(lambda x: x["id"]).run(durability="soft"):
                 user = {}
                 user["id"] = str(user.id)
                 user["toggle"] = False
                 user["amount"] = None
                 user["time"] = None
-                serverdata.update({"users": r.row["users"].append(user)}).run()
+                serverdata.update({"users": r.row["users"].append(user)}).run(durability="soft", noreply=True)
             else:
-                serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": None, "amount": None, "toggle": False}), x))}).run()
+                serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": None, "amount": None, "toggle": False}), x))}).run(durability="soft", noreply=True)
             for x in await server.audit_logs(limit=1, action=discord.AuditLogAction.member_role_update).flatten():
                 author = x.user
                 if x.reason != "":
@@ -1086,19 +1305,19 @@ class mod:
                 return
             action = "Unmute"
             try:
-                await self._log(author, server, action, reason, user)
+                await _log(self.bot, author, server, action, reason, user)
             except:
                 pass
         if role in after.roles and role not in before.roles:
-            if str(user.id) not in serverdata["users"].map(lambda x: x["id"]).run():
+            if str(user.id) not in serverdata["users"].map(lambda x: x["id"]).run(durability="soft"):
                 user = {}
                 user["id"] = str(user.id)
                 user["toggle"] = True
                 user["amount"] = None
                 user["time"] = None
-                serverdata.update({"users": r.row["users"].append(user)}).run()
+                serverdata.update({"users": r.row["users"].append(user)}).run(durability="soft", noreply=True)
             else:
-                serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": None, "amount": None, "toggle": True}), x))}).run()
+                serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": None, "amount": None, "toggle": True}), x))}).run(durability="soft", noreply=True)
             for x in await server.audit_logs(limit=1, action=discord.AuditLogAction.member_role_update).flatten():
                 author = x.user
                 if x.reason != "":
@@ -1107,7 +1326,7 @@ class mod:
                 return
             action = "Mute (Infinite)"
             try:
-                await self._log(author, server, action, reason, user)
+                await _log(self.bot, author, server, action, reason, user)
             except:
                 pass
             
@@ -1132,7 +1351,7 @@ class mod:
         author = ctx.message.author
         server = ctx.message.guild
         channel = ctx.message.channel
-        r.table("mute").insert({"id": str(server.id), "users": []}).run()
+        r.table("mute").insert({"id": str(server.id), "users": []}).run(durability="soft")
         mutedata = r.table("mute").get(str(server.id))
         if user.bot:
             return await ctx.send("You cannot warn bots :no_entry:")
@@ -1145,13 +1364,13 @@ class mod:
             else:
                 await ctx.send("You can not warn someone higher than your own role :no_entry:")
                 return
-        if str(user.id) not in mutedata["users"].map(lambda x: x["id"]).run():
-            user = {}
-            user["id"] = str(user.id)
-            user["toggle"] = False
-            user["amount"] = None
-            user["time"] = None
-            mutedata.update({"users": r.row["users"].append(user)}).run()
+        if str(user.id) not in mutedata["users"].map(lambda x: x["id"]).run(durability="soft"):
+            user2 = {}
+            user2["id"] = str(user.id)
+            user2["toggle"] = False
+            user2["amount"] = None
+            user2["time"] = None
+            mutedata.update({"users": r.row["users"].append(user2)}).run(durability="soft")
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         overwrite = discord.PermissionOverwrite()
         overwrite.send_messages = False
@@ -1167,13 +1386,13 @@ class mod:
         serverdata = r.table("warn").get(str(server.id))
         userdata = serverdata["users"].filter({"id": str(user.id)})[0]
         if reason:
-            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"reasons": x["reasons"].append(reason)}), x))}).run()
-        if userdata["warnings"].run() == 2 and not ctx.channel.permissions_for(ctx.author).kick_members:
+            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"reasons": x["reasons"].append(reason)}), x))}).run(durability="soft")
+        if userdata["warnings"].run(durability="soft") == 2 and not ctx.channel.permissions_for(ctx.author).kick_members:
             return await ctx.send("You need the kick members permission to warn the user again :no_entry:")
-        if userdata["warnings"].run() == 3 and not ctx.channel.permissions_for(ctx.author).ban_members:
+        if userdata["warnings"].run(durability="soft") == 3 and not ctx.channel.permissions_for(ctx.author).ban_members:
             return await ctx.send("You need the ban members permission to warn the user again :no_entry:")
-        serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": x["warnings"] + 1}), x))}).run()
-        if userdata["warnings"].run() == 1:
+        serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": x["warnings"] + 1}), x))}).run(durability="soft")
+        if userdata["warnings"].run(durability="soft") == 1:
             await ctx.send("**{}** has been warned :warning:".format(user))
             s=discord.Embed(colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name="You have been warned in {}".format(server.name), icon_url=server.icon_url)
@@ -1185,13 +1404,13 @@ class mod:
             s.add_field(name="Next Action", value="Mute")
             action = "Warn (1st Warning)"
             try:
-                await self._log(author, server, action, reason, user)
+                await _log(self.bot, author, server, action, reason, user)
             except:
                 pass
-        if userdata["warnings"].run() == 2:
+        if userdata["warnings"].run(durability="soft") == 2:
             try:
                 await user.add_roles(role)
-                mutedata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": ctx.message.created_at.timestamp(), "amount": 600, "toggle": True}), x))}).run()
+                mutedata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": ctx.message.created_at.timestamp(), "amount": 600, "toggle": True}), x))}).run(durability="soft")
             except: 
                 await ctx.send("I cannot add the mute role to the user :no_entry:")
                 return
@@ -1206,10 +1425,10 @@ class mod:
             s.add_field(name="Next Action", value="Kick")
             action = "Mute (2nd Warning)"
             try:
-                await self._log(author, server, action, reason, user)
+                await _log(self.bot, author, server, action, reason, user)
             except:
                 pass
-        if userdata["warnings"].run() == 3:
+        if userdata["warnings"].run(durability="soft") == 3:
             try:
                 await server.kick(user, reason="Kick made by {}".format(author))
             except:
@@ -1226,10 +1445,10 @@ class mod:
             s.add_field(name="Next Action", value="Ban")
             action = "Kick (3rd Warning)"
             try:
-                await self._log(author, server, action, reason, user)
+                await _log(self.bot, author, server, action, reason, user)
             except:
                 pass
-        if userdata["warnings"].run() >= 4:
+        if userdata["warnings"].run(durability="soft") >= 4:
             try:
                 await server.ban(user, reason="Ban made by {}".format(author))
             except:
@@ -1245,10 +1464,10 @@ class mod:
                 s.add_field(name="Reason", value="None Given", inline=False)
             s.add_field(name="Moderator", value=author)
             s.add_field(name="Next Action", value="None")
-            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": 0, "reasons": []}), x))}).run()
+            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": 0, "reasons": []}), x))}).run(durability="soft")
             action = "Ban (4th Warning)"
             try:
-                await self._log(author, server, action, reason, user)
+                await _log(self.bot, author, server, action, reason, user)
             except:
                 pass
         try:
@@ -1267,7 +1486,7 @@ class mod:
             await ctx.send("Invalid page :no_entry:")
             return
         try:
-            if page > math.ceil(len(serverdata["users"].run())/20):
+            if page > math.ceil(len(list(filter(lambda x: int(x["id"]) in map(lambda x: x.id, server.members) and x["warnings"] != 0, r.table("warn").get(str(server.id))["users"].run(durability="soft"))))/20):
                 await ctx.send("Invalid page :no_entry:")
                 return
         except:
@@ -1284,7 +1503,7 @@ class mod:
         """Check how many warnings a specific user is on"""
         server = ctx.message.guild
         serverdata = r.table("warn").get(str(server.id))
-        userdata = serverdata["users"].filter({"id": str(user.id)})[0].run()
+        userdata = serverdata["users"].filter({"id": str(user.id)})[0].run(durability="soft")
         try:
             if userdata["warnings"] == 1:
                 action = "Mute"
@@ -1327,11 +1546,11 @@ class mod:
                 return await ctx.send("You have to be above the user in the role hierarchy to set their warns :no_entry:")
         await self._create_warn(server, user)
         if not warnings:  
-            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": 0, "reasons": []}), x))}).run()
+            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": 0, "reasons": []}), x))}).run(durability="soft")
             await ctx.send("**{}'s** warnings have been reset".format(user.name))
             return
         if warnings == 0:
-            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": 0, "reasons": []}), x))}).run()
+            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": 0, "reasons": []}), x))}).run(durability="soft")
             await ctx.send("**{}'s** warnings have been reset".format(user.name))
             return
         if warnings <= 0:
@@ -1340,68 +1559,107 @@ class mod:
         if warnings >= 5:
             await ctx.send("You can set warnings to 1-4 only :no_entry:") 
             return
-        serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": warnings}), x))}).run()
+        serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"warnings": warnings}), x))}).run(durability="soft")
 
         await ctx.send("**{}'s** warnings have been set to **{}**".format(user.name, warnings))  
 
     async def check_mute(self):
         while not self.bot.is_closed():
-            data = r.table("mute")
-            for d in data.run():
-                server = self.bot.get_guild(int(d["id"]))
-                serverdata = data.get(d["id"])
-                if server != None:
-                    role = discord.utils.get(server.roles, name="Muted - Sx4")
-                    if role != None:
-                        if serverdata["users"].run() != None:
-                            for x in serverdata["users"].run():
-                                user = discord.utils.get(server.members, id=int(x["id"]))
-                                if user != None:
-                                    if x["toggle"] != False and x["time"] != None and x["amount"] != None:
-                                        time2 = x["time"] - datetime.datetime.utcnow().timestamp() + x["amount"]
-                                        if time2 <= 0:
-                                            if role in user.roles:
-                                                await user.remove_roles(role)
-                                                s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.now())
-                                                s.add_field(name="Moderator", value="{} ({})".format(self.bot.user, self.bot.user.id), inline=False)
-                                                s.add_field(name="Reason", value="Time Served", inline=False)
-                                                try:
-                                                    await user.send(embed=s)
-                                                except:
-                                                    pass
-                                                action = "Unmute (Automatic)"
-                                                author = self.bot.user
-                                                reason = "Time limit served"
-                                                try:
-                                                    await self._log(author, server, action, reason, user)
-                                                except:
-                                                    pass
-                                            serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": None, "amount": None, "toggle": False}), x))}).run()          
+            try:
+                data = r.table("mute")
+                for d in data.filter(r.row["users"] != []).run(durability="soft"):
+                    try:
+                        server = {x.id: x for x in self.bot.guilds}[int(d["id"])]
+                    except: 
+                        continue
+                    if server:
+                        serverdata = data.get(d["id"])
+                        users = serverdata["users"].filter((r.row["amount"]) & (r.row["time"]) & (r.row["toggle"] != False))
+                        role = discord.utils.get(server.roles, name="Muted - Sx4")
+                        if role:
+                            for x in users.run(durability="soft"):
+                                try:
+                                    user = {x.id: x for x in server.members}[int(x["id"])]
+                                except:
+                                    continue
+                                if user:
+                                    time2 = x["time"] - datetime.datetime.utcnow().timestamp() + x["amount"]
+                                    if time2 <= 0:
+                                        serverdata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"time": None, "amount": None, "toggle": False}), x))}).run(durability="soft", noreply=True)    
+                                        if role in user.roles:
+                                            await user.remove_roles(role)
+                                            s=discord.Embed(title="You have been unmuted in {}".format(server.name), colour=0xfff90d, timestamp=datetime.datetime.now())
+                                            s.add_field(name="Moderator", value="{} ({})".format(self.bot.user, self.bot.user.id), inline=False)
+                                            s.add_field(name="Reason", value="Time Served", inline=False)
+                                            try:
+                                                await user.send(embed=s)
+                                            except:
+                                                pass
+                                            action = "Unmute (Automatic)"
+                                            author = self.bot.user
+                                            reason = "Time limit served"
+                                            try:
+                                                await _log(self.bot, author, server, action, reason, user)
+                                            except:
+                                                pass
+            except Exception as e:
+                await self.bot.get_channel(344091594972069888).send(e)
             await asyncio.sleep(45)
       
                     
         
     async def _create_warn(self, server, user):
-        r.table("warn").insert({"id": str(server.id), "users": []}).run()
-        if str(user.id) not in r.table("warn").get(str(server.id))["users"].map(lambda x: x["id"]).run():
+        r.table("warn").insert({"id": str(server.id), "users": []}).run(durability="soft")
+        if str(user.id) not in r.table("warn").get(str(server.id))["users"].map(lambda x: x["id"]).run(durability="soft"):
             warn = {}
             warn["id"] = str(user.id)
             warn["warnings"] = 0
             warn["reasons"] = []
-            r.table("warn").update({"users": r.row["users"].append(warn)}).run()
+            r.table("warn").update({"users": r.row["users"].append(warn)}).run(durability="soft")
             
     async def _list_warns(self, server, page):
         msg = ""
         s=discord.Embed(colour=0xfff90d)
         s.set_author(name=server.name, icon_url=server.icon_url)
-        sortedwarn = sorted(r.table("warn").get(str(server.id))["users"].run(), key=lambda x: x["warnings"], reverse=True)[page*20-20:page*20]
+        sortedwarn = sorted(filter(lambda x: int(x["id"]) in map(lambda x: x.id, server.members) and x["warnings"] != 0, r.table("warn").get(str(server.id))["users"].run(durability="soft")), key=lambda x: x["warnings"], reverse=True)[page*20-20:page*20]
         for x in sortedwarn:
             users = discord.utils.get(server.members, id=int(x["id"]))
-            if users and x["warnings"] != 0:
-                msg += "\n`{}`: Warning **#{}**".format(users, x["warnings"])
+            msg += "\n`{}`: Warning **#{}**".format(users, x["warnings"])
         s.add_field(name="Users on Warnings", value=msg)
-        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(r.table("warn").get(str(server.id))["users"].run())/20)))
+        s.set_footer(text="Page {}/{}".format(page, math.ceil(len(list(filter(lambda x: int(x["id"]) in map(lambda x: x.id, server.members) and x["warnings"] != 0, r.table("warn").get(str(server.id))["users"].run(durability="soft"))))/20)))
         return s
+
+async def _log(bot, author, server, action, reason, user):
+    if author == bot.user and "(Automatic)" not in action:
+        return
+    r.table("modlogs").insert({"id": str(server.id), "channel": None, "toggle": False, "case#": 0, "case": []}).run(durability="soft")
+    serverdata = r.table("modlogs").get(str(server.id))
+    channel = bot.get_channel(int(serverdata["channel"].run(durability="soft")))
+    if serverdata["toggle"].run(durability="soft") == True and channel is not None:
+        serverdata.update({"case#": r.row["case#"] + 1}).run(durability="soft") 
+        number = serverdata["case#"].run(durability="soft")
+        if not author:
+            authortext = "Unknown (Update using `s?modlog case {} <reason>`)".format(number)
+        else:
+            authortext = str(author)
+        if not reason: 
+            reasontext = "None (Update using `s?modlog case {} <reason>`)".format(number)
+        else:
+            reasontext = reason
+        s=discord.Embed(title="Case {} | {}".format(number, action), timestamp=datetime.datetime.utcnow())
+        s.add_field(name="User", value=user)
+        s.add_field(name="Moderator", value=authortext, inline=False)
+        s.add_field(name="Reason", value=reasontext)
+        message = await channel.send(embed=s)
+        case2 = {}
+        case2["id"] = number
+        case2["action"] = action
+        case2["user"] = str(user.id)
+        case2["mod"] = str(author.id) if author else None
+        case2["reason"] = reason if reason else None
+        case2["time"] = datetime.datetime.utcnow().timestamp()
+        case2["message"] = str(message.id)
+        serverdata.update({"case": r.row["case"].append(case2)}).run(durability="soft")
         
 def setup(bot): 
     bot.add_cog(mod(bot))

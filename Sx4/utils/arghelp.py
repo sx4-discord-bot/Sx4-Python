@@ -13,7 +13,7 @@ async def send(bot, ctx):
         for x in ctx.command.params:
             if x != "ctx":
                 if x != "self":
-                    if "None" in str(ctx.command.params[x]):
+                    if "=" in str(ctx.command.params[x]):
                         msg += "[{}] ".format(x)
                     else:
                         msg += "<{}> ".format(x)

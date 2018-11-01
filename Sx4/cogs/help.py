@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 import os
 from copy import deepcopy
-from utils.dataIO import dataIO
 from collections import namedtuple, defaultdict, deque
 from datetime import datetime
 from random import randint
@@ -78,7 +77,7 @@ class help:
             for x in self.bot.all_commands[commandname.lower()].params:
                 if x != "ctx":
                     if x != "self":
-                        if "None" in str(self.bot.all_commands[commandname.lower()].params[x]):
+                        if "=" in str(self.bot.all_commands[commandname.lower()].params[x]):
                             msg += "[{}] ".format(x)
                         else:
                             msg += "<{}> ".format(x)
@@ -112,7 +111,7 @@ class help:
             for x in self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].params:
                 if x != "ctx":
                     if x != "self":
-                        if "None" in str(self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].params[x]):
+                        if "=" in str(self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].params[x]):
                             msg += "[{}] ".format(x)
                         else:
                             msg += "<{}> ".format(x)

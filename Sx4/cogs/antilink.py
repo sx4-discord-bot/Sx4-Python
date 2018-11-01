@@ -25,7 +25,7 @@ class antilink:
         if ctx.invoked_subcommand is None:
             await arghelp.send(self.bot, ctx)
         else:
-            r.table("antilink").insert({"id": str(server.id), "toggle": False, "modtoggle": True, "admintoggle": False, "bottoggle": True, "channels": []}).run()
+            r.table("antilink").insert({"id": str(server.id), "toggle": False, "modtoggle": True, "admintoggle": False, "bottoggle": True, "channels": []}).run(durability="soft")
 		
     @antilink.command()
     @checks.has_permissions("manage_messages")
@@ -33,12 +33,12 @@ class antilink:
         """Toggle antilink on or off"""
         server = ctx.guild
         data = r.table("antilink").get(str(server.id))
-        if data["toggle"].run() == True:
-            data.update({"toggle": False}).run()
+        if data["toggle"].run(durability="soft") == True:
+            data.update({"toggle": False}).run(durability="soft")
             await ctx.send("Anti-link has been **Disabled**")
             return
-        if data["toggle"].run() == False:
-            data.update({"toggle": True}).run()
+        if data["toggle"].run(durability="soft") == False:
+            data.update({"toggle": True}).run(durability="soft")
             await ctx.send("Anti-link has been **Enabled**")
             return
 		
@@ -48,12 +48,12 @@ class antilink:
         """Choose whether you want your mods to be able to send links or not (manage_message and above are classed as mods)"""
         server = ctx.guild
         data = r.table("antilink").get(str(server.id))
-        if data["modtoggle"].run() == True:
-            data.update({"modtoggle": False}).run()
+        if data["modtoggle"].run(durability="soft") == True:
+            data.update({"modtoggle": False}).run(durability="soft")
             await ctx.send("Mods will now not be affected by anti-link.")
             return
-        if data["modtoggle"].run() == False:
-            data.update({"modtoggle": True}).run()
+        if data["modtoggle"].run(durability="soft") == False:
+            data.update({"modtoggle": True}).run(durability="soft")
             await ctx.send("Mods will now be affected by anti-link.")
             return
 			
@@ -63,12 +63,12 @@ class antilink:
         """Choose whether you want your admins to be able to send links or not (administrator perms are classed as admins)"""
         server = ctx.guild
         data = r.table("antilink").get(str(server.id))
-        if data["admintoggle"].run() == True:
-            data.update({"admintoggle": False}).run()
+        if data["admintoggle"].run(durability="soft") == True:
+            data.update({"admintoggle": False}).run(durability="soft")
             await ctx.send("Admins will now not be affected by anti-link.")
             return
-        if data["admintoggle"].run() == False:
-            data.update({"admintoggle": True}).run()
+        if data["admintoggle"].run(durability="soft") == False:
+            data.update({"admintoggle": True}).run(durability="soft")
             await ctx.send("Admins will now be affected by anti-link.")
             return
 			
@@ -78,12 +78,12 @@ class antilink:
         """Choose whether bots can send links or not"""
         server = ctx.guild
         data = r.table("antilink").get(str(server.id))
-        if data["bottoggle"].run() == True:
-            data.update({"bottoggle": False}).run()
+        if data["bottoggle"].run(durability="soft") == True:
+            data.update({"bottoggle": False}).run(durability="soft")
             await ctx.send("Bots will now not be affected by anti-link.")
             return
-        if data["bottoggle"].run() == False:
-            data.update({"bottoggle": True}).run()
+        if data["bottoggle"].run(durability="soft") == False:
+            data.update({"bottoggle": True}).run(durability="soft")
             await ctx.send("Bots will now be affected by anti-link.")
             return
 			
@@ -95,12 +95,12 @@ class antilink:
         data = r.table("antilink").get(str(server.id))
         if not channel:
            channel = ctx.channel 
-        if str(channel.id) in data["channels"].run():
-            data.update({"channels": r.row["channels"].difference([str(channel.id)])}).run()
+        if str(channel.id) in data["channels"].run(durability="soft"):
+            data.update({"channels": r.row["channels"].difference([str(channel.id)])}).run(durability="soft")
             await ctx.send("Anti-link is now disabled in <#{}>".format(str(channel.id)))
             return
         else: 
-            data.update({"channels": r.row["channels"].append(str(channel.id))}).run()
+            data.update({"channels": r.row["channels"].append(str(channel.id))}).run(durability="soft")
             await ctx.send("Anti-link is now enabled in <#{}>".format(str(channel.id)))
             return
 		 
@@ -113,19 +113,19 @@ class antilink:
         s=discord.Embed(colour=0xfff90d)
         s.set_author(name="Anti-link Settings", icon_url=self.bot.user.avatar_url)
         msg = ""
-        if data["toggle"].run() == True:
+        if data["toggle"].run(durability="soft") == True:
             toggle = "Enabled"
         else:
             toggle = "Disabled"
-        if data["modtoggle"].run() == False:
+        if data["modtoggle"].run(durability="soft") == False:
             mod = "Mods **Can** send links"
         else:
             mod = "Mods **Can't** send links"
-        if data["bottoggle"].run() == False:
+        if data["bottoggle"].run(durability="soft") == False:
             bottoggle = "Bots **Can** send links"
         else:
             bottoggle = "Bots **Can't** send links"
-        if data["admintoggle"].run() == False:
+        if data["admintoggle"].run(durability="soft") == False:
             admin = "Admins **Can** send links"
         else:
             admin = "Admins **Can't** send links"
@@ -133,7 +133,7 @@ class antilink:
         s.add_field(name="Mod Perms", value=mod)
         s.add_field(name="Admin Perms", value=admin)
         s.add_field(name="Bots", value=bottoggle)
-        for channelid in data["channels"].run():
+        for channelid in data["channels"].run(durability="soft"):
             channel = discord.utils.get(server.channels, id=int(channelid))
             msg += channel.mention + "\n"
         s.add_field(name="Disabled Channels", value=msg if msg != "" else "None")
@@ -145,18 +145,18 @@ class antilink:
         author = message.author
         channel = message.channel
         data = r.table("antilink").get(str(serverid))
-        if data["modtoggle"].run() == False:
+        if data["modtoggle"].run(durability="soft") == False:
             if channel.permissions_for(author).manage_messages:
                 return
-        if data["admintoggle"].run() == False:
+        if data["admintoggle"].run(durability="soft") == False:
             if channel.permissions_for(author).administrator:
                 return
-        if data["bottoggle"].run() == False:
+        if data["bottoggle"].run(durability="soft") == False:
             if author.bot:
                 return
-        if str(channel.id) in data["channels"].run():
+        if str(channel.id) in data["channels"].run(durability="soft"):
             return
-        if data["toggle"].run() == True:
+        if data["toggle"].run(durability="soft") == True:
             if ("http://" in message.content.lower()) or ("https://" in message.content.lower()):
                 await message.delete()
                 await channel.send("{}, You are not allowed to send links here :no_entry:".format(author.mention))
@@ -166,18 +166,18 @@ class antilink:
         author = before.author
         channel = before.channel
         data = r.table("antilink").get(str(serverid))
-        if data["modtoggle"].run() == False:
+        if data["modtoggle"].run(durability="soft") == False:
             if channel.permissions_for(author).manage_messages:
                 return
-        if data["admintoggle"].run() == False:
+        if data["admintoggle"].run(durability="soft") == False:
             if channel.permissions_for(author).administrator:
                 return
-        if data["bottoggle"].run() == False:
+        if data["bottoggle"].run(durability="soft") == False:
             if author.bot:
                 return
-        if str(channel.id) in data["channels"].run():
+        if str(channel.id) in data["channels"].run(durability="soft"):
             return
-        if data["toggle"].run() == True:
+        if data["toggle"].run(durability="soft") == True:
             if ("http://" in after.content.lower()) or ("https://" in after.content.lower()):
                 await after.delete()
                 await channel.send("{}, You are not allowed to send links here :no_entry:".format(author.mention))

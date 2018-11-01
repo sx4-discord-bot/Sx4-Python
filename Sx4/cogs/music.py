@@ -1,3 +1,4 @@
+
 import re
 import discord
 import logging
@@ -27,6 +28,7 @@ class music:
 
     async def _events(self, event):
         if isinstance(event, lavalink.Events.TrackStartEvent):
+            event.player.store("voted", [])
             channel = event.player.fetch('channel')
             author = discord.utils.get(self.bot.get_all_members(), id=event.track.requester)
             if channel:
@@ -45,7 +47,7 @@ class music:
             if channel:
                 channel = self.bot.get_channel(channel)
                 if channel:
-                    await channel.send("There are no more songs left in the queue.")
+                    await channel.send(embed=discord.Embed(title="Queue Ended", description="If you enjoyed it would be greatly appreciated if you upvoted the bot, you can do so here: **https://discordbots.org/bot/440996323156819968/vote**\n\nIf you enjoy using Sx4 and want to go that extra mile and help Sx4 run you can donate here: **https://www.patreon.com/Sx4**"))
         elif isinstance(event, lavalink.Events.TrackEndEvent):
             try:
                 event.player.delete("votes")
@@ -58,7 +60,6 @@ class music:
             self.bot.loop.create_task(player.disconnect())
             player.cleanup()
         self.bot.lavalink.players.clear()
-        self.bot.lavalink.unregister_hook(self._track_hook)
 
 
                 
@@ -85,10 +86,15 @@ class music:
             await ctx.send("Summoned to `{}` <:done:403285928233402378>".format(ctx.author.voice.channel.name))
 
     @commands.command(aliases=["p"])
-    async def play(self, ctx, *, query):
+    async def play(self, ctx, *, query=None):
         """Play something by query or link"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        query = query.strip('<>').replace("music.", "")
+        if ctx.message.attachments and not query:
+            query = ctx.message.attachments[0].url
+        elif not ctx.message.attachments and not query:
+            return await arghelp.send(self.bot, ctx)
+        else:
+            query = query.strip('<>').replace("music.", "")
         if player.is_connected:
             if not ctx.author.voice or not ctx.author.voice.channel or player.connected_channel.id != ctx.author.voice.channel.id:
                 return await ctx.send("I'm already in a voice channel :no_entry:")
@@ -143,6 +149,83 @@ class music:
             await self.bot.get_channel(player.fetch('channel')).send(embed=s)
         if not player.is_playing:
             await player.play()
+
+    @commands.command()
+    async def playnow(self, ctx, *, query=None):
+        """Play something by query or link"""
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+        if ctx.message.attachments and not query:
+            query = ctx.message.attachments[0].url
+        elif not ctx.message.attachments and not query:
+            return await arghelp.send(self.bot, ctx)
+        else:
+            query = query.strip('<>').replace("music.", "")
+        if player.fetch("sessionowner") in map(lambda c: c.id, player.connected_channel.members) and player.fetch("sessionowner") != ctx.author.id:
+            return await ctx.send("You have to be the session owner to use this command :no_entry:")
+        if player.is_connected:
+            if not ctx.author.voice or not ctx.author.voice.channel or player.connected_channel.id != ctx.author.voice.channel.id:
+                return await ctx.send("I'm already in a voice channel :no_entry:")
+        else:
+            if not ctx.author.voice or not ctx.author.voice.channel:
+                return await ctx.send("You are not in a voice channel :no_entry:")
+            else:
+                player.store('sessionowner', ctx.author.id)
+                player.store('channel', ctx.channel.id)
+                await player.connect(ctx.author.voice.channel.id)
+        if not url_re.match(query):
+            query = "ytsearch:{}".format(query)
+        results = await self.bot.lavalink.get_tracks(query)
+        if not results or not results['tracks']:
+            return await ctx.send("I could not find any songs matching that query :no_entry:")
+        s=discord.Embed()
+        if results["loadType"] == "PLAYLIST_LOADED":
+            queue_length = len(player.queue)
+            tracks = results["tracks"]
+            for track in tracks:
+                player.add(requester=ctx.author.id, track=track)
+            if queue_length != 0:
+                player.queue[:queue_length], player.queue[queue_length:] = player.queue[queue_length:], player.queue[:queue_length]
+            s.description = "Enqueued {} with **{}** tracks <:done:403285928233402378>".format(results['playlistInfo']['name'], len(tracks))
+            await self.bot.get_channel(player.fetch('channel')).send(embed=s)
+        else:
+            queue_length = len(player.queue)
+            track = results["tracks"][0]
+            player.add(requester=ctx.author.id, track=track)
+            if queue_length != 0:
+                player.queue[:queue_length], player.queue[queue_length+1:] = player.queue[queue_length+1:], player.queue[:queue_length]
+            try:
+                request = requests.get("https://www.youtube.com/list_ajax?style=json&action_get_templist=1&video_ids={}".format(track["info"]["identifier"])).json()["video"][0]
+            except:
+                request = None
+            s.set_author(name="Added to Queue", icon_url=ctx.author.avatar_url)
+            if request:
+                s.set_footer(text="{:,} 👍 | {:,} 👎".format(request["likes"], request["dislikes"]))
+            s.set_thumbnail(url="https://img.youtube.com/vi/{}/default.jpg".format(track["info"]["identifier"]))
+            s.add_field(name="Song", value="[{}]({})".format(track["info"]["title"], track["info"]["uri"]), inline=False)
+            s.add_field(name="Duration", value=self.format_time(track["info"]["length"]), inline=True)
+            if request:
+                s.add_field(name="Views", value=request["views"].replace("\xa0", ","))
+                s.add_field(name="Channel", value=request["author"])
+            s.add_field(name="Position in Queue", value="Next")
+            s.add_field(name="Estimated time till playing", value="Next")
+            await self.bot.get_channel(player.fetch('channel')).send(embed=s)
+        if not player.is_playing:
+            await player.play()
+        await player.skip()
+
+    @commands.command()
+    async def movesong(self, ctx, track_index: int, new_index: int):
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+        if player.fetch("sessionowner") in map(lambda c: c.id, player.connected_channel.members) and player.fetch("sessionowner") != ctx.author.id:
+            return await ctx.send("You have to be the session owner to use this command :no_entry:")
+        if (new_index < 1 or new_index > len(player.queue)) or (track_index < 1 or track_index > len(player.queue)):
+            return await ctx.send("Invalid Index :no_entry:")
+        new_index -= 1
+        track_index -= 1
+        track = player.queue[track_index:track_index + 1][0]
+        player.queue.pop(track_index)
+        player.queue.insert(new_index, track)
+        await ctx.send("Moved **{}** to index {} <:done:403285928233402378>".format(track.title, new_index + 1))
 
     @commands.command()
     async def playlist(self, ctx, *, query):
@@ -389,14 +472,7 @@ class music:
                 await ctx.send("Skipped.")
                 await player.skip()
             else:
-                minpeople = math.ceil(len(set(filter(lambda x: not x.bot, player.connected_channel.members)))/2)
-                votes = player.fetch("votes") if player.fetch("votes") else 0
-                player.store("votes", votes + 1)
-                if votes + 1 >= minpeople:
-                    await ctx.send("Skipped.")
-                    await player.skip()
-                else:
-                    await ctx.send("Skip? {}/{}".format(votes + 1, minpeople))
+                await ctx.send("Only the session owner can skip songs :no_entry:")
 
 
     @commands.command()
@@ -520,12 +596,11 @@ class music:
                             player.store("nousers", datetime.datetime.utcnow().timestamp())
                         else:
                             if datetime.datetime.utcnow().timestamp() - player.fetch("nousers") >= 100:
-                                player.queue.clear()
-                                await player.disconnect()
-                                player.delete("votes")
-                                player.delete("nousers")
                                 if channel:
                                     await channel.send("No one has been in the voice channel for 2 minutes :wave:")
+                                player.queue.clear()
+                                await player.disconnect()
+                                player.cleanup()
                     else:
                         player.delete("nousers")
             await asyncio.sleep(45)

@@ -30,7 +30,7 @@ class selfroles:
         if ctx.invoked_subcommand is None:
             await arghelp.send(self.bot, ctx)
         else:
-            r.table("selfroles").insert({"id": str(server.id), "roles": []}).run()
+            r.table("selfroles").insert({"id": str(server.id), "roles": []}).run(durability="soft")
 			
     @selfrole.command() 
     @checks.has_permissions("manage_roles")
@@ -55,7 +55,7 @@ class selfroles:
         server = ctx.message.guild
         data = r.table("selfroles").get(str(server.id))
         try:
-            if str(role.id) in data["roles"].run():
+            if str(role.id) in data["roles"].run(durability="soft"):
                 await ctx.send("That role is already a self role :no_entry:")
                 return
         except: 
@@ -85,10 +85,10 @@ class selfroles:
             return await ctx.send("I could not find that role :no_entry:")
         server = ctx.message.guild
         data = r.table("selfroles").get(str(server.id))
-        if str(role.id) not in data["roles"].run():
+        if str(role.id) not in data["roles"].run(durability="soft"):
             await ctx.send("That role isn't a self role :no_entry:")
             return
-        data.update({"roles": r.row["roles"].difference([str(role.id)])}).run()
+        data.update({"roles": r.row["roles"].difference([str(role.id)])}).run(durability="soft")
         await ctx.send("Removed **{}** from the self roles list <:done:403285928233402378>".format(role.name))
 		
     @selfrole.command() 
@@ -97,14 +97,14 @@ class selfroles:
         """Reset all the selfroles"""
         server = ctx.message.guild
         data = r.table("selfroles").get(str(server.id))
-        data.update({"roles": []}).run()
+        data.update({"roles": []}).run(durability="soft")
         await ctx.send("All self roles have been deleted <:done:403285928233402378>")
 		
     @selfrole.command() 
     async def list(self, ctx): 
         """List all the selfroles"""
         server = ctx.message.guild
-        data = r.table("selfroles").get(str(server.id)).run()
+        data = r.table("selfroles").get(str(server.id)).run(durability="soft")
         i = 0
         for roleid in data["roles"]:
             role = discord.utils.get(server.roles, id=int(roleid))
@@ -189,7 +189,9 @@ class selfroles:
             return await ctx.send("I could not find that role :no_entry:")
         author = ctx.message.author
         server = ctx.message.guild
-        data = r.table("selfroles").get(str(server.id)).run()
+        data = r.table("selfroles").get(str(server.id)).run(durability="soft")
+        if not data:
+            return await ctx.send("That role is not self assignable :no_entry:")
         if str(role.id) in data["roles"]:
             if role in author.roles:
                 await author.remove_roles(role)
@@ -203,23 +205,23 @@ class selfroles:
             await ctx.send("That role is not self assignable :no_entry:")
 			
     async def _create_role(self, server, role):
-        r.table("selfroles").get(str(server.id)).update({"roles": r.row["roles"].append(str(role.id))}).run()
+        r.table("selfroles").get(str(server.id)).update({"roles": r.row["roles"].append(str(role.id))}).run(durability="soft")
 			
     async def _list(self, server, page):   
         msg = []
-        data = r.table("selfroles").get(str(server.id)).run()
+        data = r.table("selfroles").get(str(server.id)).run(durability="soft")
         for roleid in list(data["roles"])[page*20-20:page*20]:
             role = discord.utils.get(server.roles, id=int(roleid))
             if role:
                 msg.append(role)
-        msg = "\n".join(sorted([x.name for x in msg], key=[x.name for x in server.role_hierarchy].index))
+        msg = "\n".join(map(lambda x: x.name, (sorted(msg, key=server.roles.index))[::-1]))
         return msg
 		 
     async def on_server_role_delete(self, role):
         server = role.guild
         data = r.table("selfroles").get(str(server.id))
-        if str(role.id) in data["roles"].run():
-            data.update({"roles": r.row["roles"].difference([str(role.id)])}).run()
+        if str(role.id) in data["roles"].run(durability="soft"):
+            data.update({"roles": r.row["roles"].difference([str(role.id)])}).run(durability="soft")
 		
 def setup(bot):
     bot.add_cog(selfroles(bot))

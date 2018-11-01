@@ -17,14 +17,13 @@ import html
 from urllib.request import Request, urlopen
 import json
 import urllib
-#from iso639 import languages
+from iso639 import languages
 import re
 import os
 from random import choice
 from threading import Timer
 from utils import Token 
 import requests
-from utils.dataIO import dataIO
 from random import randint
 from copy import deepcopy
 from collections import namedtuple, defaultdict, deque
@@ -41,6 +40,7 @@ class fun:
         self.bot = bot
 
     @commands.command(aliases=["tran", "tr"])
+    @commands.cooldown(1, 7, commands.BucketType.user)
     async def translate(self, ctx, language, *, text):
         """Translate one language to another"""
         if len(language) == 2:
@@ -64,6 +64,34 @@ class fun:
             s.add_field(name="Input Text ({})".format(languages.get(part1=request.json()["from"]["language"]["iso"]).name), value=html.unescape(request.json()["from"]["text"]["value"]) if request.json()["from"]["text"]["value"] else text, inline=False)
             s.add_field(name="Output Text ({})".format(language.title()), value=request.json()["text"])
             await ctx.send(embed=s)
+
+    @commands.command(aliases=["vg"])
+    @commands.cooldown(1, 6, commands.BucketType.default)
+    async def vainglory(self, ctx, ign: str, region: str="na"):
+        """Get stats of a player make sure to include their ign and region they play on"""
+        regions = ["cn", "na", "eu", "sa", "ea", "sg"]
+        if region not in regions:
+            ctx.command.reset_cooldown(ctx)
+            return await ctx.send("Invalid region, valid regions are {} :no_entry:".format(", ".join(regions)))
+        request = requests.get("https://api.dc01.gamelockerapp.com/shards/{}/players?{}".format(region, urllib.parse.urlencode({"filter[playerNames]": ign})), headers={"Authorization": Token.vainglory(), "Accept": "application/vnd.api+json"}).json()
+        try:
+            if request["errors"]:
+                ctx.command.reset_cooldown(ctx)
+                return await ctx.send("I could not find that user :no_entry:")  
+        except:
+            pass
+        userdata = request["data"][0]["attributes"]
+        id = request["data"][0]["id"]
+        s=discord.Embed(colour=ctx.author.colour)
+        s.set_author(name=ign, icon_url=ctx.author.avatar_url)
+        s.set_footer(text="ID: {} | Guild Tag: {}".format(id, userdata["stats"]["guildTag"] if  userdata["stats"]["guildTag"] else "None"))
+        s.add_field(name="Games Played", value="{}\nWins: {:,}".format("\n".join(["{}: {:,}".format(x[0].replace("_", " ").title(), x[1]) for x in userdata["stats"]["gamesPlayed"].items()]), userdata["stats"]["wins"]))
+        s.add_field(name="ELO Earned", value="\n".join(sorted(["{}: {:,}".format(x.split("_", 2)[2].replace("_", " ").title(), userdata["stats"][x]) for x in userdata["stats"] if "season" in x], key=lambda x: x.split(" ")[1])))
+        s.add_field(name="Levels", value="Level {:,}\n{:,} XP\nKarma Level: {:,}".format(userdata["stats"]["level"], userdata["stats"]["xp"], userdata["stats"]["karmaLevel"]))
+        s.add_field(name="Streaks", value="Win Streak: {:,}\nLoss Streak: {:,}".format(userdata["stats"]["winStreak"], userdata["stats"]["lossStreak"]))
+        s.add_field(name="Ranked Points", value="{}".format("\n".join(["{}: {:,}".format(x[0].replace("_", " ").title(), round(x[1])) for x in userdata["stats"]["rankPoints"].items()])))
+        s.add_field(name="Skill Tier", value="{:,}".format(userdata["stats"]["skillTier"]))
+        await ctx.send(embed=s)
 
     @commands.command(aliases=["calc"])
     async def calculator(self, ctx, *, equation):
@@ -421,11 +449,11 @@ class fun:
             your_choice = "**Scissors :scissors:**"
         await ctx.send("{}: {}\nSx4: {}\n\n{}".format(author.name, your_choice, bot_choice, end))
         if end == "You lose, better luck next time.":
-            authordata.update({"rps_losses": r.row["rps_losses"] + 1}).run()
+            authordata.update({"rps_losses": r.row["rps_losses"] + 1}).run(durability="soft")
         if end == "Draw, let's go again!":
-            authordata.update({"rps_draws": r.row["rps_draws"] + 1}).run()
+            authordata.update({"rps_draws": r.row["rps_draws"] + 1}).run(durability="soft")
         if end == "You win! :trophy:":
-            authordata.update({"rps_wins": r.row["rps_wins"] + 1}).run()
+            authordata.update({"rps_wins": r.row["rps_wins"] + 1}).run(durability="soft")
          
     @commands.command(pass_context=True, aliases=["rpss"])
     async def rpsstats(self, ctx, *, user: discord.Member=None): 
@@ -436,9 +464,14 @@ class fun:
         userdata = r.table("rps").get(str(user.id))
         s=discord.Embed(colour=user.colour)
         s.set_author(name="{}'s RPS Stats".format(user.name), icon_url=user.avatar_url)
-        s.add_field(name="Wins", value=userdata["rps_wins"].run())
-        s.add_field(name="Draws", value=userdata["rps_draws"].run())
-        s.add_field(name="Losses", value=userdata["rps_losses"].run())
+        if not userdata:
+            s.add_field(name="Wins", value="0")
+            s.add_field(name="Draws", value="0")
+            s.add_field(name="Losses", value="0")
+        else:
+            s.add_field(name="Wins", value=userdata["rps_wins"].run(durability="soft"))
+            s.add_field(name="Draws", value=userdata["rps_draws"].run(durability="soft"))
+            s.add_field(name="Losses", value=userdata["rps_losses"].run(durability="soft"))
         await ctx.send(embed=s)
         
 def setup(bot):

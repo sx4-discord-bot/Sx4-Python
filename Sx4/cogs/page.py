@@ -11,7 +11,6 @@ from utils import checks
 import numbers
 import os
 from random import choice
-from utils.dataIO import dataIO
 from random import randint
 from copy import deepcopy
 from collections import namedtuple, defaultdict, deque
@@ -36,7 +35,7 @@ class page:
 		if channel.id not in PagedResultData.paged_results[server.id]:
 			PagedResultData.paged_results[server.id][channel.id] = dict()
 			
-		paged_result = PagedResult([x for x in ctx.message.guild.role_hierarchy], lambda role: role.mention)
+		paged_result = PagedResult(ctx.guild.roles[::-1], lambda role: role.mention)
 		paged_result.list_indexes = True
 		paged_result.selectable = False
 

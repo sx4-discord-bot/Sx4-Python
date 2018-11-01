@@ -26,7 +26,7 @@ async def prefix_function(bot, message):
     elif server and server["prefixes"] != []:
         return [x.encode().decode() for x in server["prefixes"]] + ['<@440996323156819968> ']
     else:
-        return ['s?', 'S?' 'sx4 ', '<@440996323156819968> ']
+        return ['s?', 'S?', 'sx4 ', '<@440996323156819968> ']
    
 bot = commands.AutoShardedBot(command_prefix=prefix_function, case_insensitive=False)
 wrap = "```py\n{}\n```"
@@ -53,6 +53,7 @@ async def on_ready():
 		
 @bot.event 
 async def on_message(message):
+    await bot.wait_until_ready()
     if message.author.bot:
         return
     elif str(message.author.id) in r.table("blacklist").get("owner")["users"].run():
@@ -65,6 +66,7 @@ async def on_message(message):
 
 @bot.event 
 async def on_message_edit(before, after):
+    await bot.wait_until_ready()
     if after.author.bot:
         return
     elif str(after.author.id) in r.table("blacklist").get("owner")["users"].run():
@@ -82,6 +84,7 @@ async def on_command_error(ctx, error, *args, **kwargs):
     channel = ctx.channel
     author = ctx.author 
     if isinstance(error, commands.CheckFailure):
+        perms = ctx.command.checks[0]
         if ctx.command.checks[0].__name__ == "is_owner_check":
             try:
                 ctx.command.reset_cooldown(ctx)
@@ -111,7 +114,8 @@ async def on_command_error(ctx, error, *args, **kwargs):
             ctx.command.reset_cooldown(ctx)
         except:
             pass
-        return await channel.send("The command `{}` has been disabled :no_entry:".format(ctx.command))
+        if not checks.is_owner_check(ctx):
+            return await channel.send("The command `{}` has been disabled :no_entry:".format(ctx.command))
     elif isinstance(error, commands.CommandOnCooldown):
         m, s = divmod(error.retry_after, 60)
         h, m = divmod(m, 60)
@@ -131,7 +135,7 @@ async def on_command_error(ctx, error, *args, **kwargs):
         for x in ctx.command.params:
             if x != "ctx":
                 if x != "self":
-                    if "None" in str(ctx.command.params[x]):
+                    if "=" in str(ctx.command.params[x]):
                         msg += "[{}] ".format(x)
                     else:
                         msg += "<{}> ".format(x)
@@ -167,7 +171,7 @@ async def on_command_error(ctx, error, *args, **kwargs):
         for x in ctx.command.params:
             if x != "ctx":
                 if x != "self":
-                    if "None" in str(ctx.command.params[x]):
+                    if "=" in str(ctx.command.params[x]):
                         msg += "[{}] ".format(x)
                     else:
                         msg += "<{}> ".format(x)

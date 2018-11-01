@@ -4,7 +4,6 @@ from discord.ext import commands
 from random import choice as randchoice
 import time
 import datetime
-from utils.dataIO import dataIO
 from utils import checks
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen

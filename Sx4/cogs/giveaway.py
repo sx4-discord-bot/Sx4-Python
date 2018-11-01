@@ -43,7 +43,7 @@ class giveaway:
         if ctx.invoked_subcommand is None:
             await arghelp.send(self.bot, ctx)
         else:
-            r.table("giveaway").insert({"id": str(server.id), "giveaway#": 0, "giveaways": []}).run()
+            r.table("giveaway").insert({"id": str(server.id), "giveaway#": 0, "giveaways": []}).run(durability="soft")
 
     @giveaway.command()
     async def reroll(self, ctx, message_id: int, winners: int=None):
@@ -93,7 +93,7 @@ class giveaway:
         server = ctx.guild
         serverdata = r.table("giveaway").get(str(server.id))
         try:
-            message = await self.bot.get_channel(int(serverdata["giveaways"].filter({"id": id})[0]["channel"].run())).get_message(int(serverdata["giveaways"].filter({"id": id})[0]["message"].run()))
+            message = await self.bot.get_channel(int(serverdata["giveaways"].filter({"id": id})[0]["channel"].run(durability="soft"))).get_message(int(serverdata["giveaways"].filter({"id": id})[0]["message"].run(durability="soft")))
         except:
             await ctx.send("Not a valid id :no_entry:")
             return
@@ -101,7 +101,7 @@ class giveaway:
             await message.delete()
         except:
             pass
-        serverdata.update({"giveaways": r.row["giveaways"].filter(lambda x: x["id"] != id)}).run()
+        serverdata.update({"giveaways": r.row["giveaways"].filter(lambda x: x["id"] != id)}).run(durability="soft")
         await ctx.send("That giveaway has been cancelled and deleted.")
 
     @giveaway.command()
@@ -192,8 +192,8 @@ class giveaway:
         except asyncio.TimeoutError:
             await ctx.send("Timed out :stopwatch:")
             return
-        serverdata.update({"giveaway#": r.row["giveaway#"] + 1}).run()
-        id = serverdata["giveaway#"].run()
+        serverdata.update({"giveaway#": r.row["giveaway#"] + 1}).run(durability="soft")
+        id = serverdata["giveaway#"].run(durability="soft")
         starttime = datetime.utcnow().timestamp()
         endtime = datetime.utcnow().timestamp() + int(time2.content)
         s=discord.Embed(title=title.content, description="Enter by reacting with :tada:\n\nThis giveaway is for **{}**\nDuration: **{}**\nWinners: **{}**".format(item.content, await self.giveaway_time(starttime, endtime), int(winners.content)), timestamp=datetime.fromtimestamp(datetime.utcnow().timestamp() + int(time2.content)))
@@ -208,37 +208,39 @@ class giveaway:
         giveaway["message"] = str(message.id)
         giveaway["winners"] = int(winners.content)
         giveaway["id"] = id
-        serverdata.update({"giveaways": r.row["giveaways"].append(giveaway)}).run()
+        serverdata.update({"giveaways": r.row["giveaways"].append(giveaway)}).run(durability="soft")
         await ctx.send("Your giveaway has been created :tada:\nGiveaway ID: `{}` (This can be used to delete giveaways)".format(id))
         
     async def check_giveaway(self):
-        await self.bot.wait_until_ready()
-        data = r.table("giveaway")
         while not self.bot.is_closed():
-            for sdata in data.run():
-                serverdata = data.get(sdata["id"])
-                for x in sdata["giveaways"]:
-                    if x["endtime"] <= datetime.utcnow().timestamp():
-                        try:
-                            message = await self.bot.get_channel(int(x["channel"])).get_message(int(x["message"]))
-                            reaction = [x for x in message.reactions if x.emoji == "🎉"][0]
+            try:
+                data = r.table("giveaway")
+                for sdata in data.run(durability="soft"):
+                    serverdata = data.get(sdata["id"])
+                    for x in sdata["giveaways"]:
+                        if x["endtime"] <= datetime.utcnow().timestamp():
                             try:
-                                winner = random.sample([x for x in await reaction.users().flatten() if x != self.bot.user], k=x["winners"])
+                                message = await self.bot.get_channel(int(x["channel"])).get_message(int(x["message"]))
+                                reaction = [x for x in message.reactions if x.emoji == "🎉"][0]
+                                try:
+                                    winner = random.sample([x for x in await reaction.users().flatten() if x != self.bot.user], k=x["winners"])
+                                except:
+                                    winner = random.sample([x for x in await reaction.users().flatten() if x != self.bot.user], k=len([x for x in await reaction.users().flatten() if x != self.bot.user]))
+                                if winner == []:
+                                    await self.bot.get_channel(int(x["channel"])).send("No one entered the giveaway :no_entry:")
+                                    await message.delete()
+                                    serverdata.update({"giveaways": r.row["giveaways"].filter(lambda y: y["id"] != x["id"])}).run(durability="soft", noreply=True)
+                                    return
+                                s=discord.Embed(title=x["title"], description="**{}** has won **{}**".format(", ".join([str(x) for x in winner]), x["item"]))
+                                s.set_footer(text="Giveaway Ended")
+                                await message.edit(embed=s)
+                                await self.bot.get_channel(int(x["channel"])).send("{}, Congratulations you won the giveaway for **{}**".format(", ".join([x.mention for x in winner]), x["item"]))
+                                serverdata.update({"giveaways": r.row["giveaways"].filter(lambda y: y["id"] != x["id"])}).run(durability="soft", noreply=True)
                             except:
-                                winner = random.sample([x for x in await reaction.users().flatten() if x != self.bot.user], k=len([x for x in await reaction.users().flatten() if x != self.bot.user]))
-                            if winner == []:
-                                await self.bot.get_channel(int(x["channel"])).send("No one entered the giveaway :no_entry:")
-                                await message.delete()
-                                serverdata.update({"giveaways": r.row["giveaways"].filter(lambda y: y["id"] != x["id"])}).run()
-                                return
-                            s=discord.Embed(title=x["title"], description="**{}** has won **{}**".format(", ".join([str(x) for x in winner]), x["item"]))
-                            s.set_footer(text="Giveaway Ended")
-                            await message.edit(embed=s)
-                            await self.bot.get_channel(int(x["channel"])).send("{}, Congratulations you won the giveaway for **{}**".format(", ".join([x.mention for x in winner]), x["item"]))
-                            serverdata.update({"giveaways": r.row["giveaways"].filter(lambda y: y["id"] != x["id"])}).run()
-                        except:
-                            pass
-            await asyncio.sleep(120)
+                                pass
+            except Exception as e:
+                await self.bot.get_channel(344091594972069888).send(e)
+            await asyncio.sleep(60)
 
 
     async def giveaway_time(self, starttime, endtime):

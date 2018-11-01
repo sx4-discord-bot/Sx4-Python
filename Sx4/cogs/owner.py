@@ -6,6 +6,9 @@ import time
 import requests
 import datetime
 import rethinkdb as r
+from discord.ext.commands.view import StringView
+import json
+from utils import arg
 import math
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from utils import checks
@@ -54,6 +57,42 @@ class owner:
         except: 
             pass
 
+    @commands.command(hidden=True, name="as")
+    @checks.is_owner()
+    async def _as(self, ctx, user: str, command_name: str, *, args: str=""):
+        user = await arg.get_member(self.bot, ctx, user)
+        if not user:
+            return await ctx.send("You're retarded that's not a user :no_entry:")
+        else:
+            ctx.author = user
+            ctx.message.author = user
+        if " " in command_name:
+            command = command_name.split(" ", 1)
+            try:
+                command = self.bot.all_commands[command[0]].all_commands[command[1]]
+            except KeyError:
+                return await ctx.send("Invalid command :no_entry:")
+        else:
+            try:
+                command = self.bot.all_commands[command_name]
+            except KeyError:
+                return await ctx.send("Invalid command :no_entry:")
+        ctx.message.content = ctx.prefix + command_name + " " + args
+        ctx.view = StringView(args)
+        await command.invoke(ctx)
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def commandlog(self, ctx, *, code: str=None):
+        if not code:
+            with open("commandlog.json", "wb") as f:
+                f.write(json.dumps(r.table("botstats").get("stats")["commandlog"].run(durability="soft")).encode())
+        else:
+            with open("commandlog.json", "wb") as f:
+                f.write(json.dumps(list(eval(code.replace("data", 'r.table("botstats").get("stats")["commandlog"].run(durability="soft")')))).encode())
+        await ctx.send(file=discord.File("commandlog.json"))
+        os.remove("commandlog.json")
+
     @commands.command(hidden=True)
     @checks.is_owner()
     async def disable(self, ctx, command: str, boolean: bool=False):
@@ -69,19 +108,19 @@ class owner:
     @commands.command(hidden=True)
     @checks.is_owner()
     async def blacklist(self, ctx, user_id: str, boolean: bool):
-        r.table("blacklist").insert({"id": "owner", "users": []}).run()
+        r.table("blacklist").insert({"id": "owner", "users": []}).run(durability="soft")
         data = r.table("blacklist").get("owner")
         if boolean == True:
-            if user_id not in data["users"].run():
-                data.update({"users": r.row["users"].append(user_id)}).run()
+            if user_id not in data["users"].run(durability="soft"):
+                data.update({"users": r.row["users"].append(user_id)}).run(durability="soft")
                 await ctx.send("User has been blacklisted.")
             else:
                 await ctx.send("That user is already blacklisted.")
         if boolean == False:
-            if user_id not in data["users"].run():
+            if user_id not in data["users"].run(durability="soft"):
                 await ctx.send("That user is not blacklisted.")
             else:
-                data.update({"users": r.row["users"].difference([user_id])}).run()
+                data.update({"users": r.row["users"].difference([user_id])}).run(durability="soft")
                 await ctx.send("That user is no longer blacklisted")
 		
     @commands.command(hidden=True)

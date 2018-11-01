@@ -7,12 +7,13 @@ from collections import deque, defaultdict
 import os
 import re
 import logging
+from cogs import mod
 import asyncio
 import random
-#from utils import arghelp
+from utils import arghelp
 import time
 
-reinvite = "(?:https://|http://|[\s \S]*|)discord.gg/(?:[\s \S]|[0-9]){1,7}"
+reinvite = re.compile("(?:[\s \S]|)*(?:https?://)?(?:www.)?(?:discord.gg|(?:canary.)?discordapp.com/invite)/((?:[a-zA-Z0-9]){2,32})(?:[\s \S]|)*", re.IGNORECASE)
 
 
 class antiad:
@@ -27,35 +28,94 @@ class antiad:
         if ctx.invoked_subcommand is None:
             await arghelp.send(self.bot, ctx)
         else:
-            r.table("antiad").insert({"id": str(server.id), "toggle": False, "modtoggle": True, "admintoggle": False, "bottoggle": True, "channels": []}).run()
+            r.table("antiad").insert({"id": str(server.id), "toggle": False, "modtoggle": True, "admintoggle": False, "bottoggle": True, "baninvites": False, "channels": [], "action": None, "attempts": 3, "users": []}).run(durability="soft")
 		
     @antiinvite.command()
-    @checks.has_permissions("manage_messages")
+    @checks.has_permissions("manage_guild")
     async def toggle(self, ctx):
         """Toggle antiinvite on or off"""
         server = ctx.guild
         data = r.table("antiad").get(str(server.id))
-        if data["toggle"].run() == True:
-            data.update({"toggle": False}).run()
+        if data["toggle"].run(durability="soft") == True:
+            data.update({"toggle": False}).run(durability="soft")
             await ctx.send("Anti-invite has been **Disabled**")
             return
-        if data["toggle"].run() == False:
-            data.update({"toggle": True}).run()
+        if data["toggle"].run(durability="soft") == False:
+            data.update({"toggle": True}).run(durability="soft")
             await ctx.send("Anti-invite has been **Enabled**")
             return
-		
+
+    @antiinvite.command()
+    @checks.has_permissions("manage_guild")
+    async def banusernames(self, ctx):
+        """Ban users if they join with an advertising discord link username"""
+        server = ctx.guild
+        data = r.table("antiad").get(str(server.id))
+        if data["baninvites"].run(durability="soft") == True:
+            data.update({"baninvites": False}).run(durability="soft")
+            await ctx.send("I will no longer ban users with a discord link as their name.")
+            return
+        if data["baninvites"].run(durability="soft") == False:
+            data.update({"baninvites": True}).run(durability="soft")
+            await ctx.send("I will now ban users with a discord link as their name.")
+            return
+
+    @antiinvite.command()
+    @checks.has_permissions("manage_guild")
+    async def action(self, ctx, action: str):
+        """Set an action (mute, kick, ban, none) to happen when a user reaches a certain amount of posted invites (defaults at 3 but can be changed using `s?antiinvite attempts <amount>`)"""
+        data = r.table("antiad").get(str(ctx.guild.id))
+        if action.lower() in ["none", "off"]:
+            await ctx.send("Auto mod for antiinvite is now disabled.")
+            data.update({"action": None}).run(durability="soft")
+        elif action.lower() in ["mute", "kick", "ban"]:
+            await ctx.send("Users who post **{}** {} will now receive a **{}**".format(data["attempts"].run(durability="soft"), "invite" if data["attempts"].run(durability="soft") == 1 else "invites", action.lower()))
+            data.update({"action": action.lower()}).run(durability="soft")
+        else:
+            await ctx.send("That is not a valid action :no_entry:")
+
+    @antiinvite.command()
+    @checks.has_permissions("manage_guild")
+    async def attempts(self, ctx, attempts: int):
+        """Sets the amount of invites which can be sent by a user before an action happens"""
+        data = r.table("antiad").get(str(ctx.guild.id))
+        if attempts < 1:
+            return await ctx.send("The amount of sent invites needs to be 1 or above :no_entry:")
+        if attempts > 500:
+            return await ctx.send("The max amount of attempts is 500 :no_entry:")
+        if data["action"].run(durability="soft"):
+            await ctx.send("Users who post **{}** {} will now receive a **{}**".format(attempts, "invite" if attempts == 1 else "invites", data["action"].run(durability="soft")))
+        else:
+            await ctx.send("Attempts set to **{}** to make the bot do an action after **{}** {}, use `{}antiinvite action <action>`".format(attempts, attempts, "attempt" if attempts == 1 else "attempts", ctx.prefix))
+        data.update({"attempts": attempts}).run(durability="soft")
+
+    @antiinvite.command(aliases=["reset"])
+    async def resetattempts(self, ctx, user: discord.Member=None):
+        """Resets the attempts of a user"""
+        if not user:
+            user = ctx.author
+        data = r.table("antiad").get(str(ctx.guild.id))
+        if str(user.id) not in data["users"].map(lambda x: x["id"]).run(durability="soft"):
+            return await ctx.send("This user doesn't have any attempts :no_entry:")
+        else:
+            if data["users"].filter(lambda x: x["id"] == str(user.id))[0]["attempts"].run(durability="soft") == 0:
+                return await ctx.send("This user doesn't have any attempts :no_entry:")
+            else:
+                await ctx.send("**{}** attempts have been reset.".format(user))
+                data.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(user.id), x.merge({"attempts": 0}), x))}).run(durability="soft")
+        
     @antiinvite.command() 
     @checks.has_permissions("manage_guild")
     async def modtoggle(self, ctx):
         """Choose whether you want your mods to be able to send invites or not (manage_message and above are classed as mods)"""
         server = ctx.guild
         data = r.table("antiad").get(str(server.id))
-        if data["modtoggle"].run() == True:
-            data.update({"modtoggle": False}).run()
+        if data["modtoggle"].run(durability="soft") == True:
+            data.update({"modtoggle": False}).run(durability="soft")
             await ctx.send("Mods will now not be affected by anti-invite.")
             return
-        if data["modtoggle"].run() == False:
-            data.update({"modtoggle": True}).run()
+        if data["modtoggle"].run(durability="soft") == False:
+            data.update({"modtoggle": True}).run(durability="soft")
             await ctx.send("Mods will now be affected by anti-invite.")
             return
 			
@@ -65,12 +125,12 @@ class antiad:
         """Choose whether you want your admins to be able to send invites or not (administrator perms are classed as admins)"""
         server = ctx.guild
         data = r.table("antiad").get(str(server.id))
-        if data["admintoggle"].run() == True:
-            data.update({"admintoggle": False}).run()
+        if data["admintoggle"].run(durability="soft") == True:
+            data.update({"admintoggle": False}).run(durability="soft")
             await ctx.send("Admins will now not be affected by anti-invite.")
             return
-        if data["admintoggle"].run() == False:
-            data.update({"admintoggle": True}).run()
+        if data["admintoggle"].run(durability="soft") == False:
+            data.update({"admintoggle": True}).run(durability="soft")
             await ctx.send("Admins will now be affected by anti-invite.")
             return
 			
@@ -80,12 +140,12 @@ class antiad:
         """Choose whether bots can send invites or not"""
         server = ctx.guild
         data = r.table("antiad").get(str(server.id))
-        if data["bottoggle"].run() == True:
-            data.update({"bottoggle": False}).run()
+        if data["bottoggle"].run(durability="soft") == True:
+            data.update({"bottoggle": False}).run(durability="soft")
             await ctx.send("Bots will now not be affected by anti-invite.")
             return
-        if data["bottoggle"].run() == False:
-            data.update({"bottoggle": True}).run()
+        if data["bottoggle"].run(durability="soft") == False:
+            data.update({"bottoggle": True}).run(durability="soft")
             await ctx.send("Bots will now be affected by anti-invite.")
             return
 			
@@ -97,11 +157,11 @@ class antiad:
         data = r.table("antiad").get(str(server.id))
         if not channel:
            channel = ctx.channel 
-        if str(channel.id) in data["channels"].run():
-            data.update({"channels": r.row["channels"].difference([str(channel.id)])}).run()
+        if str(channel.id) in data["channels"].run(durability="soft"):
+            data.update({"channels": r.row["channels"].difference([str(channel.id)])}).run(durability="soft")
             await ctx.send("Anti-invite is now enabled in <#{}>".format(str(channel.id)))
         else: 
-            data.update({"channels": r.row["channels"].append(str(channel.id))}).run()
+            data.update({"channels": r.row["channels"].append(str(channel.id))}).run(durability="soft")
             await ctx.send("Anti-invite is now disabled in <#{}>".format(str(channel.id)))
 		 
     @antiinvite.command()
@@ -113,81 +173,252 @@ class antiad:
         s.set_author(name="Anti-invite Settings", icon_url=self.bot.user.avatar_url)
         data = r.table("antiad").get(str(server.id))
         msg = ""
-        if data["toggle"].run() == True:
+        if data["toggle"].run(durability="soft") == True:
             toggle = "Enabled"
         else:
             toggle = "Disabled"
-        if data["modtoggle"].run() == False:
+        if data["modtoggle"].run(durability="soft") == False:
             mod = "Mods **Can** send links"
         else:
             mod = "Mods **Can't** send links"
-        if data["bottoggle"].run() == False:
+        if data["bottoggle"].run(durability="soft") == False:
             bottoggle = "Bots **Can** send links"
         else:
             bottoggle = "Bots **Can't** send links"
-        if data["admintoggle"].run() == False:
+        if data["admintoggle"].run(durability="soft") == False:
             admin = "Admins **Can** send links"
         else:
             admin = "Admins **Can't** send links"
+        if data["action"].run(durability="soft"):
+            action = "Sending {} {} will result in a {}".format(data["attempts"].run(durability="soft"), "invite" if data["attempts"].run(durability="soft") == 1 else "invites", data["action"].run(durability="soft"))
+        else:
+            action = "Disabled"
         s.add_field(name="Status", value=toggle)
         s.add_field(name="Mod Perms", value=mod)
         s.add_field(name="Admin Perms", value=admin)
         s.add_field(name="Bots", value=bottoggle)
-        for channelid in data["channels"].run():
+        s.add_field(name="Auto Mod", value=action)
+        s.add_field(name="Ban Users with Invites in their names", value="Yes" if data["baninvites"].run() else "No")
+        for channelid in data["channels"].run(durability="soft"):
             channel = discord.utils.get(server.channels, id=int(channelid))
             msg += channel.mention + "\n"
         s.add_field(name="Disabled Channels", value=msg if msg != "" else "None")
         await ctx.send(embed=s)
-		
+
+    async def on_member_join(self, member):
+        server = member.guild
+        if reinvite.match(member.name):
+            if r.table("antiad").get(str(server.id))["baninvites"].run() == True:
+                try:
+                    invite = await self.bot.get_invite(reinvite.match(member.name).group(1))
+                    if invite.guild == server:
+                        return
+                    else:
+                        reason = "Invite in username"
+                        action = "Ban (Automatic)"
+                        author = member
+                        await server.ban(member, reason=reason)
+                        await mod._log(self.bot, self.bot.user, server, action, reason, author)
+                except:
+                    return
 	
     async def on_message(self, message): 
         serverid = message.guild.id
+        server = message.guild
         author = message.author
         channel = message.channel
         data = r.table("antiad").get(str(serverid))
         if author == self.bot.user:
             return
-        if data["modtoggle"].run() == False:
+        if data["modtoggle"].run(durability="soft") == False:
             if channel.permissions_for(author).manage_messages:
                 return
-        if data["admintoggle"].run() == False:
+        if data["admintoggle"].run(durability="soft") == False:
             if channel.permissions_for(author).administrator:
                 return
-        if data["bottoggle"].run() == False:
+        if data["bottoggle"].run(durability="soft") == False:
             if author.bot:
                 return
-        if str(channel.id) in data["channels"].run():
+        if str(channel.id) in data["channels"].run(durability="soft"):
             return
-        if data["toggle"].run() == True:
-            if re.match(reinvite, message.content):
-                await message.delete()
-                await channel.send("{}, You are not allowed to send invite links here :no_entry:".format(author.mention))
+        if data["toggle"].run(durability="soft") == True:
+            if reinvite.match(message.content):
+                try:
+                    invite = await self.get_invite(reinvite.match(message.content).group(1))
+                    if "guild" in invite:
+                        if invite["guild"]["id"] == str(server.id):
+                            return
+                    elif "channel" in invite:
+                        pass
+                    else:
+                        return
+                    await message.delete()
+                    msg = "{}, You are not allowed to send invite links here :no_entry:".format(author.mention)
+                    if data["action"].run(durability="soft"):
+                        if str(author.id) not in data["users"].map(lambda x: x["id"]).run(durability="soft"):
+                            amount = 1
+                            userdata = {}
+                            userdata["attempts"] = amount
+                            userdata["id"] = str(author.id)
+                            data.update({"users": r.row["users"].append(userdata)}).run(durability="soft", noreply=True)
+                        else:
+                            amount = data["users"].filter(lambda x: x["id"] == str(author.id))[0]["attempts"].run(durability="soft") + 1
+                        msg = "{}, You are not allowed to send invite links here, If you continue you will receive a {}. **({}/{})** :no_entry:".format(author.mention, data["action"].run(durability="soft"), amount, data["attempts"].run(durability="soft"))
+                        if amount >= data["attempts"].run(durability="soft"):
+                            if data["action"].run(durability="soft") == "ban":
+                                try:
+                                    reason = "Auto ban (Sent {} invite link(s))".format(data["attempts"].run(durability="soft"))
+                                    await server.ban(author, reason=reason)
+                                    msg = "**{}** was banned for sending a total of **{}** {}".format(author, data["attempts"].run(durability="soft"), "invite" if data["attempts"].run(durability="soft") == 1 else "invites")
+                                    amount = 0
+                                    action = "Ban (Automatic)"
+                                except:
+                                    msg = "I attempted to ban **{}** for posting too many invite links but it failed, check my role is above the users top role and i have sufficient permissions :no_entry:".format(author)
+                            if data["action"].run(durability="soft") == "kick":
+                                try:
+                                    reason = "Auto kick (Sent {} invite link(s))".format(data["attempts"].run(durability="soft"))
+                                    await server.kick(author, reason=reason)
+                                    msg = "**{}** was kicked for sending a total of **{}** {}".format(author, data["attempts"].run(durability="soft"), "invite" if data["attempts"].run(durability="soft") == 1 else "invites")
+                                    amount = 0
+                                    action = "Kick (Automatic)"
+                                except:
+                                    msg = "I attempted to kick **{}** for posting too many invite links but it failed, check my role is above the users top role and i have sufficient permissions :no_entry: {}".format(author)
+                            if data["action"].run(durability="soft") == "mute":
+                                if str(server.id) not in r.table("mute").map(lambda x: x["id"]).run(durability="soft"):
+                                    r.table("mute").insert({"id": str(server.id), "users": []}).run(durability="soft", noreply=True)
+                                mutedata = r.table("mute").get(str(serverid))
+                                role = discord.utils.get(server.roles, name="Muted - Sx4")
+                                if not role:
+                                    try:
+                                        role = await server.create_role(name="Muted - Sx4")
+                                    except:
+                                        msg = "I was unable to make the mute role therefore i was not able to mute {}, check if i have the manage_roles permission :no_entry:".format(author)
+                                if role:
+                                    try:
+                                        await author.add_roles(role)
+                                        msg = "**{}** was muted for 60 minutes for sending a total of **{}** {}".format(author, data["attempts"].run(durability="soft"), "invite" if data["attempts"].run(durability="soft") == 1 else "invites")
+                                        action = "Mute (Automatic)"
+                                        reason = "Auto mute (Sent {} invite link(s))".format(data["attempts"].run(durability="soft"))
+                                        amount = 0
+                                        if str(author.id) not in mutedata["users"].map(lambda x: x["id"]).run(durability="soft"):
+                                            userobj = {}
+                                            userobj["id"] = str(author.id)
+                                            userobj["toggle"] = True
+                                            userobj["amount"] = 3600
+                                            userobj["time"] = message.created_at.timestamp()
+                                            mutedata.update({"users": r.row["users"].append(userobj)}).run(durability="soft", noreply=True)
+                                        else:
+                                            mutedata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(author.id), x.merge({"time": message.created_at.timestamp(), "amount": 3600, "toggle": True}), x))}).run(durability="soft", noreply=True)
+                                    except:
+                                        msg = "I attempted to mute **{}** for posting too many invite links but it failed, check that i have the manage_roles permission and that my role is above the mute role :no_entry:".format(author)
+                        data.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(author.id), x.merge({"attempts": amount}), x))}).run(durability="soft", noreply=True)
+                    await channel.send(msg)
+                    await mod._log(self.bot, self.bot.user, server, action, reason, author)
+                except:
+                    return
 				
     async def on_message_edit(self, before, after): 
         serverid = before.guild.id
+        server = before.guild
         author = before.author
         channel = before.channel
         data = r.table("antiad").get(str(serverid))
         if author == self.bot.user:
             return
-        if data["modtoggle"].run() == False:
+        if data["modtoggle"].run(durability="soft") == False:
             if channel.permissions_for(author).manage_messages:
                 return
-        if data["admintoggle"].run() == False:
+        if data["admintoggle"].run(durability="soft") == False:
             if channel.permissions_for(author).administrator:
                 return
-        if data["bottoggle"].run() == False:
+        if data["bottoggle"].run(durability="soft") == False:
             if author.bot:
                 return
         try:
-            if str(channel.id) in data["channels"].run():
+            if str(channel.id) in data["channels"].run(durability="soft"):
                 return
         except:
             pass
-        if data["toggle"].run() == True:
-            if re.match(reinvite, after.content):
-                await after.delete()
-                await channel.send("{}, You are not allowed to send invite links here :no_entry:".format(author.mention))
+        if data["toggle"].run(durability="soft") == True:
+            if reinvite.match(after.content):
+                try:
+                    invite = await self.get_invite(reinvite.match(after.content).group(1))
+                    if "guild" in invite:
+                        if invite["guild"]["id"] == str(server.id):
+                            return
+                    elif "channel" in invite:
+                        pass
+                    else:
+                        return
+                    await after.delete()
+                    msg = "{}, You are not allowed to send invite links here :no_entry:".format(author.mention)
+                    if data["action"].run(durability="soft"):
+                        if str(author.id) not in data["users"].map(lambda x: x["id"]).run(durability="soft"):
+                            amount = 1
+                            userdata = {}
+                            userdata["attempts"] = amount
+                            userdata["id"] = str(author.id)
+                            data.update({"users": r.row["users"].append(userdata)}).run(durability="soft", noreply=True)
+                        else:
+                            amount = data["users"].filter(lambda x: x["id"] == str(author.id))[0]["attempts"].run(durability="soft", noreply=True) + 1
+                        msg = "{}, You are not allowed to send invite links here, If you continue you will receive a {}. **({}/{})** :no_entry:".format(author.mention, data["action"].run(durability="soft"), amount, data["attempts"].run(durability="soft"))
+                        if amount >= data["attempts"].run(durability="soft"):
+                            if data["action"].run(durability="soft") == "ban":
+                                try:
+                                    reason = "Auto ban (Sent {} invite link(s))".format(data["attempts"].run(durability="soft"))
+                                    await server.ban(author, reason=reason)
+                                    msg = "**{}** was banned for sending a total of **{}** {}".format(author, data["attempts"].run(durability="soft"), "invite" if data["attempts"].run(durability="soft") == 1 else "invites")
+                                    amount = 0
+                                    action = "Ban (Automatic)"
+                                except:
+                                    msg = "I attempted to ban **{}** for posting too many invite links but it failed, check my role is above the users top role and i have sufficient permissions :no_entry:".format(author)
+                            if data["action"].run(durability="soft") == "kick":
+                                try:
+                                    reason = "Auto kick (Sent {} invite link(s))".format(data["attempts"].run(durability="soft"))
+                                    await server.kick(author, reason=reason)
+                                    msg = "**{}** was kicked for sending a total of **{}** {}".format(author, data["attempts"].run(durability="soft"), "invite" if data["attempts"].run(durability="soft") == 1 else "invites")
+                                    amount = 0
+                                    action = "Kick (Automatic)"
+                                except:
+                                    msg = "I attempted to kick **{}** for posting too many invite links but it failed, check my role is above the users top role and i have sufficient permissions :no_entry:".format(author)
+                            if data["action"].run(durability="soft") == "mute":
+                                if str(server.id) not in r.table("mute").map(lambda x: x["id"]).run(durability="soft"):
+                                    r.table("mute").insert({"id": str(server.id), "users": []}).run(durability="soft", noreply=True)
+                                mutedata = r.table("mute").get(str(serverid))
+                                role = discord.utils.get(server.roles, name="Muted - Sx4")
+                                if not role:
+                                    try:
+                                        role = await server.create_role(name="Muted - Sx4")
+                                    except:
+                                        msg = "I was unable to make the mute role therefore i was not able to mute {}, check if i have the manage_roles permission :no_entry:".format(author)
+                                if role:
+                                    try:
+                                        await author.add_roles(role)
+                                        msg = "**{}** was muted for 60 minutes for sending a total of **{}** {}".format(author, data["attempts"].run(durability="soft"), "invite" if data["attempts"].run(durability="soft") == 1 else "invites")
+                                        amount = 0
+                                        action = "Mute (Automatic)"
+                                        reason = "Auto mute (Sent {} invite link(s))".format(data["attempts"].run(durability="soft"))
+                                        if str(author.id) not in mutedata["users"].map(lambda x: x["id"]).run(durability="soft"):
+                                            userobj = {}
+                                            userobj["id"] = str(author.id)
+                                            userobj["toggle"] = True
+                                            userobj["amount"] = 3600
+                                            userobj["time"] = after.edited_at.timestamp()
+                                            mutedata.update({"users": r.row["users"].append(userobj)}).run(durability="soft", noreply=True)
+                                        else:
+                                            mutedata.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(author.id), x.merge({"time": after.edited_at.timestamp(), "amount": 3600, "toggle": True}), x))}).run(durability="soft", noreply=True)
+                                    except:
+                                        msg = "I attempted to mute **{}** for posting too many invite links but it failed, check that i have the manage_roles permission and that my role is above the mute role :no_entry:".format(author)
+                        data.update({"users": r.row["users"].map(lambda x: r.branch(x["id"] == str(author.id), x.merge({"attempts": amount}), x))}).run(durability="soft", noreply=True)
+                    await channel.send(msg)
+                    await mod._log(self.bot, self.bot.user, server, action, reason, author)
+                except:
+                    return
+
+    async def get_invite(self, invite):
+        client = self.bot.http
+        r = discord.http.Route('GET', '/invite/{invite}?with_counts=true', invite=invite)
+        return await client.request(r)
 
 def setup(bot): 
     bot.add_cog(antiad(bot))

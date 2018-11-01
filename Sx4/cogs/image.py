@@ -2,18 +2,19 @@ import discord
 from discord.ext import commands
 import os
 from copy import deepcopy
-from utils.dataIO import dataIO
 from collections import namedtuple, defaultdict, deque
 from datetime import datetime
 from random import randint
 from copy import deepcopy
+from io import BytesIO, StringIO
 from utils import checks
 from enum import Enum
 import time
 import logging
 import datetime
 import math
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+from utils import arg
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageSequence
 from urllib.request import Request, urlopen
 import re
 import json
@@ -40,37 +41,119 @@ class image:
     async def flag(self, ctx, flag_initial: str, *, user: discord.Member=None):
         if not user:
             user = ctx.author
-        request = requests.get("http://www.geonames.org/flags/x/{}.gif".format(flag_initial))
-        with open("flag.png", "wb") as f:
-            f.write(request.content)
-        with open("avatar.png", "wb") as f:
-            f.write(requests.get(user.avatar_url).content)
         try:
-            flag = Image.open("flag.png").convert("RGBA")
+            flag = getImage("http://www.geonames.org/flags/x/{}.gif".format(flag_initial))
         except:
             return await ctx.send("Invalid flag initial :no_entry:")
-        avatar = Image.open("avatar.png").convert("RGBA")
+        avatar = getImage(user.avatar_url)
         avatar = avatar.resize((200, 200))
         flag = flag.resize((200, 200))
         flag.putalpha(100)
         avatar.paste(flag, (0, 0), flag)
-        avatar.save("flag.png")
-        await ctx.send(file=discord.File("flag.png", "flag.png"))
-        try:
-            os.remove("avatar.png")
-            os.remove("flag.png")
-        except:
-            pass
+        await send_file(ctx, avatar)
+
+    @commands.command()
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    async def halloween(self, ctx, user_or_image: str=None, enhance: int=None):
+        """Turn an image into a halloween themed one"""
+        if not user_or_image:
+            if ctx.message.attachments:
+                try:
+                    r = requests.get(ctx.message.attachments[0].url, stream=True)
+                    url = ctx.message.attachments[0].url
+                    if ".gif" in url:
+                        gif = True 
+                    else:
+                        gif = False
+                except:
+                    ctx.command.reset_cooldown(ctx)
+                    return await ctx.send("Invalid user/image :no_entry:")
+            else:
+                user = ctx.author
+                r = requests.get(user.avatar_url, stream=True)
+                url = user.avatar_url
+                if ".gif" in user.avatar_url:
+                    gif = True 
+                else:
+                    gif = False
+        else:
+            user = await arg.get_member(self.bot, ctx, user_or_image)
+            if not user:
+                try: 
+                    r = requests.get(user_or_image, stream=True)
+                    url = user_or_image
+                    if ".gif" in user_or_image:
+                        gif = True 
+                    else:
+                        gif = False
+                except:
+                    ctx.command.reset_cooldown(ctx)
+                    return await ctx.send("Invalid user/image :no_entry:")
+            else:
+                r = requests.get(user.avatar_url, stream=True)
+                url = user.avatar_url
+                if ".gif" in user.avatar_url:
+                    gif = True 
+                else:
+                    gif = False
+        if not gif:
+            img = Image.open(r.raw)
+            if enhance:
+                img = img.convert(mode='L')
+                img = ImageEnhance.Contrast(img).enhance(enhance)
+            img = img.convert("RGBA")
+            basewidth = 400
+            wpercent = (basewidth/float(img.size[0]))
+            hsize = int((float(img.size[1])*float(wpercent)))
+            img = img.resize((basewidth, hsize))
+
+            pixels = img.load()
+
+            for y in range(img.height):
+                for x in range(img.width):
+                    r, g, b, a = img.getpixel((x, y))
+                    o = math.sqrt(0.299*r**2 + 0.587*g**2 + 0.114*b**2)
+                    o *= ((o - 102) / 128)
+                    pixels[x, y] = (int(o), int((o - 10) / 2), 0, a)
+            await send_file(ctx, img)
+        else:
+            with open("avatar.gif", "wb") as f:
+                f.write(requests.get(url).content)
+            img = Image.open("avatar.gif")
+            new = []
+            frames = [frame.copy() for frame in ImageSequence.Iterator(img)]
+            try:
+                for frame in frames:
+                    if enhance:
+                        frame = frame.convert(mode='L')
+                        frame = ImageEnhance.Contrast(frame).enhance(enhance)
+                    basewidth = 128
+                    wpercent = (basewidth/float(img.size[0]))
+                    hsize = int((float(img.size[1])*float(wpercent)))
+                    frame = frame.convert("RGBA").resize((basewidth, hsize))
+                    pixels = frame.load()
+                    for y in range(frame.height):
+                        for x in range(frame.width):
+                            r, g, b, a = pixels[x, y]
+                            o = math.sqrt(0.299*r**2 + 0.587*g**2 + 0.114*b**2)
+                            o *= ((o - 102) / 128)
+                            pixels[x, y] = (int(o), int((o - 10) / 2), 0, a)
+                    new.append(frame)
+            except EOFError:
+                pass
+            await ctx.send(file=get_file_gif(new[0], new[1:]))
+            try:
+                os.remove("avatar.gif")
+            except:
+                pass
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def rip(self, ctx, *, user: discord.Member=None):
         if not user:
             user = ctx.author
-        with open("avatar.png", "wb") as f:
-            f.write(requests.get(user.avatar_url).content)
+        avatar = getImage(user.avatar_url)
         image = Image.open("rip.jpg").convert("RGBA")
-        avatar = Image.open("avatar.png").convert("RGBA")
         avatar = avatar.resize((260, 260))
         draw = ImageDraw.Draw(image)
         font = ImageFont.truetype("arial.ttf", 30)
@@ -80,12 +163,7 @@ class image:
         draw.text((left, 410), "Here lies {}".format(user.name), (0, 0, 0), font=font)
         image.paste(avatar, (285, 145), avatar)
         image.save("image.png")
-        await ctx.send(file=discord.File("image.png", "image.png"))
-        try:
-            os.remove("avatar.png")
-            os.remove("image.png")
-        except:
-            pass
+        await send_file(ctx, image)
         
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -117,26 +195,18 @@ class image:
                 except:
                     url = user_or_imagelink
         try:
-            with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
+            img2 = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
             img = Image.open("trash-meme.jpg")
-            img2 = Image.open("image.jpg")
             img2 = img2.resize((385, 384))
             img2 = img2.filter(ImageFilter.GaussianBlur(radius=7.0))
             img.paste(img2, (384, 0))
-            img.save("result.png")
-            await ctx.send(file=discord.File("result.png", "result.png"))
-            try:
-                os.remove("result.png")
-                os.remove("image.jpg")
-            except:
-                pass
+            await send_file(ctx, img)
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
 
     @commands.command(aliases=["www"]) 
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def whowouldwin(self, ctx, user_or_imagelink: str, user_or_imagelink2: str):
+    async def whowouldwin(self, ctx, user_or_imagelink: str, user_or_imagelink2: str=None):
         """Who would win out of 2 images"""
         channel = ctx.message.channel
         author = ctx.message.author
@@ -181,25 +251,14 @@ class image:
                 except:
                     url2 = user_or_imagelink2
         try:
-            with open('image1.jpg', 'wb') as f:
-                f.write(requests.get(url1.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
-            with open('image2.jpg', 'wb') as f:
-                f.write(requests.get(url2.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
+            img2 = getImage(url1.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
+            img3 = getImage(url2.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
             img = Image.open("whowouldwin.png").convert("RGBA")
-            img2 = Image.open("image1.jpg").convert("RGBA")
-            img3 = Image.open("image2.jpg").convert("RGBA")
             img2 = img2.resize((400, 400))
             img3 = img3.resize((400, 400))
             img.paste(img2, (30, 180), img2)
             img.paste(img3, (510, 180), img3)
-            img.save("result.png")
-            await ctx.send(file=discord.File("result.png", "result.png"))
-            try:
-                os.remove("result.png")
-                os.remove("image1.jpg")
-                os.remove("image1.jpg")
-            except:
-                pass
+            await send_file(ctx, img)
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
             
@@ -233,19 +292,12 @@ class image:
                 except:
                     url = user_or_imagelink
         try:
-            with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
-            img = Image.open("image.jpg")
+            img = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
             img2 = Image.open("fear-meme.png")
             img = img.resize((251, 251))
             img2.paste(img, (260, 517))
             img2.save("result.png")
-            await ctx.send(file=discord.File("result.png", "result.png"))
-            try:
-                os.remove("result.png")
-                os.remove("image.jpg")
-            except:
-                pass
+            await send_file(ctx, img2)
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
         
@@ -279,19 +331,11 @@ class image:
                 except:
                     url = user_or_imagelink
         try:
-            with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
-            im = Image.open("image.jpg")
+            im = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
             image = im.filter(ImageFilter.EMBOSS) 
             image = ImageEnhance.Contrast(image).enhance(4.0)
             image = image.filter(ImageFilter.SMOOTH)
-            image.save("result.png")
-            await ctx.send(file=discord.File("result.png", "result.png"))
-            try:
-                os.remove("result.png")
-                os.remove("image.jpg")
-            except:
-                pass
+            await send_file(ctx, image)
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
             
@@ -307,16 +351,10 @@ class image:
         random.seed(user2.id + user1.id)
         number = randint(0, 100)
         random.setstate(state)
-        if user1.id + user2.id == 581253343411044352:
-            number = 100
         u1avatar = user1.avatar_url
         u2avatar = user2.avatar_url
-        with open('image.jpg', 'wb') as f:
-            f.write(requests.get(u1avatar.replace("gif", "png").replace("webp", "png")).content)
-        with open('image2.jpg', 'wb') as f:
-            f.write(requests.get(u2avatar.replace("gif", "png").replace("webp", "png")).content)
-        user1 = Image.open("image.jpg").convert("RGBA")
-        user2 = Image.open("image2.jpg").convert("RGBA")
+        user1 = getImage(u1avatar.replace("gif", "png").replace("webp", "png"))
+        user2 = getImage(u2avatar.replace("gif", "png").replace("webp", "png"))
         user1 = user1.resize((280, 280))
         user2 = user2.resize((280, 280))
         heart = Image.open("heart.png")
@@ -324,14 +362,10 @@ class image:
         image.paste(user1, (0, 0))
         image.paste(heart, (280, 0))
         image.paste(user2, (600, 0))
-        image.save("result.png")
-        await ctx.send(content="Ship Name: **{}**\nLove Percentage: **{}%**".format(shipname, number), file=discord.File("result.png", "result.png"))
-        try:
-            os.remove("result.png")
-            os.remove("image.jpg")
-            os.remove("image2.jpg")
-        except:
-            pass        
+        temp = BytesIO()
+        image.save(temp, "png")
+        temp.seek(0)
+        await ctx.send(content="Ship Name: **{}**\nLove Percentage: **{}%**".format(shipname, number), file=discord.File(temp, "result.png"))
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -363,23 +397,15 @@ class image:
                 except:
                     url = user_or_imagelink
         try:
-            with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
+            img2 = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
             img = Image.open("vr.png").convert("RGBA")
             img = img.resize((493, 511))
-            img2 = Image.open("image.jpg").convert("RGBA")
             image = Image.new('RGBA', (493, 511), (255, 255, 255, 0))
             img2 = img2.resize((225, 150))
             img2.convert('RGBA')
             image.paste(img2, (15, 310), img2)
             image.paste(img, (0, 0), img)
-            image.save("result.png")
-            await ctx.send(file=discord.File("result.png", "result.png"))
-            try:
-                os.remove("result.png")
-                os.remove("image.jpg")
-            except:
-                pass
+            await send_file(ctx, image)
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
 					
@@ -414,23 +440,15 @@ class image:
                 except:
                     url = user_or_imagelink
         try:
-            with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
+            img2 = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
             img = Image.open("shit-meme.png").convert("RGBA")
-            img2 = Image.open("image.jpg").convert("RGBA")
             image = Image.new('RGBA', (763, 1080), (255, 255, 255, 0))
             img2 = img2.resize((185, 185))
             img2 = img2.rotate(50, expand=True)
             img2.convert('RGBA')
             image.paste(img2, (215, 675), img2)
             image.paste(img, (0, 0), img)
-            image.save("result.png")
-            await ctx.send(file=discord.File("result.png", "result.png"))
-            try:
-                os.remove("result.png")
-                os.remove("image.jpg")
-            except:
-                pass
+            await send_file(ctx, image)
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
 
@@ -463,22 +481,14 @@ class image:
                 except:
                     url = user_or_imagelink
         try:
-            with open('image.jpg', 'wb') as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
+            img2 = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
             img = Image.open("beautiful.png").convert("RGBA")
-            img2 = Image.open("image.jpg").convert("RGBA")
             img2 = img2.resize((90, 104))
             img2 = img2.rotate(1, expand=True)
             img2.convert('RGBA')
             img.paste(img2, (253, 25), img2)
             img.paste(img2, (256, 222), img2)
-            img.save("result.png")
-            await ctx.send(file=discord.File("result.png", "result.png"))
-            try:
-                os.remove("result.png")
-                os.remove("image.jpg")
-            except:
-                pass
+            await send_file(ctx, img)
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
             
@@ -511,9 +521,7 @@ class image:
                 except:
                     url = user_or_imagelink
         try:
-            with open("image.jpg", "wb") as f:
-                f.write(requests.get(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", "")).content)
-            img = Image.open("image.jpg").convert("RGBA")
+            img = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
             img = img.resize((600, 600))
             red = Image.new("RGBA", (600, 100), (255, 0, 0, 125))
             orange = Image.new("RGBA", (600, 100), (255, 69, 0, 125))
@@ -527,10 +535,7 @@ class image:
             img.paste(green, (0, 300), green)
             img.paste(blue, (0, 400), blue)
             img.paste(purple, (0, 500), purple)
-            img.save("image.png")
-            await ctx.send(file=discord.File("image.png", "image.png"))
-            os.remove("image.png")
-            os.remove("image.jpg")
+            await send_file(ctx, img)
         except:
             await ctx.send("Not a valid user or image url :no_entry:")
             
@@ -566,13 +571,7 @@ class image:
             m += 70
         font = ImageFont.truetype("arial.ttf", size)
         draw.text((60, 125), description, (0, 0, 0), font=font)
-        img.save("result.png")
-        await ctx.send(file=discord.File("result.png", "result.png"))
-        try:
-            os.remove("result.png")
-            os.remove("image.jpg")
-        except:
-            pass
+        await send_file(ctx, img)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -611,13 +610,7 @@ class image:
             m += char
         font = ImageFont.truetype("arial.ttf", size)
         draw.text((95, 285), description, (0, 0, 0), font=font)
-        img.save("result.png")
-        await ctx.send(file=discord.File("result.png", "result.png"))
-        try:
-            os.remove("result.png")
-            os.remove("image.jpg")
-        except:
-            pass
+        await send_file(ctx, img)
             
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -730,21 +723,65 @@ class image:
         draw.text((125, 60), description, (255, 255, 255), font=font)
         if description2 != "":
             draw.text((265, 60), description2, (255, 255, 255), font=font2)
-        with open('image.jpg', 'wb') as f:
-            if user.avatar_url != "":
-                f.write(requests.get(user.avatar_url.replace("gif", "png").replace("webp", "png")).content)
-            else:
-                f.write(requests.get(user.default_avatar_url.replace("gif", "png").replace("webp", "png")).content)
-        img2 = Image.open("image.jpg")
+        img2 = getImage(user.avatar_url.replace("gif", "png").replace("webp", "png"))
         img2 = img2.resize((23, 23))
         img.paste(img2, (270, 335))
-        img.save("result.png")
-        await ctx.send(file=discord.File("result.png", "result.png"))
+        await send_file(ctx, img)
+
+    @commands.command()
+    async def commoncolour(self, ctx, user_or_imagelink: str=None):
+        """Returns the most common colour from an image"""
+        if not user_or_imagelink:
+            if ctx.message.attachments:
+                url = ctx.message.attachments[0].url
+            else:
+                url = ctx.author.avatar_url
+        else:
+            user = await arg.get_member(self.bot, ctx, user_or_imagelink)
+            if not user:
+                url = user_or_imagelink
+            else:
+                url = user.avatar_url
         try:
-            os.remove("result.png")
-            os.remove("image.jpg")
+            image = getImage(url).convert("RGB")
         except:
-            pass
+            return await ctx.send("Invalid Image/User :no_entry:")
+        pixdata = image.load()
+        entries = {}
+        for y in range(image.size[1]):
+            for x in range(image.size[0]):
+                if pixdata[x, y] not in entries:
+                    entries[pixdata[x, y]] = 1
+                else:
+                    entries[pixdata[x, y]] += 1
+        image = Image.new("RGBA", (300, 50), sorted(entries.items(), key=lambda x: x[1], reverse=True)[0][0])
+        hex = '%02x%02x%02x' % sorted(entries.items(), key=lambda x: x[1], reverse=True)[0][0]
+        await ctx.send(file=get_file(image), embed=discord.Embed(title="Most Common Colour: #{}".format(hex.upper()), description="RGB: {}".format(sorted(entries.items(), key=lambda x: x[1], reverse=True)[0][0]), colour=discord.Colour(int(hex, 16))).set_image(url="attachment://result.png").set_thumbnail(url=url))
+        del entries
+
+
+async def send_file(ctx, image):
+    temp = BytesIO()
+    image.save(temp, "png")
+    temp.seek(0)
+    await ctx.send(file=discord.File(temp, "result.png"))
+
+def get_file(image):
+    temp = BytesIO()
+    image.save(temp, "png")
+    temp.seek(0)
+    return discord.File(temp, "result.png")
+
+def get_file_gif(image, frames):
+    temp = BytesIO()
+    image.save(temp, "gif", save_all=True, append_images=frames)
+    temp.seek(0)
+    return discord.File(temp, "result.gif")
+
+def getImage(url):
+    r = requests.get(url, stream=True)
+    img = Image.open(r.raw).convert('RGBA')
+    return img
         
 def setup(bot):
     bot.add_cog(image(bot))
