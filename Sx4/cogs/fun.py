@@ -21,6 +21,7 @@ from iso639 import languages
 import re
 import os
 from random import choice
+from utils import arg
 from threading import Timer
 from utils import Token 
 import requests
@@ -38,6 +39,110 @@ rps_settings = {"rps_wins": 0, "rps_draws": 0, "rps_losses": 0}
 class fun:
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command()
+    async def convert(self, ctx, amount: float, currency_from: str, currency_to: str):
+        request = requests.get("https://free.currencyconverterapi.com/api/v6/convert?q={}_{}".format(currency_from.upper(), currency_to.upper())).json()
+        if request["query"]["count"] == 0:
+            return await ctx.send("Invalid currency :no_entry:")
+        else:
+            result = request["results"]["{}_{}".format(currency_from.upper(), currency_to.upper())]
+            currency = format(result["val"] * amount, ".2f")
+            amount = format(amount, ".2f")
+            await ctx.send("**{}** {} to **{}** {}".format(amount, currency_from.upper(), currency, currency_to.upper()))
+
+    @commands.command(aliases=["gtn"])
+    async def guessthenumber(self, ctx, user: str, bet: int=None):
+        """Who ever gets closest to the number gets the others money if you bet money"""
+        user = arg.get_server_member(ctx, user)
+        if not user:
+            return await ctx.send("Invalid user :no_entry:")
+        if bet:
+            if bet > 0:
+                await self._set_bank(ctx.author)
+                await self._set_bank(user)
+                authordata = r.table("bank").get(str(ctx.author.id))
+                userdata = r.table("bank").get(str(user.id))
+                if userdata["balance"].run() < bet:
+                    return await ctx.send("**{}** doesn't have enough money :no_entry:".format(user))
+                if authordata["balance"].run() < bet:
+                    return await ctx.send("**{}** doesn't have enough money :no_entry:".format(ctx.author))
+            else: 
+                return await ctx.send("The bet must be more than $0 :no_entry:")
+        await ctx.send("{}, type `accept` if you would like to play guess the number{}".format(user.mention, " for **${:,}**".format(bet) if bet else "."))
+        def user_confirmation_check(m):
+            return m.channel == ctx.channel and m.author == user
+        def author_check(m):
+            if m.author == ctx.author and isinstance(m.channel, discord.DMChannel) and m.content.isdigit():
+                if int(m.content) > 0 and int(m.content) < 51:
+                    return True
+            return False
+        def user_check(m):
+            if m.author == user and isinstance(m.channel, discord.DMChannel) and m.content.isdigit():
+                if int(m.content) > 0 and int(m.content) < 51:
+                    return True
+            return False
+        try:
+            user_confirmation = await self.bot.wait_for("message", check=user_confirmation_check, timeout=60)
+            if user_confirmation.content.lower() == "accept":
+                await ctx.send("I will send a message to **{}** first, once they've responded I will send a message to **{}**".format(user.name, ctx.author.name))
+                try:
+                    await user.send("I'm thinking of a number between 1-50, try and guess the number the person who gets the closest out of you and your opponent will get the others money. (Respond below)")
+                except:
+                    return await ctx.send("{}, Make sure i am able to message you :no_entry:".format(user.mention))
+                try:
+                    user_answer = await self.bot.wait_for("message", check=user_check, timeout=20)
+                except asyncio.TimeoutError:
+                    return await ctx.send("{}'s response timed out :stopwatch:".format(user.name))
+                if user_answer:
+                    await user.send("Your answer has been locked in, waiting for an answer from {}. Answers will be sent in {}".format(ctx.author, ctx.channel.mention))
+                try:
+                    await ctx.author.send("I'm thinking of a number between 1-50, try and guess the number the person who gets the closest out of you and your opponent will get the others money. (Respond below)")
+                except:
+                    return await ctx.send("{}, Make sure i am able to message you :no_entry:".format(ctx.author.mention))
+                try:
+                    author_answer = await self.bot.wait_for("message", check=author_check, timeout=20)
+                except asyncio.TimeoutError:
+                    return await ctx.send("{}'s response timed out :stopwatch:".format(author.name))
+                if author_answer:
+                    await ctx.author.send("Your answer has been locked in, answers have been sent in {}".format(ctx.channel.mention))
+                if author_answer and user_answer:
+                    number = randint(1, 50)
+                    user_number = int(user_answer.content)
+                    author_number = int(author_answer.content)
+                    user_difference = abs(number - user_number)
+                    author_difference = abs(number - author_number)
+                    msg = "My number was **{}**\n{}'s number was **{}**\n{}'s number was **{}**\n\n".format(number, user.name, user_number, ctx.author.name, author_number)
+                    if user_difference == author_difference:
+                        msg += "You both guessed the same number, It was a draw!"
+                        winner = None
+                    elif user_difference < author_difference:
+                        msg += "{} won! They were the closest to {}".format(user.name, number)
+                        winner = user
+                    else:
+                        msg += "{} won! They were the closest to {}".format(ctx.author.name, number)
+                        winner = ctx.author
+                    if bet and winner:
+                        if winner == ctx.author:
+                            if userdata["balance"].run() < bet:
+                                msg += "\nBet was cancelled due to **{}** not having enough money.".format(user.name)
+                            else:
+                                msg += "\nThey have been rewarded **${:,}**".format(bet*2)
+                                authordata.update({"balance": r.row["balance"] + bet}).run(durability="soft")
+                                userdata.update({"balance": r.row["balance"] - bet}).run(durability="soft")
+                        elif winner == user:
+                            if authordata["balance"].run() < bet:
+                                msg += "\nBet was cancelled due to **{}** not having enough money.".format(ctx.author.name)
+                            else:
+                                msg += "\nThey have been rewarded **${:,}**".format(bet*2)
+                                userdata.update({"balance": r.row["balance"] + bet}).run(durability="soft")
+                                authordata.update({"balance": r.row["balance"] - bet}).run(durability="soft")
+                    await ctx.send(msg)
+            else:
+                return await ctx.send("User declined :no_entry:")
+        except asyncio.TimeoutError:
+            return await ctx.send("Response timed out :stopwatch:")
+
 
     @commands.command(aliases=["tran", "tr"])
     @commands.cooldown(1, 7, commands.BucketType.user)
@@ -473,6 +578,13 @@ class fun:
             s.add_field(name="Draws", value=userdata["rps_draws"].run(durability="soft"))
             s.add_field(name="Losses", value=userdata["rps_losses"].run(durability="soft"))
         await ctx.send(embed=s)
+
+    async def _set_bank(self, author):
+        if author.bot:
+            return
+        r.table("bank").insert({"id": str(author.id), "rep": 0, "balance": 0, "streak": 0, "streaktime": None,
+        "reptime": None, "items": [], "pickdur": None, "roddur": None, "minertime": None, "winnings": 0,
+        "fishtime": None, "factorytime": None, "picktime": None}).run(durability="soft")
         
 def setup(bot):
     bot.add_cog(fun(bot))

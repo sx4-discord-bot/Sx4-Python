@@ -8,6 +8,7 @@ import datetime
 import rethinkdb as r
 from discord.ext.commands.view import StringView
 import json
+import inspect
 from utils import arg
 import math
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -17,6 +18,34 @@ import os
 class owner:
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    async def code(self, ctx, *, command: str=None):
+        if not command:
+            command = ctx.command
+        else:
+            command = self.bot.get_command(command)
+            if not command:
+                return await ctx.send("Invalid command :no_entry:")
+        wrap = "```py\n{}```"
+        code = inspect.getsource(command.callback)
+        code = code.replace("```", "\```")
+        if len(code) > 1990:
+            pages = math.ceil(len(code)/1990)
+            n = 0
+            m = 1990
+            for x in range(pages):
+                if n != 0:
+                    while code[n-1:n] != "\n":
+                        n -= 1
+                while code[m-1:m] != "\n":
+                    m -= 1
+                await ctx.send(wrap.format(code[n:m]))
+                n += 1990
+                m += 1990
+        else:
+            await ctx.send(wrap.format(code))
 
     @commands.command(hidden=True)
     @checks.is_owner()
@@ -95,33 +124,34 @@ class owner:
 
     @commands.command(hidden=True)
     @checks.is_owner()
-    async def disable(self, ctx, command: str, boolean: bool=False):
-        try:
-            self.bot.all_commands[command].enabled = boolean
-            if boolean == False:
-                await ctx.send("`{}` has been disabled.".format(command))
-            else:
-                await ctx.send("`{}` has been enabled.".format(command))
-        except KeyError:
+    async def disable(self, ctx, *, command: str):
+        command = self.bot.get_command(command)
+        if not command:
             return await ctx.send("Invalid command :no_entry:")
+        command.enabled = not command.enabled
+        if command.enabled == False:
+            await ctx.send("`{}` has been disabled.".format(command))
+        else:
+            await ctx.send("`{}` has been enabled.".format(command))
 
     @commands.command(hidden=True)
     @checks.is_owner()
-    async def blacklist(self, ctx, user_id: str, boolean: bool):
+    async def blacklistuser(self, ctx, user: str, boolean: bool):
+        user = await arg.get_member(self.bot, ctx, user)
         r.table("blacklist").insert({"id": "owner", "users": []}).run(durability="soft")
         data = r.table("blacklist").get("owner")
         if boolean == True:
-            if user_id not in data["users"].run(durability="soft"):
-                data.update({"users": r.row["users"].append(user_id)}).run(durability="soft")
-                await ctx.send("User has been blacklisted.")
+            if str(user.id) not in data["users"].run(durability="soft"):
+                data.update({"users": r.row["users"].append(str(user.id))}).run(durability="soft")
+                await ctx.send("{} has been blacklisted.".format(user))
             else:
-                await ctx.send("That user is already blacklisted.")
+                await ctx.send("{} is already blacklisted.".format(user))
         if boolean == False:
-            if user_id not in data["users"].run(durability="soft"):
-                await ctx.send("That user is not blacklisted.")
+            if str(user.id) not in data["users"].run(durability="soft"):
+                await ctx.send("{} is not blacklisted.".format(user))
             else:
-                data.update({"users": r.row["users"].difference([user_id])}).run(durability="soft")
-                await ctx.send("That user is no longer blacklisted")
+                data.update({"users": r.row["users"].difference([str(user.id)])}).run(durability="soft")
+                await ctx.send("{} is no longer blacklisted".format(user))
 		
     @commands.command(hidden=True)
     async def modules(self, ctx):
@@ -189,7 +219,23 @@ class owner:
             channel = self.bot.get_channel(493439822682259497)
             for x in await channel.history(limit=1).flatten():
                 if int(x.content.split(" ")[0].replace(",", "")) > guilds:
-                    await x.delete()  
+                    await x.delete() 
+
+    async def on_command(self, ctx):
+        webhook = discord.utils.get(await self.bot.get_guild(330399610273136641).webhooks(), id=507684441020170251)
+        if checks.is_owner_c(ctx.author):
+            ctx.command.reset_cooldown(ctx)
+        try:
+            s=discord.Embed(colour=0xffff00, timestamp=ctx.message.edited_at if ctx.message.edited_at else ctx.message.created_at)
+            s.add_field(name="Message", value="Content: {}\nID: {}".format(ctx.message.content, ctx.message.id), inline=False)
+            s.add_field(name="Channel", value="Name: {}\nID: {}".format(ctx.channel.name, ctx.channel.id), inline=False)
+            s.add_field(name="Guild", value="Name: {}\nID: {}\nMember Count: {:,}".format(ctx.guild.name, ctx.guild.id, ctx.guild.member_count), inline=False)
+            s.add_field(name="Author", value="User: {}\nID: {}".format(ctx.author, ctx.author.id), inline=False)
+            s.add_field(name="Command", value="Prefix: {}\nCommand: {}\nArguments: {}".format(ctx.prefix, ctx.command, ctx.kwargs), inline=False)
+            s.add_field(name="Attachments", value="\n".join(map(lambda x: x.url, ctx.message.attachments)) if ctx.message.attachments else "None", inline=False)
+            await webhook.send(embed=s)
+        except Exception as e:
+            await webhook.send(e)
 		
 def setup(bot):
     bot.add_cog(owner(bot))

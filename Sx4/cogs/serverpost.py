@@ -20,14 +20,11 @@ import subprocess
 dbltoken = Token.dbl()
 dbotspwtoken = Token.dbpw()
 botspacetoken = Token.botlistspace()
-konomitoken = Token.konomi()
 dbpwurl = "https://bots.discord.pw/api/bots/440996323156819968/stats"
 url = "https://discordbots.org/api/bots/440996323156819968/stats"
 botspaceurl = "https://botlist.space/api/bots/440996323156819968/"
-konomiurl = "http://bots.disgd.pw/api/bot/440996323156819968/stats"
 headers = {"Authorization" : dbltoken}
 headersdb = {"Authorization" : dbotspwtoken, "Content-Type" : "application/json"}
-headerskon = {"Authorization" : konomitoken, "Content-Type" : "application/json"}
 headersbs = {"Authorization" : botspacetoken, "Content-Type" : "application/json"}
 
 class serverpost:
@@ -60,11 +57,6 @@ class serverpost:
             s.add_field(name="BotList.Space", value="Posted")
         except Exception as e: 
             s.add_field(name="BotList.Space", value=e)
-        try:
-            requests.post(konomiurl, data=json.dumps({"guild_count" : len(self.bot.guilds)}), headers=headerskon)
-            s.add_field(name="Konomi Bots", value="Posted")
-        except Exception as e: 
-            s.add_field(name="Konomi Bots", value=e)
         await ctx.send(embed=s)
 
 
@@ -83,10 +75,6 @@ class serverpost:
             try:
                 requests.post(botspaceurl, data=json.dumps(payloadservers), headers=headersbs)
             except:
-                pass
-            try:
-                requests.post(konomiurl, data=json.dumps({"guild_count" : len(self.bot.guilds)}), headers=headerskon)
-            except: 
                 pass
             await asyncio.sleep(3600)
 

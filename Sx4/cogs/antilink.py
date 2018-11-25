@@ -135,7 +135,8 @@ class antilink:
         s.add_field(name="Bots", value=bottoggle)
         for channelid in data["channels"].run(durability="soft"):
             channel = discord.utils.get(server.channels, id=int(channelid))
-            msg += channel.mention + "\n"
+            if channel:
+                msg += channel.mention + "\n"
         s.add_field(name="Disabled Channels", value=msg if msg != "" else "None")
         await ctx.send(embed=s)
 		

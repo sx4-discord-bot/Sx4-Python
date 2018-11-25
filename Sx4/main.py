@@ -54,6 +54,34 @@ async def on_ready():
 @bot.event 
 async def on_message(message):
     await bot.wait_until_ready()
+    ctx = await bot.get_context(message)
+    if checks.is_owner_check(ctx):
+        return await bot.process_commands(message)
+    if not ctx.command:
+        return
+    serverdata = r.table("blacklist").get(str(message.guild.id))
+    if serverdata.run():
+        commands = serverdata["commands"].map(lambda x: x["id"]).run()
+        if str(ctx.command) in serverdata["disabled"].run():
+            return
+        if ctx.command.module[5:] in commands:
+            blacklisted = list(filter(lambda x: x["id"] == ctx.command.module[5:], serverdata["commands"].run()))[0]["blacklisted"]
+            if str(message.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", blacklisted)):
+                return
+            elif str(message.author.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "user", blacklisted)):
+                return
+            for x in message.author.roles:
+                if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", blacklisted)):
+                    return
+        if str(ctx.command) in commands:
+            blacklisted = list(filter(lambda x: x["id"] == str(ctx.command), serverdata["commands"].run()))[0]["blacklisted"]
+            if str(message.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", blacklisted)):
+                return
+            elif str(message.author.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "user", blacklisted)):
+                return
+            for x in message.author.roles:
+                if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", blacklisted)):
+                    return
     if message.author.bot:
         return
     elif str(message.author.id) in r.table("blacklist").get("owner")["users"].run():

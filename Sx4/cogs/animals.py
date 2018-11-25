@@ -64,8 +64,8 @@ class animals:
     @commands.command()
     async def cat(self, ctx):
         """Shows a random cat"""
-        response = requests.get("http://thecatapi.com/api/images/get?format=src")
-        image = response.url
+        response = requests.get("http://aws.random.cat/meow").json()
+        image = response["file"]
         s=discord.Embed(description=":cat:", colour=ctx.message.author.colour)
         s.set_image(url=image)
         try:

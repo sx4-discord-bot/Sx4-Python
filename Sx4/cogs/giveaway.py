@@ -16,6 +16,7 @@ from urllib.request import Request, urlopen
 import json
 import urllib
 import re
+from utils import ctime, arg
 import os
 from random import choice
 from threading import Timer
@@ -120,20 +121,15 @@ class giveaway:
         def check_time(m):
             if m.content.lower() == "cancel" and m.channel == ctx.channel and m.author == ctx.author:
                 return True
-            if m.channel == ctx.channel and m.author == ctx.author and m.content.isdigit() and int(m.content) >= 120 and int(m.content) <= 31556926:
-                return True
+            if m.channel == ctx.channel and m.author == ctx.author:
+                seconds = ctime.convert(m.content)
+                if seconds >= 120 and seconds <= 31556926:
+                    return True
         def check_channel(m):
             if m.channel == ctx.channel and m.author == ctx.author:
                 if m.content.lower() == "cancel":
                     return True
-                if "<" in m.content.lower() and "#" in m.content.lower():
-                    channel = m.content.replace("#", "").replace("<", "").replace(">", "")
-                    channel = discord.utils.get(ctx.guild.text_channels, id=int(channel))
-                else:
-                    try:
-                        channel = discord.utils.get(ctx.guild.text_channels, id=int(m.content.lower()))
-                    except:
-                        channel = discord.utils.get(ctx.guild.text_channels, name=m.content)
+                channel = arg.get_text_channel(ctx, m.content)
                 if channel:
                     return True
         await ctx.send("What channel would you like me to start this giveaway? Type \"cancel\" at anytime to cancel the creation (Respond below)")
@@ -142,14 +138,7 @@ class giveaway:
             if channel.content.lower() == "cancel":
                 await ctx.send("Cancelled")
                 return
-            if "<" in channel.content and "#" in channel.content:
-                channel = channel.content.replace("#", "").replace("<", "").replace(">", "")
-                channel = discord.utils.get(ctx.guild.text_channels, id=int(channel))
-            else:
-                try:
-                    channel = discord.utils.get(ctx.guild.text_channels, id=int(channel.content.lower()))
-                except:
-                    channel = discord.utils.get(ctx.guild.text_channels, name=channel.content)
+            channel = arg.get_text_channel(ctx, channel.content)
         except asyncio.TimeoutError:
             await ctx.send("Timed out :stopwatch:")
             return
@@ -174,7 +163,7 @@ class giveaway:
         except asyncio.TimeoutError:
             await ctx.send("Timed out :stopwatch:")
             return
-        await ctx.send("How long do you want your giveaway to last (in seconds, minimum seconds: 120)? (Respond below)")
+        await ctx.send("How long do you want your giveaway to last? (After the numerical value add 'd' for days, 'h' for hours, 'm' for minutes, 's' for seconds) Minimum time: 2 minutes. (Respond below)")
         try:
             time2 = await self.bot.wait_for("message", check=check_time, timeout=300)
             if time2.content.lower() == "cancel":
@@ -194,15 +183,16 @@ class giveaway:
             return
         serverdata.update({"giveaway#": r.row["giveaway#"] + 1}).run(durability="soft")
         id = serverdata["giveaway#"].run(durability="soft")
+        giveaway_seconds = ctime.convert(time2.content)
         starttime = datetime.utcnow().timestamp()
-        endtime = datetime.utcnow().timestamp() + int(time2.content)
-        s=discord.Embed(title=title.content, description="Enter by reacting with :tada:\n\nThis giveaway is for **{}**\nDuration: **{}**\nWinners: **{}**".format(item.content, await self.giveaway_time(starttime, endtime), int(winners.content)), timestamp=datetime.fromtimestamp(datetime.utcnow().timestamp() + int(time2.content)))
+        endtime = datetime.utcnow().timestamp() + giveaway_seconds
+        s=discord.Embed(title=title.content, description="Enter by reacting with :tada:\n\nThis giveaway is for **{}**\nDuration: **{}**\nWinners: **{}**".format(item.content, self.giveaway_time(starttime, endtime), int(winners.content)), timestamp=datetime.fromtimestamp(datetime.utcnow().timestamp() + giveaway_seconds))
         s.set_footer(text="Ends")
         message = await channel.send(embed=s)
         await message.add_reaction("🎉")
         giveaway["title"] = title.content
-        giveaway["endtime"] = datetime.utcnow().timestamp() + int(time2.content)
-        giveaway["length"] = int(time2.content)
+        giveaway["endtime"] = datetime.utcnow().timestamp() + giveaway_seconds
+        giveaway["length"] = giveaway_seconds
         giveaway["item"] = item.content
         giveaway["channel"] = str(channel.id)
         giveaway["message"] = str(message.id)
@@ -243,7 +233,7 @@ class giveaway:
             await asyncio.sleep(60)
 
 
-    async def giveaway_time(self, starttime, endtime):
+    def giveaway_time(self, starttime, endtime):
         m, s = divmod(endtime - starttime, 60)
         h, m = divmod(m, 60)
         d, h = divmod(h, 24)
@@ -263,14 +253,7 @@ class giveaway:
             seconds = "seconds"
         else: 
             seconds = "seconds"
-        if d == 0 and h == 0:
-            duration = "%d {} %d {}".format(minutes, seconds) % (m, s)
-        elif d == 0 and h == 0 and m == 0:
-            duration = "%d {}".format(seconds) % (s)
-        elif d == 0:
-            duration = "%d {} %d {} %d {}".format(hours, minutes, seconds) % (h, m, s)
-        else:
-            duration = "%d {} %d {} %d {} %d {}".format(days, hours, minutes, seconds) % (d, h, m, s)
+        duration = ("%d %s " % (d, days) if d != 0 else "") + ("%d %s " % (h, hours) if h != 0 else "") + ("%d %s " % (m, minutes) if m != 0 else "") + ("%d %s " % (s, seconds) if s >= 1 else "")
         return duration
 
 def setup(bot): 

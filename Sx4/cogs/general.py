@@ -179,38 +179,29 @@ class general:
     async def decode(self, ctx):
         """Decode any text file (Supports languages and will use markdown)"""
         if ctx.message.attachments:
-            with open("test.txt", "wb") as f:
-                f.write(requests.get(ctx.message.attachments[0].url).content)
-            with open("test.txt", "rb") as f:
-                try:
-                    contents = f.read().decode()
-                except:
-                    await ctx.send("Failed to decode the file :no_entry:")
-                    os.remove("test.txt")
+            try:
+                contents = requests.get(ctx.message.attachments[0].url).content.decode()
+            except:
+                await ctx.send("Failed to decode the file :no_entry:")
             amount = ctx.message.attachments[0].url.rfind(".")
             if len(contents) > 2000:
-                os.remove("test.txt")
                 return await ctx.send("This file contains more than 2000 characters :no_entry:")
             await ctx.send("```{}\n".format(ctx.message.attachments[0].url[amount+1:]) + contents  + "```")
-            os.remove("test.txt")
         else:
             await ctx.send("You didn't attach a text file with the command :no_entry:")
 
     @commands.command(aliases=["cinfo"])
-    async def channelinfo(self, ctx, *, channel: str=None):
-        channel_mention = re.compile("<#([0-9]*)>")
-        channel_id = re.compile("([0-9]*)")
-        if not channel:
+    async def channelinfo(self, ctx, *, channel_or_category: str=None):
+        if not channel_or_category:
             channel = ctx.channel
         else:
-            if channel_mention.match(channel):
-                channel = discord.utils.get(ctx.guild.channels, id=int(channel_mention.match(channel).group(1)))
-            elif channel_id.match(channel):
-                channel = discord.utils.get(ctx.guild.channels, id=int(channel_id.match(channel).group(1)))
-            else:
-                channel = discord.utils.get(ctx.guild.channels, name=channel)
+            channel = arg.get_voice_channel(ctx, channel_or_category)
         if not channel:
-            return await ctx.send("Invalid channel :no_entry:")
+            channel = arg.get_text_channel(ctx, channel_or_category)
+        if not channel:
+            channel = arg.get_category(ctx, channel_or_category)
+        if not channel:
+            return await ctx.send("Invalid channel/category :no_entry:")
         perms = "\n".join(list(map(lambda x: x[0].replace("_", " ").title(), filter(lambda x: x[1] == True, channel.permissions_for(ctx.author)))))
         if isinstance(channel, discord.TextChannel):
             s=discord.Embed(colour=ctx.author.colour, description=ctx.channel.topic)
@@ -248,10 +239,36 @@ class general:
 
 
 
-    @commands.command(aliases=["updates"])
-    async def changes(self, ctx):
-        """View changes which have recently happened on the bot"""
-        message = list(await self.bot.get_channel(455806567577681921).history(limit=1).flatten())[0]
+    @commands.command(aliases=["updates", "changelog"])
+    async def changes(self, ctx, date: str=None):
+        """View changes which have recently happened on the bot or on a specific date"""
+        message = None
+        if not date:
+            message = list(await self.bot.get_channel(455806567577681921).history(limit=1).flatten())[0]
+        else:
+            if "/" in date:
+                year = int(datetime.now().strftime("%y"))
+                try:
+                    day = int(date.split("/")[0])
+                    month = int(date.split("/")[1])
+                except IndexError:
+                    return await ctx.send("Invalid date format :no_entry:")
+                try:
+                    year = int(date.split("/")[2])
+                except IndexError:
+                    pass
+                for x in await self.bot.get_channel(455806567577681921).history(limit=100).flatten():
+                    date = x.content.split("\n\n")[7].split("(")[1][:-1]
+                    day_message = int(date.split("/")[0])
+                    month_message = int(date.split("/")[1])
+                    year_message = int(date.split("/")[2])
+                    if day == day_message and month_message == month and year == year_message:
+                        message = x
+                        break
+            else:
+                return await ctx.send("Invalid date format :no_entry:")
+        if not message:
+            return await ctx.send("I could not find changes from that date (Make sure the date is within 100 days within today) :no_entry:")
         bugfixes = message.content.split("\n\n")[2]
         updates = message.content.split("\n\n")[4]
         announcements = message.content.split("\n\n")[6]
@@ -856,7 +873,6 @@ class general:
         servers = len(self.bot.guilds)
         channel = ctx.message.channel
         shea = discord.utils.get(self.bot.get_all_members(), id=402557516728369153)
-        legacy = discord.utils.get(self.bot.get_all_members(), id=153286414212005888)
         joakim = discord.utils.get(self.bot.get_all_members(), id=190551803669118976)
         description = ("Sx4 is a bot which intends to make your discord experience easier yet fun, it has multiple different purposes"
         ", which includes Moderation, utility and economy. Sx4 began as a red bot to help teach it's owner more about coding, it has now evolved in to"
@@ -864,8 +880,8 @@ class general:
         s=discord.Embed(description=description, colour=0xfff90d)
         s.set_author(name="Info!", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Stats", value="Ping: {}ms\nServers: {}\nUsers: {}".format(ping, servers, users))
-        s.add_field(name="Credits", value="[Victor#6359 (Host)](https://vjserver.ddns.net/discordbots.html)\n[Nexus](https://discord.gg/t2umQq3)\n[RethinkDB](https://www.rethinkdb.com/api/python/)\n[Lavalink (Music)](https://github.com/Devoxin/Lavalink.py/)\n[Python](https://www.python.org/downloads/release/python-352/)\n[discord.py](https://pypi.python.org/pypi/discord.py/)")
-        s.add_field(name="Sx4", value="Developers: {}, {}, {}\nInvite: [Click Here](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\nSupport: [Click Here](https://discord.gg/PqJNcfB)\nDonate: [PayPal](https://paypal.me/SheaCartwright), [Patreon](https://www.patreon.com/Sx4)".format(shea, legacy, joakim))
+        s.add_field(name="Credits", value="[Victor#6359 (Host)](https://vjserver.ddns.net/discordbots.html)\n[ETLegacy](https://discord.gg/MqQsmF7)\n[Nexus](https://discord.gg/MqQsmF7)\n[RethinkDB](https://www.rethinkdb.com/api/python/)\n[Lavalink (Music)](https://github.com/Devoxin/Lavalink.py/)\n[Python](https://www.python.org/downloads/release/python-352/)\n[discord.py](https://pypi.python.org/pypi/discord.py/)")
+        s.add_field(name="Sx4", value="Developers: {}, {}\nInvite: [Click Here](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\nSupport: [Click Here](https://discord.gg/PqJNcfB)\nDonate: [PayPal](https://paypal.me/SheaCartwright), [Patreon](https://www.patreon.com/Sx4)".format(shea, joakim))
         await ctx.send(embed=s)
 
     @commands.command(aliases=["shards"])
@@ -1012,8 +1028,11 @@ class general:
         await ctx.send(embed=s)
         
     @commands.command(pass_context=True)
-    async def inrole(self, ctx, *, role: discord.Role):
+    async def inrole(self, ctx, *, role: str):
         """Check who's in a specific role"""
+        role = arg.get_role(ctx, role)
+        if not role:
+            return await ctx.send("Invalid role :no_entry:")
         server = ctx.guild
         page = 1
         number = len(role.members)
@@ -1126,9 +1145,12 @@ class general:
         await ctx.send(embed=s)
     
     @commands.command(pass_context=True, aliases=["ri", "rinfo"]) 
-    async def roleinfo(self, ctx, *, role: discord.Role):
+    async def roleinfo(self, ctx, *, role: str):
         """Find out stuff about a role"""
         server = ctx.guild
+        role = arg.get_role(ctx, role)
+        if not role:
+            return await ctx.send("I could not find that role :no_entry:")
         perms = role.permissions
         members = len([x for x in server.members if role in x.roles])
         if perms.value == 0: 
@@ -1324,11 +1346,17 @@ class general:
                 usersran = channel["users"].run()
                 if not message.attachments:
                     await message.delete()
+                    image_only = await message.channel.send("{}, You can only send images in this channel :no_entry:".format(message.author.mention))
+                    await asyncio.sleep(10)
+                    await image_only.delete()
                 attach = message.attachments[0].url
                 supported = ["png", "jpg", "jpeg", "gif", "webp"]
                 index = attach.rfind(".") + 1
                 if attach[index:] not in supported:
                     await message.delete()
+                    image_only = await message.channel.send("{}, You can only send images in this channel :no_entry:".format(message.author.mention))
+                    await asyncio.sleep(10)
+                    await image_only.delete()
                 else:
                     if int(channel["slowmode"].run()) != 0:
                         if str(message.author.id) not in users.map(lambda x: x["id"]).run():
@@ -1452,7 +1480,7 @@ class general:
         s.add_field(name="Joined {}".format(server.name), value=joined_server)
         s.add_field(name="Name", value="{}".format(user.name))
         s.add_field(name="Nickname", value="{}".format(user.nick))
-        s.add_field(name="Discriminator", value="#{}".format(user.discriminator))
+        s.add_field(name="Discriminator", value=user.discriminator)
         s.add_field(name="Status", value="{}".format(status))
         s.add_field(name="User's Colour", value="{}".format(user.colour))
         s.add_field(name="User's ID", value="{}".format(user.id))
@@ -1509,7 +1537,7 @@ class general:
         text_channels = len(ctx.guild.text_channels)
         voice_channels = len(ctx.guild.voice_channels)
         categorys = len(ctx.guild.categories)
-        s=discord.Embed(description="{} was created on {}".format(server.name, server_created), colour=discord.Colour(value=colour), timestamp=__import__('datetime').datetime.utcnow())
+        s=discord.Embed(description="{} was created on {}".format(server.name, server_created), colour=discord.Colour(value=colour), timestamp=datetime.utcnow())
         s.set_author(name=server.name, icon_url=server.icon_url)
         s.set_thumbnail(url=server.icon_url)
         s.add_field(name="Region", value=str(server.region))
@@ -1566,7 +1594,7 @@ class general:
         s.add_field(name="CPU Usage", value=str(psutil.cpu_percent()) + "%")
         s.add_field(name="Text Channels", value="{:,}".format(len([x for x in self.bot.get_all_channels() if isinstance(x, discord.TextChannel)])))
         s.add_field(name="Voice Channels", value="{:,}".format(len([x for x in self.bot.get_all_channels() if isinstance(x, discord.VoiceChannel)])))
-        s.add_field(name="Servers Joined Today", value="{:,}".format(botdata["servers"]))
+        s.add_field(name="Servers Joined Today", value="{:,}".format(len(self.bot.guilds) - botdata["servercountbefore"]))
         s.add_field(name="Commands Used Today", value="{:,}".format(botdata["commands"]))
         s.add_field(name="Messages Sent Today", value="{:,}".format(botdata["messages"]))
         s.add_field(name="Connected Channels", value=len(set(filter(lambda x: x[1].connected_channel, self.bot.lavalink.players))))
@@ -1634,12 +1662,6 @@ class general:
         else:
             return "{} {}".format(round(s), "second" if round(s) == 1 else "seconds")
         
-    async def on_guild_join(self, guild):
-        r.table("botstats").get("stats").update({"servers": r.row["servers"] + 1}).run(durability="soft", noreply=True)
-        
-    async def on_guild_remove(self, guild):
-        r.table("botstats").get("stats").update({"servers": r.row["servers"] - 1}).run(durability="soft", noreply=True)
-        
     async def on_member_join(self, member):
         server = member.guild
         r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run(durability="soft", noreply=True)
@@ -1648,7 +1670,7 @@ class general:
     async def on_member_remove(self, member):
         server = member.guild
         r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run(durability="soft", noreply=True)
-        r.table("stats").get(str(server.id)).update({"members": r.row["members"] + 1}).run(durability="soft", noreply=True)
+        r.table("stats").get(str(server.id)).update({"members": r.row["members"] - 1}).run(durability="soft", noreply=True)
         
     async def on_command(self, ctx):
         botdata = r.table("botstats").get("stats")
@@ -1667,18 +1689,19 @@ class general:
         while not self.bot.is_closed():
             if datetime.utcnow().strftime("%H") == "23":
                 botdata = r.table("botstats").get("stats")
+                servers = len(self.bot.guilds) - botdata["servercountbefore"].run()
                 s=discord.Embed(colour=0xffff00, timestamp=datetime.utcnow())
                 s.set_author(name="Bot Logs", icon_url=self.bot.user.avatar_url)
                 if 86400/botdata["commands"].run(durability="soft") >= 1:
-                    s.add_field(name="Average Command Usage", value="1 every {}s".format(round(86400/botdata["commands"].run(durability="soft"))))
+                    s.add_field(name="Average Command Usage", value="1 every {}s ({})".format(round(86400/botdata["commands"].run(durability="soft")), botdata["commands"].run()))
                 else:
-                    s.add_field(name="Average Command Usage", value="{} every second".format(round(botdata["commands"].run(durability="soft")/86400)))
-                s.add_field(name="Servers", value="{} ({})".format(len(self.bot.guilds), "+" + str(botdata["servers"].run(durability="soft")) if botdata["servers"].run(durability="soft") >= 0 else botdata["servers"].run(durability="soft")), inline=False)
+                    s.add_field(name="Average Command Usage", value="{} every second ({})".format(round(botdata["commands"].run(durability="soft")/86400), botdata["commands"].run()))
+                s.add_field(name="Servers", value="{} ({})".format(len(self.bot.guilds), "+" + str(servers) if servers >= 0 else servers), inline=False)
                 s.add_field(name="Users (No Bots)", value=len(set(filter(lambda m: not m.bot, list(set(self.bot.get_all_members()))))))
                 await self.bot.get_channel(445982429522690051).send(embed=s)
-                botdata.update({"servers": 0, "commands": 0, "messages": 0}).run(durability="soft", noreply=True)
+                botdata.update({"commands": 0, "messages": 0, "servercountbefore": len(self.bot.guilds)}).run(durability="soft", noreply=True)
                 r.table("stats").delete().run(durability="soft", noreply=True)
-            await asyncio.sleep(3540)
+            await asyncio.sleep(3580)
 
     async def on_member_update(self, before, after):
         if after.status != discord.Status.offline and before.status == discord.Status.offline:

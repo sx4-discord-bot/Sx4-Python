@@ -6,11 +6,12 @@ import time
 import datetime
 import random
 from utils import checks
-from utils import arghelp
+from utils import arghelp, arg
 import os
 import math
 from random import choice
 import rethinkdb as r
+import re
 from random import randint
 from copy import deepcopy
 from collections import namedtuple, defaultdict, deque
@@ -19,9 +20,159 @@ from enum import Enum
 import asyncio
 from difflib import get_close_matches
 
+re_emoji = re.compile("<(?:a|):.+:([0-9]+)>")
+
 class selfroles:
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.group()
+    async def reactionrole(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            r.table("reactionrole").insert({"id": str(ctx.guild.id), "messages": [], "dm": True}).run(durability="soft")
+
+    @reactionrole.command()
+    @checks.has_permissions("manage_roles")
+    async def create(self, ctx, channel: str, *, title: str=None):
+        """Creates the base message for a reaction role in a certain channel with an optional title"""
+        serverdata = r.table("reactionrole").get(str(ctx.guild.id))
+        channel = arg.get_text_channel(ctx, channel)
+        if not channel:
+            return await ctx.send("Invalid Channel :no_entry:")
+        if title:
+            if len(title) > 256:
+                return await ctx.send("Titles can not be more than 256 characters :no_entry:")
+        s=discord.Embed(title="Reaction Role" if not title else title, description="To add reactions use `{}reactionrole add` (This message will be removed upon adding a role)".format(ctx.prefix))
+        s.set_footer(text="React to the corresponding emote to get the desired role")
+        message = await channel.send(embed=s)
+        new_message = {"id": str(message.id), "channel": str(channel.id), "roles": []}
+        await ctx.send("The base reaction role menu has been created In {}".format(channel.mention))
+        serverdata.update({"messages": r.row["messages"].append(new_message)}).run(durability="soft")
+        
+    @reactionrole.command(name="add")
+    @checks.has_permissions("manage_roles")
+    async def _add(self, ctx, message_id: int, emote: str, *, role: str):
+        """Adds an emote and role to the reaction role message"""
+        serverdata = r.table("reactionrole").get(str(ctx.guild.id))
+        role = arg.get_role(ctx, role)
+        if not role:
+            return await ctx.send("Invalid Role :no_entry:")
+        if str(message_id) in serverdata["messages"].map(lambda x: x["id"]).run():
+            message_db = serverdata["messages"].filter(lambda x: x["id"] == str(message_id))[0]
+            message = await self.bot.get_channel(int(message_db["channel"].run())).get_message(message_id)
+            if str(role.id) in message_db["roles"].map(lambda x: x["id"]).run():
+                return await ctx.send("This role is already on this reaction role message :no_entry:")
+            s = message.embeds[0]
+            if len(message.reactions) >= 20:
+                return await ctx.send("This message has hit the reaction cap of 20 :no_entry:")
+            if re_emoji.match(emote):
+                if str(re_emoji.match(emote).group(1)) in message_db["roles"].map(lambda x: x["emote"]).run():
+                    return await ctx.send("This emote is already being used in this reaction role message :no_entry:")
+                emote = self.bot.get_emoji(int(re_emoji.match(emote).group(1)))
+                if not emote:
+                    return await ctx.send("I'm not able to use that emoji or It's Invalid :no_entry:")
+                else:
+                    emote_db = str(emote.id)
+                    await message.add_reaction(emote)
+            else:
+                if emote in message_db["roles"].map(lambda x: x["emote"]).run():
+                    return await ctx.send("This emote is already being used in this reaction role message :no_entry:")
+                try:
+                    await message.add_reaction(emote)
+                    emote_db = str(emote)
+                except:
+                    return await ctx.send("Inavlid Emoji :no_entry:")
+            if not message_db["roles"].run():
+                s.description = "{}: {}".format(str(emote), role.mention)
+            else:
+                s.description += "\n\n{}: {}".format(str(emote), role.mention)
+            await message.edit(embed=s)
+            role_db = {"id": str(role.id), "emote": emote_db}
+            new_message = message_db.run()
+            new_message["roles"].append(role_db)
+            message_new = serverdata["messages"].run()
+            message_new.remove(message_db.run())
+            message_new.append(new_message)
+            await ctx.send("The role `{}` will now be given when reacting with {}".format(role.name, emote))
+            serverdata.update({"messages": message_new}).run(durability="soft")
+        else:
+            return await ctx.send("That message is not a reaction role message :no_entry:")
+
+    @reactionrole.command(name="remove")
+    @checks.has_permissions("manage_roles")
+    async def _remove(self, ctx, message_id: int, *, role: str):
+        """Removes an emote and role from the reaction role message"""
+        serverdata = r.table("reactionrole").get(str(ctx.guild.id))
+        role = arg.get_role(ctx, role)
+        if not role:
+            return await ctx.send("Invalid Role :no_entry:")
+        if str(message_id) in serverdata["messages"].map(lambda x: x["id"]).run():
+            message_db = serverdata["messages"].filter(lambda x: x["id"] == str(message_id))[0]
+            message = await self.bot.get_channel(int(message_db["channel"].run())).get_message(message_id)
+            if str(role.id) not in message_db["roles"].map(lambda x: x["id"]).run():
+                return await ctx.send("This role is not on this reaction role message :no_entry:")
+            else:
+                role_db = message_db["roles"].filter(lambda x: x["id"] == str(role.id))[0]
+                emote_db = role_db["emote"].run()
+                if emote_db.isdigit():
+                    emote = self.bot.get_emoji(int(emote_db))
+                else:
+                    emote = emote_db
+            s = message.embeds[0]
+            content = "{}: {}\n\n".format(str(emote), role.mention)
+            try:
+                before = s.description
+                s.description = s.description.replace(content, "")
+                if before == s.description:
+                    content = "\n\n{}: {}".format(str(emote), role.mention)
+                    s.description = s.description.replace(content, "")
+            except:
+                pass
+            await message.edit(embed=s)
+            await message.remove_reaction(emote, ctx.me)
+            role_db = {"id": str(role.id), "emote": emote_db}
+            new_message = message_db.run()
+            new_message["roles"].remove(role_db)
+            message_new = serverdata["messages"].run()
+            message_new.remove(message_db.run())
+            message_new.append(new_message)
+            await ctx.send("The role `{}` has been removed from the reaction role".format(role.name))
+            serverdata.update({"messages": message_new}).run(durability="soft")
+        else:
+            return await ctx.send("Invalid Message :no_entry:")
+
+    @reactionrole.command()
+    @checks.has_permissions("manage_roles")
+    async def delete(self, ctx, message_id: int):
+        """Deletes a reactionrole message and it's data"""
+        serverdata = r.table("reactionrole").get(str(ctx.guild.id))
+        if str(message_id) in serverdata["messages"].map(lambda x: x["id"]).run():
+            message_db = serverdata["messages"].filter(lambda x: x["id"] == str(message_id))[0]
+            try:
+                message = await self.bot.get_channel(int(message_db["channel"].run())).get_message(message_id)
+                await message.delete()
+            except:
+                pass
+            await ctx.send("That reaction role has been deleted")
+            messages = serverdata["messages"].run()
+            messages.remove(message_db.run())
+            serverdata.update({"messages": messages}).run(durability="soft")
+        else:
+            return await ctx.send("Invalid Message :no_entry:")
+
+    @reactionrole.command()
+    @checks.has_permissions("manage_roles")
+    async def dmtoggle(self, ctx):
+        """Toggles whether the bot dms users when they get/remove a role"""
+        serverdata = r.table("reactionrole").get(str(ctx.guild.id))
+        if serverdata["dm"].run() == True:
+            await ctx.send("I will no longer dm users when they get a role through reaction roles.")
+            serverdata.update({"dm": False}).run(durability="soft")
+        elif serverdata["dm"].run() == False:
+            await ctx.send("I will now dm users when they get a role through reaction roles.")
+            serverdata.update({"dm": True}).run(durability="soft")
 	
     @commands.group()
     async def selfrole(self, ctx): 
@@ -222,6 +373,51 @@ class selfroles:
         data = r.table("selfroles").get(str(server.id))
         if str(role.id) in data["roles"].run(durability="soft"):
             data.update({"roles": r.row["roles"].difference([str(role.id)])}).run(durability="soft")
+
+    async def on_raw_reaction_add(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        server = channel.guild
+        user = server.get_member(payload.user_id)
+        message = await channel.get_message(payload.message_id)
+        serverdata = r.table("reactionrole").get(str(server.id))
+        if str(message.id) in serverdata["messages"].map(lambda x: x["id"]).run():
+            message_db = serverdata["messages"].filter(lambda x: x["id"] == str(message.id))[0]
+            if payload.emoji.is_unicode_emoji():
+                if str(payload.emoji) in message_db["roles"].map(lambda x: x["emote"]).run():
+                    role = discord.utils.get(server.roles, id=int(message_db["roles"].filter(lambda x: x["emote"] == str(payload.emoji))[0]["id"].run()))
+                    if role in user.roles:
+                        try:
+                            await user.remove_roles(role, reason="Reaction role")
+                        except discord.errors.Forbidden:
+                            return await user.send("I failed taking the role away from you make sure I have the `manage_roles` and that my role is above the one I'm trying to take away from you :no_entry:")
+                        if serverdata["dm"].run():
+                            await user.send("You no longer have the role **{}**".format(role.name))
+                    else:
+                        try:
+                            await user.add_roles(role, reason="Reaction role")
+                        except discord.errors.Forbidden:
+                            return await user.send("I failed giving you the role make sure I have the `manage_roles` and that my role is above the one I'm trying to give you :no_entry:")
+                        if serverdata["dm"].run():
+                            await user.send("You now have the role **{}**".format(role.name))
+            else:
+                if str(payload.emoji.id) in message_db["roles"].map(lambda x: x["emote"]).run():
+                    role = discord.utils.get(server.roles, id=int(message_db["roles"].filter(lambda x: x["emote"] == str(payload.emoji.id))[0]["id"].run()))
+                    if role in user.roles:
+                        try:
+                            await user.remove_roles(role, reason="Reaction role")
+                        except discord.errors.Forbidden:
+                            return await user.send("I failed taking the role away from you make sure I have the `manage_roles` and that my role is above the one I'm trying to take away from you :no_entry:")
+                        if serverdata["dm"].run():
+                            await user.send("You no longer have the role **{}**".format(role.name))
+                    else:
+                        try:
+                            await user.add_roles(role, reason="Reaction role")
+                        except discord.errors.Forbidden:
+                            return await user.send("I failed giving you the role make sure I have the `manage_roles` and that my role is above the one I'm trying to give you :no_entry:")
+                        if serverdata["dm"].run():
+                            await user.send("You now have the role **{}**".format(role.name))
+
+
 		
 def setup(bot):
     bot.add_cog(selfroles(bot))

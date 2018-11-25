@@ -36,6 +36,66 @@ class image:
     def __init__(self, bot):  
         self.bot = bot
 
+    @commands.command(name="discord")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def _discord(self, ctx, user: str, *, discord_text: str):
+        if len(discord_text) > 2000:
+            return await ctx.send("You can not have more than 2000 characters :no_entry:")
+        user = await arg.get_member(self.bot, ctx, user)
+        if not user:
+            return await ctx.send("Invalid User :no_entry:")
+        if discord_text.lower().endswith(" --white"):
+            white = True
+            discord_text = discord_text[:-8]
+        else: 
+            white = False
+        bot = getImage("https://cdn.discordapp.com/emojis/441255212582174731.png").resize((60, 60))
+        breaks = len([x for x in discord_text if x == "\n"])
+        length = 66 if user.bot else 0
+        text = ImageFont.truetype("whitney/whitney-book.otf", 34)
+        textsize = text.getsize(discord_text)
+        times = math.ceil(len(discord_text)/50)
+        height = (times * 36) + (breaks * 36)
+        n, m, final_text = 0, 50, ""
+        for x in range(times):
+            if n != 0:
+                while discord_text[n-1:n] != " " and len(discord_text) != n:
+                    if n != 0:
+                        n -= 1
+                    else:
+                        n = ((x + 1) * 50) - 50
+                        break
+            while discord_text[m-1:m] != " " and len(discord_text) != m:
+                if m != 0:
+                    m -= 1
+                else:
+                    m = (x + 1) * 50
+                    break
+            final_text += discord_text[n:m] + "\n"
+            n += 50
+            m += 50
+        def circlefy(image):
+            size = (image.size[0] * 6, image.size[1] * 6)
+            mask = Image.new('L', size, 0)
+            draw = ImageDraw.Draw(mask) 
+            draw.ellipse((0, 0) + size, fill=255)
+            mask = mask.resize(image.size)
+            image.putalpha(mask)
+            return image
+        avatar = getImage(user.avatar_url).resize((100, 100))
+        background = Image.new("RGBA", (1000, 115 + height), (54, 57, 63) if not white else (255, 255, 255))
+        draw = ImageDraw.Draw(background)
+        name = ImageFont.truetype("whitney/Whitney-Medium.ttf", 40)
+        time = ImageFont.truetype("whitney/WhitneyLight.ttf", 24)
+        background.paste(circlefy(avatar), (20, 10), circlefy(avatar))
+        namesize = name.getsize(user.display_name)
+        if user.bot:
+            background.paste(bot, (160 + namesize[0] + 10, 2), bot)
+        draw.text((160, 6), user.display_name, (user.colour.r, user.colour.g, user.colour.b), font=name)
+        draw.text((170 + namesize[0] + length, (namesize[1]/2) - 2), "Today at " + datetime.datetime.utcnow().strftime("%H:%M"), (122, 125, 130), font=time)
+        draw.text((160, namesize[1] + 20), final_text, (116, 127, 141) if white else (255, 255, 255), font=text)
+        await send_file(ctx, background)
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def flag(self, ctx, flag_initial: str, *, user: discord.Member=None):
@@ -53,7 +113,109 @@ class image:
         await send_file(ctx, avatar)
 
     @commands.command()
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(1, 15, commands.BucketType.user)
+    async def christmas(self, ctx, user_or_image: str=None, enhance: int=None):
+        """Turn an image into a christmas themed one"""
+        if not user_or_image:
+            if ctx.message.attachments:
+                try:
+                    r = requests.get(ctx.message.attachments[0].url, stream=True)
+                    url = ctx.message.attachments[0].url
+                    if ".gif" in url:
+                        gif = True 
+                    else:
+                        gif = False
+                except:
+                    ctx.command.reset_cooldown(ctx)
+                    return await ctx.send("Invalid user/image :no_entry:")
+            else:
+                user = ctx.author
+                r = requests.get(user.avatar_url, stream=True)
+                url = user.avatar_url
+                if ".gif" in user.avatar_url:
+                    gif = True 
+                else:
+                    gif = False
+        else:
+            user = await arg.get_member(self.bot, ctx, user_or_image)
+            if not user:
+                try: 
+                    r = requests.get(user_or_image, stream=True)
+                    url = user_or_image
+                    if ".gif" in user_or_image:
+                        gif = True 
+                    else:
+                        gif = False
+                except:
+                    ctx.command.reset_cooldown(ctx)
+                    return await ctx.send("Invalid user/image :no_entry:")
+            else:
+                r = requests.get(user.avatar_url, stream=True)
+                url = user.avatar_url
+                if ".gif" in user.avatar_url:
+                    gif = True 
+                else:
+                    gif = False
+        if not gif:
+            img = Image.open(r.raw)
+            if enhance:
+                img = img.convert(mode='L')
+                img = ImageEnhance.Contrast(img).enhance(enhance)
+            img = img.convert("RGBA")
+            basewidth = 400
+            wpercent = (basewidth/float(img.size[0]))
+            hsize = int((float(img.size[1])*float(wpercent)))
+            white = Image.new("RGBA", (basewidth, hsize), (255, 255, 255))
+            img = img.resize((basewidth, hsize))
+
+            pixels = img.load()
+
+            for y in range(img.height):
+                for x in range(img.width):
+                    r, g, b, a = img.getpixel((x, y))
+                    o = math.sqrt(0.299*r**2 + 0.587*g**2 + 0.114*b**2)
+                    o *= ((o - 102) / 128)
+                    o = 255 - o
+                    pixels[x, y] = (255, 0, 0, int(o))
+            white.paste(img, (0, 0), img)
+            await send_file(ctx, white)
+        else:
+            with open("avatar.gif", "wb") as f:
+                f.write(requests.get(url).content)
+            img = Image.open("avatar.gif")
+            basewidth = 128
+            new = []
+            frames = [frame.copy() for frame in ImageSequence.Iterator(img)]
+            try:
+                for frame in frames:
+                    if enhance:
+                        frame = frame.convert(mode='L')
+                        frame = ImageEnhance.Contrast(frame).enhance(enhance)
+                    wpercent = (basewidth/float(img.size[0]))
+                    hsize = int((float(img.size[1])*float(wpercent)))
+                    white = Image.new("RGBA", (basewidth, hsize), (255, 255, 255))
+                    frame = frame.convert("RGBA").resize((basewidth, hsize))
+                    pixels = frame.load()
+                    for y in range(frame.height):
+                        for x in range(frame.width):
+                            r, g, b, a = pixels[x, y]
+                            o = math.sqrt(0.299*r**2 + 0.587*g**2 + 0.114*b**2)
+                            o *= ((o - 102) / 128)
+                            o = 255 - o
+                            pixels[x, y] = (255, 0, 0, int(o))
+                    white.paste(frame, (0, 0), frame)
+                    new.append(white)
+            except EOFError:
+                pass
+            await ctx.send(file=get_file_gif(new[0], new[1:]))
+            try:
+                os.remove("avatar.gif")
+            except:
+                pass
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def halloween(self, ctx, user_or_image: str=None, enhance: int=None):
         """Turn an image into a halloween themed one"""
         if not user_or_image:
@@ -502,24 +664,12 @@ class image:
                 url = ctx.message.attachments[0].url
             else:
                 url = ctx.message.author.avatar_url
-        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
-            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            try:
-                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
-            except:
-                await ctx.send("Invalid user :no_entry:")
-                return
-            url = user.avatar_url
         else:
-            try:
-                user = ctx.message.guild.get_member_named(user_or_imagelink)
+            user = await arg.get_member(self.bot, ctx, user_or_imagelink)
+            if not user:
+                return await ctx.send("Invalid user :no_entry:")
+            else:
                 url = user.avatar_url
-            except:
-                try:
-                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    url = user.avatar_url
-                except:
-                    url = user_or_imagelink
         try:
             img = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
             img = img.resize((600, 600))

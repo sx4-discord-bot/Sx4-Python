@@ -269,14 +269,10 @@ class logs:
     async def on_voice_state_update(self, member, before, after):
         server = member.guild
         serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
+        action = "Unknown"
         for x in await server.audit_logs(limit=1).flatten():
             if x.action == discord.AuditLogAction.member_update:
-                if x.before.mute:
-                    unmutedby = x.user
-        for x in await server.audit_logs(limit=1).flatten():
-            if x.action == discord.AuditLogAction.member_update:
-                if x.after.mute:
-                    mutedby = x.user
+                action = x.user
         if before.channel != after.channel:
             s=discord.Embed(description="**{}** just changed voice channels".format(member.name), colour=0xe6842b, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=member, icon_url=member.avatar_url)
@@ -289,10 +285,16 @@ class logs:
             s=discord.Embed(description="**{}** just joined the voice channel `{}`".format(member.name, after.channel), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=member, icon_url=member.avatar_url)
         if before.mute and not after.mute:
-            s=discord.Embed(description="**{}** has been unmuted by **{}**".format(member.name, unmutedby), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="**{}** has been unmuted by **{}**".format(member.name, action), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=member, icon_url=member.avatar_url)
         if not before.mute and after.mute:
-            s=discord.Embed(description="**{}** has been muted by **{}**".format(member.name, mutedby), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
+            s=discord.Embed(description="**{}** has been muted by **{}**".format(member.name, action), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
+            s.set_author(name=member, icon_url=member.avatar_url)
+        if before.deaf and not after.deaf:
+            s=discord.Embed(description="**{}** has been undeafened by **{}**".format(member.name, action), colour=0x5fe468, timestamp=__import__('datetime').datetime.utcnow())
+            s.set_author(name=member, icon_url=member.avatar_url)
+        if not before.deaf and after.deaf:
+            s=discord.Embed(description="**{}** has been deafened by **{}**".format(member.name, action), colour=0xf84b50, timestamp=__import__('datetime').datetime.utcnow())
             s.set_author(name=member, icon_url=member.avatar_url)
         if serverdata["toggle"] == True:
             await self.webhook_send(self.bot.get_channel(int(serverdata["channel"])), server, s)
@@ -340,12 +342,16 @@ class logs:
                 avatar = f.read()
         except:
             avatar = None
-        webhook = discord.utils.get(await guild.webhooks(), name="Sx4")
+        try:
+            await discord.utils.get(await guild.webhooks(), name="Sx4").delete()
+        except:
+            pass
+        webhook = discord.utils.get(await guild.webhooks(), name="Sx4 - Logs")
         if not webhook:
-            webhook = await channel.create_webhook(name="Sx4", avatar=avatar)
-        if webhook and channel != webhook.channel:
+            webhook = await channel.create_webhook(name="Sx4 - Logs", avatar=avatar)
+        elif webhook and channel != webhook.channel:
             await webhook.delete()
-            webhook = await channel.create_webhook(name="Sx4", avatar=avatar)
+            webhook = await channel.create_webhook(name="Sx4 - Logs", avatar=avatar)
         await webhook.send(embed=embed)
 		
 

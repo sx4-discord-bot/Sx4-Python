@@ -205,11 +205,16 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         message2 = message2.replace("{user}", str(author))
         message2 = message2.replace("{server.members}", str(len(server.members))) 
         message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
-        if data["imgwelcomertog"]:
+        if data["imgwelcomertog"] and data["toggle"]:
             await ctx.send(content=message, file=self.image_welcomer(author, server))
-        else:
+        elif data["imgwelcomertog"] and not data["toggle"]:
+            await ctx.send(file=self.image_welcomer(author, server))
+        elif not data["imgwelcomertog"] and data["toggle"]:
             await ctx.send(message)
-        await ctx.send(message2)
+        else:
+            return await ctx.send("You have neither image welcomer or welcomer enabled :no_entry:")
+        if data["leavetoggle"]:
+            await ctx.send(message2)
             
     @welcomer.command()
     @checks.has_permissions("manage_messages")
@@ -285,15 +290,21 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         message = message.replace("{user}", str(member))
         message = message.replace("{server.members}", str(len(server.members))) 
         message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
-        if data["toggle"] == True:
-            if data["dm"] == True and data["imgwelcomertog"] == True:
+        if data["toggle"] == True and data["imgwelcomertog"] == True:
+            if data["dm"] == True:
                 await member.send(content=message, file=self.image_welcomer(author, server))
-            elif data["dm"] == True and data["imgwelcomertog"] == False:
-                await member.send(content=message)
-            elif data["imgwelcomertog"] == True and data["dm"] == False:
+            elif data["dm"] == False:
                 await server.get_channel(int(channel)).send(content=message, file=self.image_welcomer(author, server))
-            else:
+        elif data["toggle"] == True and data["imgwelcomertog"] == False:
+            if data["dm"] == True:
+                await member.send(content=message)
+            elif data["dm"] == False:
                 await server.get_channel(int(channel)).send(message)
+        elif data["toggle"] == False and data["imgwelcomertog"] == True:
+            if data["dm"] == True:
+                await member.send(file=self.image_welcomer(author, server))
+            elif data["dm"] == False:
+                await server.get_channel(int(channel)).send(file=self.image_welcomer(author, server))    
         else:
             pass
             
