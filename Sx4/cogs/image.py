@@ -36,12 +36,36 @@ class image:
     def __init__(self, bot):  
         self.bot = bot
 
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def hot(self, ctx, user_or_image: str=None):
+        """The specified user/image will be called hot by will smith"""
+        if ctx.message.attachments and not user_or_image:
+            url = ctx.message.attachments[0].url
+        elif not ctx.message.attachments and not user_or_image:
+            url = ctx.author.avatar_url
+        else:
+            user = await arg.get_member(ctx, user_or_image)
+            if not user:
+                url = user_or_image
+            else:
+                url = user.avatar_url
+        try:
+            avatar = getImage(url).resize((400, 300))
+        except:
+            return await ctx.send("Invalid user/image :no_entry:")
+        image = Image.open("thats-hot-meme.png").resize((419, 493))
+        main = Image.new('RGBA', (419, 493), (255, 255, 255, 0))
+        main.paste(avatar, (8, 213), avatar)
+        main.paste(image, (0, 0), image)
+        await send_file(ctx, main)
+
     @commands.command(name="discord")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def _discord(self, ctx, user: str, *, discord_text: str):
         if len(discord_text) > 2000:
             return await ctx.send("You can not have more than 2000 characters :no_entry:")
-        user = await arg.get_member(self.bot, ctx, user)
+        user = await arg.get_member(ctx, user)
         if not user:
             return await ctx.send("Invalid User :no_entry:")
         if discord_text.lower().endswith(" --white"):
@@ -137,7 +161,7 @@ class image:
                 else:
                     gif = False
         else:
-            user = await arg.get_member(self.bot, ctx, user_or_image)
+            user = await arg.get_member(ctx, user_or_image)
             if not user:
                 try: 
                     r = requests.get(user_or_image, stream=True)
@@ -239,7 +263,7 @@ class image:
                 else:
                     gif = False
         else:
-            user = await arg.get_member(self.bot, ctx, user_or_image)
+            user = await arg.get_member(ctx, user_or_image)
             if not user:
                 try: 
                     r = requests.get(user_or_image, stream=True)
@@ -378,6 +402,8 @@ class image:
             userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
             try:
                 user = discord.utils.get(ctx.message.guild.members, id=int(userid))
+                if not user:
+                    return await ctx.send("Invalid user :no_entry:")
             except:
                 await ctx.send("Invalid user :no_entry:")
                 return
@@ -385,10 +411,14 @@ class image:
         else:
             try:
                 user = ctx.message.guild.get_member_named(user_or_imagelink)
+                if not user:
+                    return await ctx.send("Invalid user :no_entry:")
                 url1 = user.avatar_url
             except:
                 try:
                     user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
+                    if not user:
+                        return await ctx.send("Invalid user :no_entry:")
                     url1 = user.avatar_url
                 except:
                     url1 = user_or_imagelink
@@ -665,7 +695,7 @@ class image:
             else:
                 url = ctx.message.author.avatar_url
         else:
-            user = await arg.get_member(self.bot, ctx, user_or_imagelink)
+            user = await arg.get_member(ctx, user_or_imagelink)
             if not user:
                 return await ctx.send("Invalid user :no_entry:")
             else:
@@ -887,7 +917,7 @@ class image:
             else:
                 url = ctx.author.avatar_url
         else:
-            user = await arg.get_member(self.bot, ctx, user_or_imagelink)
+            user = await arg.get_member(ctx, user_or_imagelink)
             if not user:
                 url = user_or_imagelink
             else:

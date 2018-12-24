@@ -61,7 +61,32 @@ class music:
             player.cleanup()
         self.bot.lavalink.players.clear()
 
-
+    @commands.command()
+    async def seek(self, ctx, position: str):
+        """Skip forwards or backwards in a song or set the exact time with the format hh:mm:ss"""
+        position_re = re.compile("(?:([0-9]+):|)([0-9]+):([0-9]+)")
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+        if not player.is_connected:
+            return await ctx.send("I'm not in a voice channel :no_entry:")
+        if not player.is_playing:
+            return await ctx.send("Nothing is currently playing :no_entry:")
+        if player.fetch('sessionowner') == ctx.author.id or player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members):
+            match = position_re.match(position)
+            if match:
+                hours = int(match.group(1)) if match.group(1) else None
+                minutes = int(match.group(2))
+                seconds = int(match.group(3))
+                time = (((hours*3600) if hours else 0) + (minutes*60) + seconds) * 1000
+            elif position.isdigit():
+                time = player.position + int(position) * 1000
+            elif position.startswith("-"):
+                time = player.position + -(int(position[1:]) * 1000)
+            else:
+                return await ctx.send("Invalid time format :no_entry:")
+            await player.seek(time)
+            await ctx.send("Player time is now at **{}**".format(self.format_time(time)))
+        else:
+            return await ctx.send("You are not the session owner :no_entry:")
                 
     @commands.command(aliases=["summon"])
     async def join(self, ctx):
@@ -120,10 +145,6 @@ class music:
         else:
             track = results["tracks"][0]
             player.add(requester=ctx.author.id, track=track)
-            try:
-                request = requests.get("https://www.youtube.com/list_ajax?style=json&action_get_templist=1&video_ids={}".format(track["info"]["identifier"])).json()["video"][0]
-            except:
-                request = None
             timetill = 0
             for x in player.queue:
                 timetill += x.duration
@@ -133,14 +154,9 @@ class music:
                 timetill = 0 
             index = [x.track for x in player.queue].index(track["track"]) + 1
             s.set_author(name="Added to Queue", icon_url=ctx.author.avatar_url)
-            if request:
-                s.set_footer(text="{:,} 👍 | {:,} 👎".format(request["likes"], request["dislikes"]))
             s.set_thumbnail(url="https://img.youtube.com/vi/{}/default.jpg".format(track["info"]["identifier"]))
             s.add_field(name="Song", value="[{}]({})".format(track["info"]["title"], track["info"]["uri"]), inline=False)
             s.add_field(name="Duration", value=self.format_time(track["info"]["length"]), inline=True)
-            if request:
-                s.add_field(name="Views", value=request["views"].replace("\xa0", ","))
-                s.add_field(name="Channel", value=request["author"])
             s.add_field(name="Position in Queue", value=index)
             if timetill != 0:
                 s.add_field(name="Estimated time till playing", value=self.format_time(timetill-track["info"]["length"]))
@@ -193,19 +209,10 @@ class music:
             player.add(requester=ctx.author.id, track=track)
             if queue_length != 0:
                 player.queue[:queue_length], player.queue[queue_length+1:] = player.queue[queue_length+1:], player.queue[:queue_length]
-            try:
-                request = requests.get("https://www.youtube.com/list_ajax?style=json&action_get_templist=1&video_ids={}".format(track["info"]["identifier"])).json()["video"][0]
-            except:
-                request = None
             s.set_author(name="Added to Queue", icon_url=ctx.author.avatar_url)
-            if request:
-                s.set_footer(text="{:,} 👍 | {:,} 👎".format(request["likes"], request["dislikes"]))
             s.set_thumbnail(url="https://img.youtube.com/vi/{}/default.jpg".format(track["info"]["identifier"]))
             s.add_field(name="Song", value="[{}]({})".format(track["info"]["title"], track["info"]["uri"]), inline=False)
             s.add_field(name="Duration", value=self.format_time(track["info"]["length"]), inline=True)
-            if request:
-                s.add_field(name="Views", value=request["views"].replace("\xa0", ","))
-                s.add_field(name="Channel", value=request["author"])
             s.add_field(name="Position in Queue", value="Next")
             s.add_field(name="Estimated time till playing", value="Next")
             await self.bot.get_channel(player.fetch('channel')).send(embed=s)
@@ -323,10 +330,6 @@ class music:
             else:
                 track = results["tracks"][int(response.content) - 1]
                 player.add(requester=ctx.author.id, track=track)
-                try:
-                    request = requests.get("https://www.youtube.com/list_ajax?style=json&action_get_templist=1&video_ids={}".format(track["info"]["identifier"])).json()["video"][0]
-                except:
-                    request = None
                 timetill = 0
                 for x in player.queue:
                     timetill += x.duration
@@ -337,14 +340,9 @@ class music:
                 index = [x.track for x in player.queue].index(track["track"]) + 1
                 s=discord.Embed()
                 s.set_author(name="Added to Queue", icon_url=ctx.author.avatar_url)
-                if request:
-                    s.set_footer(text="{:,} 👍 | {:,} 👎".format(request["likes"], request["dislikes"]))
                 s.set_thumbnail(url="https://img.youtube.com/vi/{}/default.jpg".format(track["info"]["identifier"]))
                 s.add_field(name="Song", value="[{}]({})".format(track["info"]["title"], track["info"]["uri"]), inline=False)
                 s.add_field(name="Duration", value=self.format_time(track["info"]["length"]), inline=True)
-                if request:
-                    s.add_field(name="Views", value=request["views"].replace("\xa0", ","))
-                    s.add_field(name="Channel", value=request["author"])
                 s.add_field(name="Position in Queue", value=index)
                 if timetill != 0:
                     s.add_field(name="Estimated time till playing", value=self.format_time(timetill-track["info"]["length"]))
@@ -380,22 +378,12 @@ class music:
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if player.current:
             requester = discord.utils.get(self.bot.get_all_members(), id=player.current.requester)
-            try:
-                request = requests.get("https://www.youtube.com/list_ajax?style=json&action_get_templist=1&video_ids={}".format(player.current.identifier)).json()["video"][0]
-            except: 
-                request = None
             s=discord.Embed()
             s.set_author(name="Now Playing", icon_url=ctx.author.avatar_url)
-            if request:
-                s.set_footer(text="Requested by {} | {:,} 👍 | {:,} 👎".format(requester, request["likes"], request["dislikes"]), icon_url=requester.avatar_url)
-            else:
-                s.set_footer(text="Requested by {}".format(requester), icon_url=requester.avatar_url)
+            s.set_footer(text="Requested by {}".format(requester), icon_url=requester.avatar_url)
             s.set_thumbnail(url=player.current.thumbnail)
             s.add_field(name="Song", value="[{}]({})".format(player.current.title, player.current.uri), inline=False)
             s.add_field(name="Duration", value="{}/{}".format(self.format_time(player.position), self.format_time(player.current.duration)))
-            if request:
-                s.add_field(name="Views", value=request["views"].replace("\xa0", ","))
-                s.add_field(name="Channel", value=request["author"])
             await ctx.send(embed=s)
         else:
             return await ctx.send("Nothing is currently playing :no_entry:")

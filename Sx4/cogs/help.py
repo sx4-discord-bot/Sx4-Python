@@ -31,9 +31,12 @@ class help:
     @commands.command()
     async def help(self, ctx, commandname=None, *, subcommand=None):
         if not commandname and not subcommand:
+            cogs = list(self.bot.cogs)
+            economy = cogs.index("economy")
+            cogs[0], cogs[economy] = cogs[economy], cogs[0]
             s=discord.Embed(colour=0xffff00)
             s.set_footer(text="s?help <command/module> for more info", icon_url=ctx.message.author.avatar_url)
-            for cog in self.bot.cogs:
+            for cog in cogs:
                 commands = ", ".join(sorted(["`" + command + "`" for command in self.bot.cogs[cog].bot.all_commands if self.bot.all_commands[command].module[5:].lower() == cog.lower() and self.bot.all_commands[command].hidden == False and command not in self.bot.all_commands[command].aliases], key=lambda x: x.lower()))
                 commandsnum = len([x for x in self.bot.all_commands if self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases])
                 cogsnum = len([x for x in self.bot.all_commands if self.bot.all_commands[x].module[5:].lower() == cog.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases])

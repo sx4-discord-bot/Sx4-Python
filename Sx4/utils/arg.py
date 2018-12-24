@@ -1,14 +1,15 @@
 import discord
 import re
 
-regex_mention = re.compile("<@(?:!|)([0-9]+)>")
-regex_namediscrim = re.compile("(.{2,32})#([0-9]{4})")
-regex_id = re.compile("([0-9]+)")
+regex_mention = re.compile("<@(?:!|)(\d+)>")
+regex_namediscrim = re.compile("(.{2,32})#(\d{4})")
+regex_id = re.compile("(^\d+$)")
 regex_name = re.compile("(.{2,32})")
-role_mention = re.compile("<@&([0-9]+)>")
-channel_mention = re.compile("<#([0-9]+)>")
+role_mention = re.compile("<@&(\d+)>")
+channel_mention = re.compile("<#(\d+)>")
 
-async def get_member(bot, ctx, user_arg):
+async def get_member(ctx, user_arg):
+    bot = ctx.bot
     match_mention = regex_mention.match(user_arg)
     match_namediscrim = regex_namediscrim.match(user_arg)
     match_id = regex_id.match(user_arg)

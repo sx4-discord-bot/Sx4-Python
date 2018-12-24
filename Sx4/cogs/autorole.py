@@ -10,7 +10,7 @@ import rethinkdb as r
 import asyncio
 import random
 import time
-from utils import arghelp
+from utils import arghelp, arg
 import discord
 from discord.ext import commands
 from random import randint
@@ -33,9 +33,12 @@ class autorole:
 
     @autorole.command() 
     @checks.has_permissions("manage_roles")
-    async def role(self, ctx, *, role: discord.Role):
+    async def role(self, ctx, *, role: str):
         """Set the role to be added to a user whne they join"""
         server = ctx.guild
+        role = arg.get_role(ctx, role)
+        if not role:
+            return await ctx.send("I could not find that role :no_entry:")
         r.table("autorole").get(str(server.id)).update({"role": str(role.id)}).run(durability="soft")
         await ctx.send("The autorole role is now **{}** <:done:403285928233402378>".format(role.name))
 		

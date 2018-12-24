@@ -97,11 +97,11 @@ class antilink:
            channel = ctx.channel 
         if str(channel.id) in data["channels"].run(durability="soft"):
             data.update({"channels": r.row["channels"].difference([str(channel.id)])}).run(durability="soft")
-            await ctx.send("Anti-link is now disabled in <#{}>".format(str(channel.id)))
+            await ctx.send("Anti-link is now enabled in <#{}>".format(str(channel.id)))
             return
         else: 
             data.update({"channels": r.row["channels"].append(str(channel.id))}).run(durability="soft")
-            await ctx.send("Anti-link is now enabled in <#{}>".format(str(channel.id)))
+            await ctx.send("Anti-link is now disabled in <#{}>".format(str(channel.id)))
             return
 		 
     @antilink.command()

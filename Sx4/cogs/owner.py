@@ -11,9 +11,57 @@ import json
 import inspect
 from utils import arg
 import math
+import functools
+import psutil
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from utils import checks
 import os
+
+execution_times = {}
+
+def log(method):
+    @functools.wraps(method)
+    async def timed(*args, **kw):
+        memory_start = psutil.Process(os.getpid()).memory_info().rss/1000000
+        start_time = time.time()
+        result = await method(*args, **kw)
+        execution_time = int((time.time() - start_time) * 1000)
+        memory_gained = (psutil.Process(os.getpid()).memory_info().rss/1000000) - memory_start
+        
+        method_name = method.__module__ + "." + method.__name__
+        if method_name not in execution_times:
+            execution_times[method_name] = {"average": 0, "data_points": 0, "memory_average": 0}
+            
+        entry = execution_times[method_name]
+        
+        new_average = ((entry["average"] * entry["data_points"]) + execution_time)/(entry["data_points"] + 1)
+        new_average_memory = ((entry["memory_average"] * entry["data_points"]) + memory_gained)/(entry["data_points"] + 1)
+        
+        entry["average_memory"] = new_average_memory
+        entry["average"] = new_average
+        entry["data_points"] += 1
+        
+        if "min_execution_time" not in entry:
+            entry["min_execution_time"] = execution_time
+        
+        entry["min_execution_time"] = min(entry["min_execution_time"], execution_time)
+        
+        if "max_execution_time" not in entry:
+            entry["max_execution_time"] = execution_time
+            
+        entry["max_execution_time"] = max(entry["max_execution_time"], execution_time)
+        
+        if "min_memory_gained" not in entry:
+            entry["min_memory_gained"] = memory_gained
+        
+        entry["min_memory_gained"] = min(entry["min_memory_gained"], memory_gained)
+        
+        if "max_memory_gained" not in entry:
+            entry["max_memory_gained"] = memory_gained
+            
+        entry["max_memory_gained"] = max(entry["max_memory_gained"], memory_gained)
+        return result
+    return timed
 
 class owner:
     def __init__(self, bot):
@@ -89,7 +137,7 @@ class owner:
     @commands.command(hidden=True, name="as")
     @checks.is_owner()
     async def _as(self, ctx, user: str, command_name: str, *, args: str=""):
-        user = await arg.get_member(self.bot, ctx, user)
+        user = await arg.get_member(ctx, user)
         if not user:
             return await ctx.send("You're retarded that's not a user :no_entry:")
         else:
@@ -137,7 +185,7 @@ class owner:
     @commands.command(hidden=True)
     @checks.is_owner()
     async def blacklistuser(self, ctx, user: str, boolean: bool):
-        user = await arg.get_member(self.bot, ctx, user)
+        user = await arg.get_member(ctx, user)
         r.table("blacklist").insert({"id": "owner", "users": []}).run(durability="soft")
         data = r.table("blacklist").get("owner")
         if boolean == True:
@@ -176,16 +224,12 @@ class owner:
             else:
                 await ctx.send("Provide a valid image :no_entry:")
                 return
-        with open("logo.png", 'wb') as f:
-            f.write(requests.get(url).content)
-        with open("logo.png", "rb") as f:
-            avatar = f.read()
+        avatar = requests.get(url).content
         try:
             await self.bot.user.edit(password=None, avatar=avatar)
         except:
             return await ctx.send("Clap you've changed my profile picture too many times")
         await ctx.send("I have changed my profile picture")
-        os.remove("logo.png")
 		
     @commands.command(hidden=True)
     @checks.is_owner()
@@ -206,17 +250,33 @@ class owner:
     async def shutdown(self, ctx):
         await ctx.send("Shutting down...")
         await self.bot.logout()
+    
+    @commands.command(hidden=True)
+    async def executions(self, ctx):
+        msg = "\n".join(["`{}` - {}ms, {}MB average memory, {}MB max memory, {}ms max execution (Executed {} times)".format(x[0], format(x[1]["average"], ".2f"), format(x[1]["average_memory"], ".2f"), format(x[1]["max_memory_gained"], ".2f"), format(x[1]["max_execution_time"], ".2f"), x[1]["data_points"]) for x in execution_times.items()])
+        i, n = 0, 2000
+        for x in range(math.ceil(len(msg)/2000)):
+            if i != 0:
+                while msg[i-1:i] != "\n":
+                    i -= 1
+            while msg[n-1:n] != "\n":
+                n -= 1
+            await ctx.send(msg[i:n])
+            i += 2000
+            n += 2000
 
+    @log
     async def on_guild_join(self, guild):
         guilds = len(self.bot.guilds)
         if guilds % 100 == 0:
-            channel = self.bot.get_channel(493439822682259497)
+            channel = guild.get_channel(493439822682259497)
             await channel.send("{:,} servers :tada:".format(guilds))
 
+    @log
     async def on_guild_remove(self, guild):
         guilds = len(self.bot.guilds)
         if guilds % 100 != 0:
-            channel = self.bot.get_channel(493439822682259497)
+            channel = guild.get_channel(493439822682259497)
             for x in await channel.history(limit=1).flatten():
                 if int(x.content.split(" ")[0].replace(",", "")) > guilds:
                     await x.delete() 
@@ -229,7 +289,7 @@ class owner:
             s=discord.Embed(colour=0xffff00, timestamp=ctx.message.edited_at if ctx.message.edited_at else ctx.message.created_at)
             s.add_field(name="Message", value="Content: {}\nID: {}".format(ctx.message.content, ctx.message.id), inline=False)
             s.add_field(name="Channel", value="Name: {}\nID: {}".format(ctx.channel.name, ctx.channel.id), inline=False)
-            s.add_field(name="Guild", value="Name: {}\nID: {}\nMember Count: {:,}".format(ctx.guild.name, ctx.guild.id, ctx.guild.member_count), inline=False)
+            s.add_field(name="Guild", value="Name: {}\nID: {}\nShard: {}\nMember Count: {:,}".format(ctx.guild.name, ctx.guild.id, ctx.guild.shard_id + 1, ctx.guild.member_count), inline=False)
             s.add_field(name="Author", value="User: {}\nID: {}".format(ctx.author, ctx.author.id), inline=False)
             s.add_field(name="Command", value="Prefix: {}\nCommand: {}\nArguments: {}".format(ctx.prefix, ctx.command, ctx.kwargs), inline=False)
             s.add_field(name="Attachments", value="\n".join(map(lambda x: x.url, ctx.message.attachments)) if ctx.message.attachments else "None", inline=False)

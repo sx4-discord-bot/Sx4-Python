@@ -64,7 +64,10 @@ class animals:
     @commands.command()
     async def cat(self, ctx):
         """Shows a random cat"""
-        response = requests.get("http://aws.random.cat/meow").json()
+        try:
+            response = requests.get("http://aws.random.cat/meow", timeout=2).json()
+        except:
+            return await ctx.send("Request timed out :no_entry:")
         image = response["file"]
         s=discord.Embed(description=":cat:", colour=ctx.message.author.colour)
         s.set_image(url=image)
@@ -82,6 +85,7 @@ class animals:
         data = json.loads(urlopen(request).read().decode())
         s=discord.Embed(description=":duck:", colour=ctx.message.author.colour)
         s.set_image(url=data["url"])
+        s.set_footer(text="Powered by random-d.uk")
         try:
             await ctx.send(embed=s)
         except:

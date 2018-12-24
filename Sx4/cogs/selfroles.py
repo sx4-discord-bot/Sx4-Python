@@ -62,6 +62,8 @@ class selfroles:
         if str(message_id) in serverdata["messages"].map(lambda x: x["id"]).run():
             message_db = serverdata["messages"].filter(lambda x: x["id"] == str(message_id))[0]
             message = await self.bot.get_channel(int(message_db["channel"].run())).get_message(message_id)
+            if not message:
+                return await ctx.send("That message has been deleted :no_entry:")
             if str(role.id) in message_db["roles"].map(lambda x: x["id"]).run():
                 return await ctx.send("This role is already on this reaction role message :no_entry:")
             s = message.embeds[0]
@@ -378,6 +380,8 @@ class selfroles:
         channel = self.bot.get_channel(payload.channel_id)
         server = channel.guild
         user = server.get_member(payload.user_id)
+        if user.bot:
+            return
         message = await channel.get_message(payload.message_id)
         serverdata = r.table("reactionrole").get(str(server.id))
         if str(message.id) in serverdata["messages"].map(lambda x: x["id"]).run():

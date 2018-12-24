@@ -8,6 +8,7 @@ import html
 import random
 import math
 from utils import arghelp
+import functools
 from PIL import Image, ImageFilter, ImageEnhance
 import psutil
 from datetime import datetime, timedelta
@@ -21,7 +22,7 @@ from iso639 import languages
 import re
 import os
 from random import choice
-from utils import arg
+from utils import arg, data
 from threading import Timer
 from utils import Token 
 import requests
@@ -31,6 +32,7 @@ from collections import namedtuple, defaultdict, deque
 from copy import deepcopy
 import rethinkdb as r
 from enum import Enum
+from utils import paged
 import asyncio
 from difflib import get_close_matches
 
@@ -40,7 +42,159 @@ class fun:
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.command(aliases=["perksearch", "searchperk"])
+    async def dbdperksearch(self, ctx, *, perk: str=None):
+        """Look up a perk on dead by daylight"""
+        killerperks = data.read_json("dbd_data/KillerPerks.json")
+        survivorperks = data.read_json("dbd_data/SurvivorPerks.json")
+        array = killerperks + survivorperks 
+        if perk:
+            additional = None
+            if perk.startswith("--"):
+                additional = perk[2:]
+                perk = None
+                event = None
+            elif " --" in perk:
+                additional = perk.split(" --")[1]
+                perk = perk.split(" --")[0]
+            if additional:
+                if additional.lower() == "killer":
+                    array = killerperks
+                elif additional.lower() == "survivor":
+                    array = survivorperks
+            if perk:
+                event = list(filter(lambda x: perk.lower() == x["name"].lower(), array))
+        else:
+            event = None
+        if not event:
+            if perk:
+                array = list(filter(lambda x: perk.lower() in x["name"].lower(), array))
+            if not array:
+                return await ctx.send("I could not find that perk :no_entry:")
+            if len(array) == 1:
+                event = array[0]
+            else:
+                event = await paged.page(ctx, array, selectable=True, per_page=15, function=lambda x: x["name"])
+            if event:
+                event2 = await paged.page(ctx, event["rarity"], function=lambda x: x.title().replace("_", " "), selectable=True, return_index=True)
+                if event2 or event2 == 0:
+                    image = "dbd_perks/iconPerks_" + event["image"] + ".png"
+                    description = event["description"].replace("%b", "**").replace("%/b", "**").replace("%i", "*").replace("%/i", "*") % tuple(event["tiers"][int(event2)])
+                    s=discord.Embed(description=description, title=event["name"])
+                    s.add_field(name="Rarity", value=event["rarity"][int(event2)].title().replace("_", " "))
+                    s.add_field(name="Teachable", value="Yes ({})".format(event["owner"].title().replace("_", " ")) if event["owner"] != "ALL" else "No")
+                    s.set_thumbnail(url="attachment://image.png")
+                    await ctx.send(file=discord.File(image, "image.png"), embed=s)
+        else:
+            event = event[0]
+            event2 = await paged.page(ctx, event["rarity"], function=lambda x: x.title().replace("_", " "), selectable=True, return_index=True)
+            if event2 or event2 == 0:
+                image = "dbd_perks/iconPerks_" + event["image"] + ".png"
+                description = event["description"].replace("%b", "**").replace("%/b", "**").replace("%i", "*").replace("%/i", "*") % tuple(event["tiers"][int(event2)])
+                s=discord.Embed(description=description, title=event["name"])
+                s.add_field(name="Rarity", value=event["rarity"][int(event2)].title().replace("_", " "))
+                s.add_field(name="Teachable", value="Yes ({})".format(event["owner"].title().replace("_", " ")) if event["owner"] != "ALL" else "No")
+                s.set_thumbnail(url="attachment://image.png")
+                await ctx.send(file=discord.File(image, "image.png"), embed=s)
+
+    @commands.command(aliases=["survivorset"])
+    async def dbdsurvivorset(self, ctx, survivor: str=None):
+        """Generates a random survivor set on dead by daylight"""
+        def get_survivor(survivor: str):
+            try:
+                survivor = list(filter(lambda x: survivor == x["index"].lower(), data.read_json("dbd_data/Survivors.json")))[0]
+            except IndexError:
+                try:
+                   survivor = list(filter(lambda x: survivor in x["index"].lower(), data.read_json("dbd_data/Survivors.json")))[0] 
+                except IndexError:
+                   return None
+            return survivor
+        if survivor:
+            survivor = get_survivor(survivor)
+            if not survivor:
+                return await ctx.send("I could not find that survivor :no_entry:")
+        else:
+            survivor = random.choice(data.read_json("dbd_data/Survivors.json"))
+        perks = data.read_json("dbd_data/SurvivorPerks.json")
+        items = data.read_json("dbd_data/Items.json")
+        addons = data.read_json("dbd_data/SurvivorAddons.json") 
+        offerings = data.read_json("dbd_data/SurvivorOfferings.json") + data.read_json("dbd_data/SharedOfferings.json")
+        perks = random.sample(perks, 4)
+        item = random.choice(items)
+        addons = random.sample(list(filter(lambda x: x["type"] == item["type"], addons)), 2)
+        offering = random.choice(offerings)
+        s=discord.Embed(title=survivor["name"])
+        s.add_field(name="Perks", value="\n".join(map(lambda x: "{} - {} perk on the {} page".format(x["name"], self.suffix(self.index_dbd(x["name"])[1]), self.suffix(self.index_dbd(x["name"])[0])), perks)))
+        s.add_field(name="Item", value=item["name"])
+        s.add_field(name="Addons", value="\n".join(map(lambda x: x["name"], addons)))
+        s.add_field(name="Offering", value=offering["name"])
+        await ctx.send(embed=s)
+
+    @commands.command(aliases=["killerset"])
+    async def dbdkillerset(self, ctx, *, killer: str=None):
+        """Generates a random killer set on dead by daylight"""
+        def get_killer(killer: str):
+            try:
+                killer = list(filter(lambda x: killer == x["index"].lower(), data.read_json("dbd_data/Killers.json")))[0]
+            except IndexError:
+                try:
+                   killer = list(filter(lambda x: killer in x["index"].lower(), data.read_json("dbd_data/Killers.json")))[0] 
+                except IndexError:
+                   return None
+            return killer
+        if killer:
+            killer = get_killer(killer)
+            if not killer:
+                return await ctx.send("I could not find that killer :no_entry:")
+        else:
+            killer = random.choice(data.read_json("dbd_data/Killers.json"))
+        perks = data.read_json("dbd_data/KillerPerks.json")
+        addons = data.read_json("dbd_data/KillerAddons.json")
+        offerings = data.read_json("dbd_data/KillerOfferings.json") + data.read_json("dbd_data/SharedOfferings.json")
+        perks = random.sample(perks, 4)
+        addons = random.sample(list(filter(lambda x: x["owner"] == killer["index"], addons)), 2)
+        offering = random.choice(offerings)
+        s=discord.Embed(title=killer["name"])
+        s.add_field(name="Perks", value="\n".join(map(lambda x: "{} - {} perk on the {} page".format(x["name"], self.suffix(self.index_dbd(x["name"], "killer")[1]), self.suffix(self.index_dbd(x["name"], "killer")[0])), perks)))
+        s.add_field(name="Addons", value="\n".join(map(lambda x: x["name"], addons)))
+        s.add_field(name="Offering", value=offering["name"])
+        await ctx.send(embed=s)
+
     @commands.command()
+    async def teams(self, ctx, amount_of_teams: int, *players):
+        """Randomizes a specified amount of teams for you"""
+        players = list(players)
+        if amount_of_teams <= 0:
+            return await ctx.send("Amount of teams has to be more than 0 :no_entry:")
+        for player in players:
+            user = arg.get_server_member(ctx, player)
+            role = arg.get_role(ctx, player)
+            if user:
+                players.remove(player)
+                players.append(user.name)
+            elif role:
+                players.remove(player)
+                for mems in map(lambda x: x.name, role.members):
+                    players.append(mems)
+        players = list(set(players))
+        if len(players) < amount_of_teams:
+            return await ctx.send("You gave more teams than players :no_entry:")
+        teams = []
+        for i in range(amount_of_teams):
+            teams.append([])
+        i = 0
+        while len(players) > 0:
+            player = random.choice(players)
+            players.remove(player)
+            teams[i].append(player)
+            if i == amount_of_teams - 1:
+                i = 0
+            else:
+                i += 1
+        await ctx.send("\n".join(["**Team {}**\n\n{}\n".format(i, ", ".join(x)) for i, x in enumerate(teams, start=1)]))
+
+    @commands.command()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def convert(self, ctx, amount: float, currency_from: str, currency_to: str):
         request = requests.get("https://free.currencyconverterapi.com/api/v6/convert?q={}_{}".format(currency_from.upper(), currency_to.upper())).json()
         if request["query"]["count"] == 0:
@@ -52,11 +206,14 @@ class fun:
             await ctx.send("**{}** {} to **{}** {}".format(amount, currency_from.upper(), currency, currency_to.upper()))
 
     @commands.command(aliases=["gtn"])
+    @commands.cooldown(1, 30, commands.BucketType.user)
     async def guessthenumber(self, ctx, user: str, bet: int=None):
         """Who ever gets closest to the number gets the others money if you bet money"""
         user = arg.get_server_member(ctx, user)
         if not user:
             return await ctx.send("Invalid user :no_entry:")
+        if user == ctx.author:
+            return await ctx.send("You can't play this game by yourself :no_entry:")
         if bet:
             if bet > 0:
                 await self._set_bank(ctx.author)
@@ -64,10 +221,13 @@ class fun:
                 authordata = r.table("bank").get(str(ctx.author.id))
                 userdata = r.table("bank").get(str(user.id))
                 if userdata["balance"].run() < bet:
+                    ctx.command.reset_cooldown(ctx)
                     return await ctx.send("**{}** doesn't have enough money :no_entry:".format(user))
                 if authordata["balance"].run() < bet:
+                    ctx.command.reset_cooldown(ctx)
                     return await ctx.send("**{}** doesn't have enough money :no_entry:".format(ctx.author))
             else: 
+                ctx.command.reset_cooldown(ctx)
                 return await ctx.send("The bet must be more than $0 :no_entry:")
         await ctx.send("{}, type `accept` if you would like to play guess the number{}".format(user.mention, " for **${:,}**".format(bet) if bet else "."))
         def user_confirmation_check(m):
@@ -89,20 +249,24 @@ class fun:
                 try:
                     await user.send("I'm thinking of a number between 1-50, try and guess the number the person who gets the closest out of you and your opponent will get the others money. (Respond below)")
                 except:
+                    ctx.command.reset_cooldown(ctx)
                     return await ctx.send("{}, Make sure i am able to message you :no_entry:".format(user.mention))
                 try:
                     user_answer = await self.bot.wait_for("message", check=user_check, timeout=20)
                 except asyncio.TimeoutError:
+                    ctx.command.reset_cooldown(ctx)
                     return await ctx.send("{}'s response timed out :stopwatch:".format(user.name))
                 if user_answer:
                     await user.send("Your answer has been locked in, waiting for an answer from {}. Answers will be sent in {}".format(ctx.author, ctx.channel.mention))
                 try:
                     await ctx.author.send("I'm thinking of a number between 1-50, try and guess the number the person who gets the closest out of you and your opponent will get the others money. (Respond below)")
                 except:
+                    ctx.command.reset_cooldown(ctx)
                     return await ctx.send("{}, Make sure i am able to message you :no_entry:".format(ctx.author.mention))
                 try:
                     author_answer = await self.bot.wait_for("message", check=author_check, timeout=20)
                 except asyncio.TimeoutError:
+                    ctx.command.reset_cooldown(ctx)
                     return await ctx.send("{}'s response timed out :stopwatch:".format(author.name))
                 if author_answer:
                     await ctx.author.send("Your answer has been locked in, answers have been sent in {}".format(ctx.channel.mention))
@@ -139,8 +303,10 @@ class fun:
                                 authordata.update({"balance": r.row["balance"] - bet}).run(durability="soft")
                     await ctx.send(msg)
             else:
+                ctx.command.reset_cooldown(ctx)
                 return await ctx.send("User declined :no_entry:")
         except asyncio.TimeoutError:
+            ctx.command.reset_cooldown(ctx)
             return await ctx.send("Response timed out :stopwatch:")
 
 
@@ -207,12 +373,14 @@ class fun:
         await ctx.send(answer)
 
     @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def quote(self, ctx):
         """Gives you a random quote"""
         request = requests.post("https://andruxnet-random-famous-quotes.p.mashape.com/", headers={"X-Mashape-Key": Token.mashape(),"Content-Type": "application/x-www-form-urlencoded","Accept": "application/json"}).json()[0]
         await ctx.send(embed=discord.Embed(description=request["quote"], title=request["author"], colour=ctx.author.colour))
 
     @commands.command(aliases=["yt"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def youtube(self, ctx, *, search: str):
         """Search for a youtube video by query"""
         url = "https://www.googleapis.com/youtube/v3/search?key=" + Token.youtube() + "&part=snippet&safeSearch=none&{}".format(urllib.parse.urlencode({"q": search}))
@@ -252,6 +420,7 @@ class fun:
         await ctx.send(embed=s)
 
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def discordmeme(self, ctx):
         """Have a discord meme"""
         url = "https://api.weeb.sh/images/random?type=discord_memes"
@@ -262,6 +431,7 @@ class fun:
         s=discord.Embed(); s.set_image(url=data["url"]); s.set_footer(text="Powered by weeb.sh"); await ctx.send(embed=s)
 
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def google(self, ctx, *, search): 
         """returns the top 5 results from google of your search query"""
         if ctx.channel.is_nsfw():
@@ -281,6 +451,7 @@ class fun:
         await ctx.send(embed=s)
 		
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def googleimage(self, ctx, *, search): 
         """returns an image based on your search from google"""
         if ctx.channel.is_nsfw():
@@ -300,6 +471,7 @@ class fun:
         await ctx.send(embed=s)
 
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def dictionary(self, ctx, *, word): 
         """Look up the definition of any word using an actual dictionary"""
         url = "https://od-api.oxforddictionaries.com:443/api/v1/entries/en/{}".format(word)
@@ -321,6 +493,7 @@ class fun:
         await ctx.send(embed=s)
 
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def steam(self, ctx, *, profile_url: str):
         """To get a steam profile you need to click on the users profile and get the vanityurl which is the name after /id/{} <--- The name should be there""" 
         idurl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + Token.steam() + "&{}".format(urllib.parse.urlencode({"vanityurl": profile_url.replace("https://steamcommunity.com/id/", "")}))
@@ -384,6 +557,7 @@ class fun:
         await ctx.send(embed=s)         
 
     @commands.command(pass_context=True, aliases=["ud"])
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def urbandictionary(self, ctx, search_term, page: int=None):
         """Look up the definition of a word on the urbandictionary"""
         if not ctx.channel.is_nsfw():
@@ -585,6 +759,60 @@ class fun:
         r.table("bank").insert({"id": str(author.id), "rep": 0, "balance": 0, "streak": 0, "streaktime": None,
         "reptime": None, "items": [], "pickdur": None, "roddur": None, "minertime": None, "winnings": 0,
         "fishtime": None, "factorytime": None, "picktime": None}).run(durability="soft")
+
+    def index_dbd(self, perk: str, type: str="survivor"):
+        index = {"UNCOMMON": 1, "RARE": 2, "VERY_RARE": 3, "ULTRA_RARE": 3}
+
+        per_row = 5
+        per_page = per_row * 3
+        
+        if type == "survivor":
+            perks = data.read_json("dbd_data/SurvivorPerks.json")
+        elif type == "killer":
+            perks = data.read_json("dbd_data/KillerPerks.json")
+        def compare(perk, perk2):
+            perk_index = index[perk["rarity"][-1]]
+            perk2_index = index[perk2["rarity"][-1]]
+
+            if perk_index > perk2_index:
+                return -1
+            elif perk_index < perk2_index:
+                return 1
+            else:
+                sorted = [perk, perk2]
+                sorted.sort(key=lambda perk: perk["name"].lower().replace('"', ''))
+
+                if sorted.index(perk) == 0:
+                    return -1
+                else:
+                    return 1
+
+        perks.sort(key=functools.cmp_to_key(compare))
+        perks_by_name = dict((e["name"], i) for i, e in enumerate(perks))
+
+        index_of_perk = perks_by_name[perk]
+
+        page = int(index_of_perk/per_page)
+        row = index_of_perk % per_page
+
+        return page + 1, row + 1
+
+    def suffix(self, number: int):
+        suffix = ""
+        num = number % 100
+        if num >= 11 and num <= 13:
+            suffix = "th"
+        else:
+            num = number % 10
+            if num == 1:
+                suffix = "st"
+            elif num == 2:
+                suffix = "nd"
+            elif num == 3:
+                suffix = "rd"
+            else:
+                suffix = "th"
+        return "{:,}{}".format(number, suffix)
         
 def setup(bot):
     bot.add_cog(fun(bot))

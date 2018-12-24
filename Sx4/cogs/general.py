@@ -19,6 +19,7 @@ import json
 import urllib
 import sys
 import re
+from . import owner as dev
 import os
 from utils import arg
 from random import choice
@@ -41,10 +42,13 @@ permsjson = {'change_nickname': 67108864, 'use_vad': 33554432, 'manage_channels'
 class general:
     def __init__(self, bot):
         self.bot = bot
+        self._stats = []
         self._stats_task = bot.loop.create_task(self.checktime())
+        self._database_check = bot.loop.create_task(self.update_database())
 
     def __unload(self):
         self._stats_task.cancel()
+        self._database_check.cancel()
 
     @commands.group()
     async def imagemode(self, ctx):
@@ -97,7 +101,7 @@ class general:
             await ctx.send("Slowmode has been updated for image mode in this channel.")
 
     @imagemode.command(name="stats")
-    async def _stats(self, ctx, channel: discord.TextChannel=None):
+    async def __stats(self, ctx, channel: discord.TextChannel=None):
         data = r.table("imagemode").get(str(ctx.guild.id))
         if not channel:
             channel = ctx.channel
@@ -182,7 +186,7 @@ class general:
             try:
                 contents = requests.get(ctx.message.attachments[0].url).content.decode()
             except:
-                await ctx.send("Failed to decode the file :no_entry:")
+                return await ctx.send("Failed to decode the file :no_entry:")
             amount = ctx.message.attachments[0].url.rfind(".")
             if len(contents) > 2000:
                 return await ctx.send("This file contains more than 2000 characters :no_entry:")
@@ -367,7 +371,7 @@ class general:
             place += 1
             if x[0] == str(user.id):
                 break 
-        await ctx.send("{} has **{}** invites which means they have the **{}** most invites. They have invited **{}%** of all users.".format(user, amount, await self.prefixfy(place), percent))
+        await ctx.send("{} has **{}** invites which means they have the **{}** most invites. They have invited **{}%** of all users.".format(user, amount, self.prefixfy(place), percent))
         del entries
 
     @commands.command(aliases=["ilb", "inviteslb"])
@@ -463,13 +467,13 @@ class general:
                     await ctx.send("Invalid join position :no_entry:")
                     return
                 input = number
-                await ctx.send("**{}** was the {} user to join {}".format(user, await self.prefixfy(input), ctx.guild.name))
+                await ctx.send("**{}** was the {} user to join {}".format(user, self.prefixfy(input), ctx.guild.name))
             except:
                 await ctx.send("You have not given a valid number or user :no_entry:")
                 return
         else:
             input = sorted([x for x in ctx.guild.members if x.joined_at], key=lambda x: x.joined_at).index(user) + 1
-            await ctx.send("{} was the **{}** user to join {}".format(user, await self.prefixfy(input), ctx.guild.name))            
+            await ctx.send("{} was the **{}** user to join {}".format(user, self.prefixfy(input), ctx.guild.name))            
 
     @commands.command()
     @checks.has_permissions("manage_emojis")
@@ -603,7 +607,7 @@ class general:
             except:
                 user = urllib.parse.quote(user)
                 url = "https://discordbots.org/api/bots?search=username:{}&fields=owners,username&limit=1&sort=points".format(user)
-        request = Request(url)
+        request = Request(url, headers={"Authorization": Token.dbl()})
         data = json.loads(urlopen(request).read().decode())["results"]
         if len(data) == 0:
             await ctx.send("I could not find that bot :no_entry:")
@@ -619,7 +623,7 @@ class general:
     async def dbltag(self, ctx, *, dbl_tag):
         """Shows the top 10 bots (sorted by monthly upvotes) in the tag form there you can select and view 1"""
         url = "https://discordbots.org/api/bots?search=tags:{}&limit=10&sort=monthlyPoints&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot,tags".format(urllib.parse.urlencode({"": dbl_tag}).replace("=", ""))
-        request = Request(url)
+        request = Request(url, headers={"Authorization": Token.dbl()})
         data = json.loads(urlopen(request).read().decode())
         n = 0
         msg = ""
@@ -685,10 +689,11 @@ class general:
             await ctx.send(embed=s)
          
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 7, commands.BucketType.user)
     async def dbl(self, ctx, user: str=None):
         """Look up any bot on discord bot list and get statistics from it"""
-        request2 = requests.get("https://discordbots.org/api/bots?sort=server_count&limit=500&fields=id,username").json()["results"]
-        request3 = requests.get("https://discordbots.org/api/bots?sort=points&limit=500&fields=username,id").json()["results"]
+        request2 = requests.get("https://discordbots.org/api/bots?sort=server_count&limit=500&fields=id,username", headers={"Authorization": Token.dbl()}).json()["results"]
+        request3 = requests.get("https://discordbots.org/api/bots?sort=points&limit=500&fields=username,id", headers={"Authorization": Token.dbl()}).json()["results"]
         if not user:
             user = self.bot.user
             url = "https://discordbots.org/api/bots?search=id:{}&fields=shortdesc,username,owners,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot&sort=points".format(user.id)
@@ -717,7 +722,7 @@ class general:
                         user = [x for x in list(set(self.bot.get_all_members())) if x.bot and username in x.name][0]
                     except:
                         user = None
-        request = Request(url)
+        request = Request(url, headers={"Authorization": Token.dbl()})
         data = json.loads(urlopen(request).read().decode())["results"]
         if len(data) == 0:
             await ctx.send("I could not find that bot :no_entry:")
@@ -737,7 +742,7 @@ class general:
             if not number:
                 s.add_field(name="Guilds", value="{:,}".format(data["server_count"]))
             else:
-                s.add_field(name="Guilds", value="{:,}".format(data["server_count"]) + " ({})".format(await self.prefixfy(number)))
+                s.add_field(name="Guilds", value="{:,}".format(data["server_count"]) + " ({})".format(self.prefixfy(number)))
         except:
             s.add_field(name="Guilds", value="N/A")
         s.add_field(name="Prefix", value=data["prefix"])
@@ -767,7 +772,7 @@ class general:
             await ctx.send("Invalid page :no_entry:")
             return
         url="https://discordbots.org/api/bots?sort=server_count&limit=10&offset={}&fields=username,server_count,id".format((page + 1)*10-10)
-        request = Request(url)
+        request = Request(url, headers={"Authorization": Token.dbl()})
         data = json.loads(urlopen(request).read().decode())
         n = page*10
         l = 0
@@ -781,15 +786,13 @@ class general:
         s.set_footer(text="Page {}/50".format(page+1))
         await ctx.send(embed=s)
         
-    @commands.command(pass_context=True)
+    @commands.command()
     async def ping(self, ctx):
         """Am i alive? (Well if you're reading this, yes)"""
-        if ctx.message.edited_at:
-            await ctx.send('Pong! :ping_pong:\n\n:stopwatch: **{}ms**\n:heartbeat: **{}ms**'.format(round((datetime.utcnow().timestamp() - ctx.message.edited_at.timestamp())*1000), round(self.bot.latency*1000)))
-        else:
-            await ctx.send('Pong! :ping_pong:\n\n:stopwatch: **{}ms**\n:heartbeat: **{}ms**'.format(round((datetime.utcnow().timestamp() - ctx.message.created_at.timestamp())*1000), round(self.bot.latency*1000)))
+        current = ctx.message.edited_at.timestamp() if ctx.message.edited_at else ctx.message.created_at.timestamp()
+        await ctx.send('Pong! :ping_pong:\n\n:stopwatch: **{}ms**\n:heartbeat: **{}ms** (Shard {})'.format(round((datetime.utcnow().timestamp() - current)*1000), round(self.bot.latencies[ctx.guild.shard_id][1]*1000), ctx.guild.shard_id + 1))
         
-    @commands.command(pass_context=True)
+    @commands.command()
     async def bots(self, ctx): 
         """Look at all my bot friends in the server"""
         server = ctx.guild
@@ -864,6 +867,13 @@ class general:
         s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\n[Support Server](https://discord.gg/PqJNcfB)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/Sx4)", colour=0xfff90d)
         s.set_author(name="Invite!", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=s)
+
+    @commands.command()
+    async def support(self, ctx):
+        """Get my support server link"""
+        s=discord.Embed(description="[Invite](https://discordapp.com/oauth2/authorize?client_id=440996323156819968&permissions=8&redirect_uri=https%3A%2F%2Fvjserver.ddns.net%2Fthanksx4.html&scope=bot)\n[Support Server](https://discord.gg/PqJNcfB)\n[PayPal](https://www.paypal.me/SheaCartwright)\n[Patreon](https://www.patreon.com/Sx4)", colour=0xfff90d)
+        s.set_author(name="Support!", icon_url=self.bot.user.avatar_url)
+        await ctx.send(embed=s)
         
     @commands.command(pass_context=True)
     async def info(self, ctx): 
@@ -885,19 +895,18 @@ class general:
         await ctx.send(embed=s)
 
     @commands.command(aliases=["shards"])
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def shardinfo(self, ctx):
         "Look at Sx4s' shards"
-        i = 0
         s=discord.Embed(colour=0xffff00)
         s.set_author(name="Shard Info!", icon_url=self.bot.user.avatar_url)
         s.set_footer(text="> indicates what shard your server is in", icon_url=ctx.author.avatar_url)
         for x in range(self.bot.shard_count):
-            if i == ctx.guild.shard_id:
+            if x == ctx.guild.shard_id:
                 guildshard = ">"
             else:
                 guildshard = ""
-            s.add_field(name="{} Shard {}".format(guildshard, i + 1), value="{} servers\n{} users\n{}ms".format(len([x for x in self.bot.guilds if x.shard_id == i]), len([x for x in list(set(self.bot.get_all_members())) if x.guild.shard_id == i]), round(self.bot.latencies[i][1]*1000)))
-            i += 1
+            s.add_field(name="{} Shard {}".format(guildshard, x + 1), value="{} servers\n{} users\n{}ms".format(len([guild for guild in self.bot.guilds if guild.shard_id == x]), len([user for user in list(set(self.bot.get_all_members())) if user.guild.shard_id == x]), round(self.bot.latencies[x][1]*1000)))
         await ctx.send(embed=s)
 
     @commands.command(pass_context=True)
@@ -928,7 +937,7 @@ class general:
         if not user:
             user = ctx.message.author
         else:
-            user = await arg.get_member(self.bot, ctx, user)
+            user = await arg.get_member(ctx, user)
             if user == self.bot.user:
                 return await ctx.send("You can check `s?servers` for that :no_entry:")
             if not user:
@@ -1165,8 +1174,8 @@ class general:
             mention = "Yes"
         else:
             mention = "No"
-        btt = await self.prefixfy(ctx.guild.roles.index(role) + 1)
-        ttb = await self.prefixfy(ctx.guild.roles[::-1].index(role) + 1)
+        btt = self.prefixfy(ctx.guild.roles.index(role) + 1)
+        ttb = self.prefixfy(ctx.guild.roles[::-1].index(role) + 1)
         s=discord.Embed(colour=role.colour)
         s.set_author(name="{} Role Info".format(role.name), icon_url=ctx.guild.icon_url)
         s.add_field(name="Role ID", value=role.id)
@@ -1315,16 +1324,19 @@ class general:
             return
         await ctx.send("The trigger **{}** has been removed <:done:403285928233402378>".format(trigger))
         
+    @dev.log    
     async def on_message(self, message):
         server = message.guild
         statsdata = r.table("botstats").get("stats")
         r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run(durability="soft", noreply=True)
-        serverstatsdata = r.table("stats").get(str(server.id))
         triggerdata = r.table("triggers").get(str(server.id))
         imagemodedata = r.table("imagemode").get(str(server.id))
         if message.author == self.bot.user:
             statsdata.update({"messages": r.row["messages"] + 1}).run(durability="soft", noreply=True)
-        serverstatsdata.update({"messages": r.row["messages"] + 1}).run(durability="soft", noreply=True)
+        if server.id not in map(lambda x: x["id"], self._stats):
+            self._stats.append({"id": server.id, "messages": 1, "members": 0})
+        else:
+            list(filter(lambda x: x["id"] == server.id, self._stats))[0]["messages"] += 1
         if message.author == self.bot.user:
             return
         if triggerdata.run():
@@ -1410,7 +1422,7 @@ class general:
         if not user:
             user = author
         else:
-            user = await arg.get_member(self.bot, ctx, user)
+            user = await arg.get_member(ctx, user)
             if not user:
                 return await ctx.send("Invalid user :no_entry:")
         if user not in ctx.guild.members:
@@ -1484,7 +1496,7 @@ class general:
         s.add_field(name="Status", value="{}".format(status))
         s.add_field(name="User's Colour", value="{}".format(user.colour))
         s.add_field(name="User's ID", value="{}".format(user.id))
-        s.set_footer(text="Join Position: {} | Requested by {}".format(await self.prefixfy(input), author))
+        s.set_footer(text="Join Position: {} | Requested by {}".format(self.prefixfy(input), author))
         s.add_field(name="Highest Role", value=user.top_role)
         s.add_field(name="Number of Roles", value=len(user.roles)) 
         if not roles:
@@ -1569,8 +1581,8 @@ class general:
         serverdata = r.table("stats").get(str(server.id)).run(durability="soft")
         s=discord.Embed()
         s.set_author(name=server.name + " Stats", icon_url=server.icon_url)
-        s.add_field(name="Users Joined Today", value=serverdata["members"])
-        s.add_field(name="Messages Sent Today", value=serverdata["messages"])
+        s.add_field(name="Users Joined Today", value=serverdata["members"] if serverdata else "0")
+        s.add_field(name="Messages Sent Today", value=serverdata["messages"] if serverdata else "0")
         await ctx.send(embed=s)
         
     @commands.command(pass_context=True)
@@ -1632,7 +1644,7 @@ class general:
             time = "%d {} %d {} %d {} %d {}".format(days, hours, minutes, seconds) % (d, h, m, s)
         return time
         
-    async def prefixfy(self, input):
+    def prefixfy(self, input):
         number = str(input)
         num = len(number) - 2
         num2 = len(number) - 1
@@ -1662,21 +1674,31 @@ class general:
         else:
             return "{} {}".format(round(s), "second" if round(s) == 1 else "seconds")
         
+    @dev.log
     async def on_member_join(self, member):
         server = member.guild
         r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run(durability="soft", noreply=True)
-        r.table("stats").get(str(server.id)).update({"members": r.row["members"] + 1}).run(durability="soft", noreply=True)
-        
+        if server.id not in map(lambda x: x["id"], self._stats):
+            self._stats.append({"id": server.id, "messages": 0, "members": 1})
+        else:
+            list(filter(lambda x: x["id"] == server.id, self._stats))[0]["members"] += 1
+
+    @dev.log   
     async def on_member_remove(self, member):
         server = member.guild
         r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run(durability="soft", noreply=True)
-        r.table("stats").get(str(server.id)).update({"members": r.row["members"] - 1}).run(durability="soft", noreply=True)
-        
+        if server.id not in map(lambda x: x["id"], self._stats):
+            self._stats.append({"id": server.id, "messages": 0, "members": -1})
+        else:
+            list(filter(lambda x: x["id"] == server.id, self._stats))[0]["members"] -= 1
+
+    @dev.log    
     async def on_command(self, ctx):
         botdata = r.table("botstats").get("stats")
-        botdata.update({"commands": r.row["commands"] + 1}).run(durability="soft", noreply=True)
         if str(ctx.author.id) not in botdata["users"].run(durability="soft"):
-            botdata.update({"users": r.row["users"].append(str(ctx.author.id))}).run(durability="soft", noreply=True)
+            botdata.update({"users": r.row["users"].append(str(ctx.author.id)), "commands": r.row["commands"] + 1}).run(durability="soft", noreply=True)
+        else:
+            botdata.update({"commands": r.row["commands"] + 1}).run(durability="soft", noreply=True)
         if str(ctx.command) not in botdata["commandcounter"].map(lambda x: x["name"]).run(durability="soft"):
             counter = {}
             counter["name"] = str(ctx.command)
@@ -1702,6 +1724,18 @@ class general:
                 botdata.update({"commands": 0, "messages": 0, "servercountbefore": len(self.bot.guilds)}).run(durability="soft", noreply=True)
                 r.table("stats").delete().run(durability="soft", noreply=True)
             await asyncio.sleep(3580)
+
+    async def update_database(self):
+        while not self.bot.is_closed():
+            try:
+                for x in self._stats:
+                    data = r.table("stats").get(str(x["id"]))
+                    if data.run():
+                        data.update({"messages": r.row["messages"] + x["messages"], "members": r.row["members"] + x["members"]}).run(durability="soft", noreply=True)
+                self._stats = []
+            except Exception as e:
+                await self.bot.get_channel(344091594972069888).send(e)
+            await asyncio.sleep(300)
 
     async def on_member_update(self, before, after):
         if after.status != discord.Status.offline and before.status == discord.Status.offline:

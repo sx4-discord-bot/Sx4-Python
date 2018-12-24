@@ -6,6 +6,7 @@ from collections import deque, defaultdict
 import os
 import re
 from utils import arghelp
+from . import owner as dev
 import math
 from io import BytesIO
 import logging
@@ -22,6 +23,7 @@ class welcomer:
 
     def __init__(self, bot):
         self.bot = bot
+        self.avatar = None
 
     @commands.group()
     @checks.has_permissions("manage_messages")
@@ -196,14 +198,14 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         message = message.replace("{user.mention}", author.mention)
         message = message.replace("{user.name}", author.name)
         message = message.replace("{user}", str(author))
-        message = message.replace("{server.members}", str(len(server.members)))  
+        message = message.replace("{server.members}", "{:,}".format(len(server.members))) 
         message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
         message2 = data["message-leave"]
         message2 = message2.replace("{server}", server.name)
         message2 = message2.replace("{user.mention}", author.mention)
         message2 = message2.replace("{user.name}", author.name)
         message2 = message2.replace("{user}", str(author))
-        message2 = message2.replace("{server.members}", str(len(server.members))) 
+        message2 = message2.replace("{server.members}", "{:,}".format(len(server.members)))
         message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
         if data["imgwelcomertog"] and data["toggle"]:
             await ctx.send(content=message, file=self.image_welcomer(author, server))
@@ -275,7 +277,7 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
                 prefix = "th"
         else:
             prefix = "th"
-        return number + prefix
+        return "{:,}".format(int(number)) + prefix
         
         
     async def on_member_join(self, member): 
@@ -284,27 +286,31 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         data = r.table("welcomer").get(str(server.id)).run(durability="soft")
         message = data["message"]
         channel = data["channel"]
+        channel = server.get_channel(int(channel))
+        if not channel:
+            if server.system_channel:
+                channel = server.system_channel
         message = message.replace("{server}", server.name)
         message = message.replace("{user.mention}", member.mention)
         message = message.replace("{user.name}", member.name)
         message = message.replace("{user}", str(member))
-        message = message.replace("{server.members}", str(len(server.members))) 
+        message = message.replace("{server.members}", "{:,}".format(len(server.members)))
         message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
         if data["toggle"] == True and data["imgwelcomertog"] == True:
             if data["dm"] == True:
                 await member.send(content=message, file=self.image_welcomer(author, server))
             elif data["dm"] == False:
-                await server.get_channel(int(channel)).send(content=message, file=self.image_welcomer(author, server))
+                await self.webhook_send(channel=channel, content=message, file=self.image_welcomer(author, server))
         elif data["toggle"] == True and data["imgwelcomertog"] == False:
             if data["dm"] == True:
                 await member.send(content=message)
             elif data["dm"] == False:
-                await server.get_channel(int(channel)).send(message)
+                await self.webhook_send(channel=channel, content=message)
         elif data["toggle"] == False and data["imgwelcomertog"] == True:
             if data["dm"] == True:
                 await member.send(file=self.image_welcomer(author, server))
             elif data["dm"] == False:
-                await server.get_channel(int(channel)).send(file=self.image_welcomer(author, server))    
+                await self.webhook_send(channel=channel, file=self.image_welcomer(author, server))    
         else:
             pass
             
@@ -316,15 +322,19 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         if data["leavetoggle"] == False:
             return
         channel = data["channel"]
+        channel = server.get_channel(int(channel))
+        if not channel:
+            if server.system_channel:
+                channel = server.system_channel
         message = data["message-leave"]
         if data["toggle"] == True:
             message = message.replace("{server}", server.name)
             message = message.replace("{user.mention}", member.mention)
             message = message.replace("{user.name}", member.name)
             message = message.replace("{user}", str(member))
-            message = message.replace("{server.members}", str(len(server.members))) 
+            message = message.replace("{server.members}", "{:,}".format(len(server.members)))
             message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
-            await server.get_channel(int(channel)).send(message)
+            await self.webhook_send(channel=channel, content=message)
         else:
             pass
 
@@ -347,7 +357,7 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
             try:
                 background = img.getImage(data["banner"])
                 background = background.resize((2560, 1440))
-                trans = 100
+                trans = 200
             except:
                 background = Image.new('RGBA', (2560, 630), (0, 0, 0, 0))
                 trans = 200
@@ -396,6 +406,21 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         temp.seek(0)
         return discord.File(temp, "result.png")
 
+    @dev.log
+    async def webhook_send(self, channel, content=None, file=None):
+        if self.avatar is None:
+            try:
+                with open("sx4-byellow.png", "rb") as f:
+                    self.avatar = f.read()
+            except:
+                pass
+        webhook = discord.utils.get(await channel.guild.webhooks(), name="Sx4 - Welcomer")
+        if not webhook:
+            webhook = await channel.create_webhook(name="Sx4 - Welcomer", avatar=self.avatar)
+        elif webhook and channel != webhook.channel:
+            await webhook.delete()
+            webhook = await channel.create_webhook(name="Sx4 - Welcomer", avatar=self.avatar)
+        await webhook.send(content=content, file=file)
 
 def setup(bot): 
     bot.add_cog(welcomer(bot))
