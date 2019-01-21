@@ -162,7 +162,7 @@ class selfroles:
             messages.remove(message_db.run())
             serverdata.update({"messages": messages}).run(durability="soft")
         else:
-            return await ctx.send("Invalid Message :no_entry:")
+            return await ctx.send("I could not find that message, make sure it's a reaction role message :no_entry:")
 
     @reactionrole.command()
     @checks.has_permissions("manage_roles")
@@ -175,6 +175,36 @@ class selfroles:
         elif serverdata["dm"].run() == False:
             await ctx.send("I will now dm users when they get a role through reaction roles.")
             serverdata.update({"dm": True}).run(durability="soft")
+
+    @reactionrole.command()
+    @checks.has_permissions("manage_roles")
+    async def maxroles(self, ctx, message_id: int, max_roles: int=None):
+        """Allows you to set the max amount of roles a user can have from a reaction role page"""
+        if max_roles:
+            if max_roles < 1:
+                return await ctx.send("The maximum amount of roles a user can have can't be less than 1 :no_entry:")
+        serverdata = r.table("reactionrole").get(str(ctx.guild.id))
+        if str(message_id) in serverdata["messages"].map(lambda x: x["id"]).run():
+            message_db = serverdata["messages"].filter(lambda x: x["id"] == str(message_id))[0].run()
+            messages = serverdata["messages"].run()
+            if max_roles:
+                if max_roles > len(message_db["roles"]):
+                    return await ctx.send("The maximum amount of roles a user can have can't be more than the amount of roles on the reaction role page :no_entry:")
+            messages.remove(message_db)
+            if "max_roles" not in message_db:
+                message_db.update({"max_roles": max_roles})
+            else:
+                if max_roles == message_db["max_roles"]:
+                    return await ctx.send("The maximum roles on this reaction role menu is already set to `{}` :no_entry:".format(max_roles if max_roles else "disabled"))
+                message_db["max_roles"] = max_roles
+            if max_roles:
+                await ctx.send("The maximum roles a user can now have from that reaction role menu is now **{}** role{}".format(max_roles, "s" if max_roles != 1 else ""))
+            else: 
+                await ctx.send("That reaction role menu will no longer have a limit for the maximum roles a user can have")
+            messages.append(message_db)
+            serverdata.update({"messages": messages}).run(durability="soft")
+        else:
+            return await ctx.send("I could not find that message, make sure it's a reaction role message :no_entry:")
 	
     @commands.group()
     async def selfrole(self, ctx): 
@@ -213,7 +243,7 @@ class selfroles:
                 return
         except: 
             pass
-        await self._create_role(server, role)
+        self._create_role(server, role)
         await ctx.send("Added **{}** to the self roles list <:done:403285928233402378>".format(role.name))
 		
     @selfrole.command() 
@@ -268,8 +298,8 @@ class selfroles:
         page = 1
         s=discord.Embed(colour=0xfff90d)
         s.set_author(name=server.name, icon_url=server.icon_url)
-        s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
-        s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
+        s.add_field(name="Self Roles ({})".format(i), value=self._list(server, page))
+        s.set_footer(text="Page {}/{} | Use s?role <selfrole> to assign a role".format(page, math.ceil(i / 20)))
         try:
             message = await ctx.send(embed=s)
             await message.add_reaction("◀")
@@ -279,44 +309,39 @@ class selfroles:
                     if reaction.message.id == message.id:
                         if reaction.emoji == "▶" or reaction.emoji == "◀":
                             return True
-            page2 = True
-            while page2:
+            while True:
                 try:
                     reaction, user = await self.bot.wait_for("reaction_add", timeout=30, check=reactioncheck)
                     if reaction.emoji == "▶":
                         if page != math.ceil(i / 20):
                             page += 1
-                            s=discord.Embed(colour=0xfff90d)
-                            s.set_author(name=server.name, icon_url=server.icon_url)
-                            s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
-                            s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
-                            await message.edit(embed=s)
                         else:
                             page = 1
-                            s=discord.Embed(colour=0xfff90d)
-                            s.set_author(name=server.name, icon_url=server.icon_url)
-                            s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
-                            s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
-                            await message.edit(embed=s)
+                        s=discord.Embed(colour=0xfff90d)
+                        s.set_author(name=server.name, icon_url=server.icon_url)
+                        s.add_field(name="Self Roles ({})".format(i), value=self._list(server, page))
+                        s.set_footer(text="Page {}/{} | Use s?role <selfrole> to assign a role".format(page, math.ceil(i / 20)))
+                        await message.edit(embed=s)
                     if reaction.emoji == "◀":
                         if page != 1:
                             page -= 1
-                            s=discord.Embed(colour=0xfff90d)
-                            s.set_author(name=server.name, icon_url=server.icon_url)
-                            s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
-                            s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
-                            await message.edit(embed=s)
                         else:
                             page = math.ceil(botnum / 20)
-                            s=discord.Embed(colour=0xfff90d)
-                            s.set_author(name=server.name, icon_url=server.icon_url)
-                            s.add_field(name="Self Roles ({})".format(i), value=await self._list(server, page))
-                            s.set_footer(text="Page {}/{}".format(page, math.ceil(i / 20)))
-                            await message.edit(embed=s)
+                        s=discord.Embed(colour=0xfff90d)
+                        s.set_author(name=server.name, icon_url=server.icon_url)
+                        s.add_field(name="Self Roles ({})".format(i), value=self._list(server, page))
+                        s.set_footer(text="Page {}/{} | Use s?role <selfrole> to assign a role".format(page, math.ceil(i / 20)))
+                        await message.edit(embed=s)
                 except asyncio.TimeoutError:
-                    await message.remove_reaction("◀", ctx.me)
-                    await message.remove_reaction("▶", ctx.me)
-                    page2 = False
+                    try:
+                        await message.remove_reaction("◀", ctx.me)
+                    except:
+                        pass
+                    try:
+                        await message.remove_reaction("▶", ctx.me)
+                    except:
+                        pass
+                    break
         except:
             pass
         
@@ -357,10 +382,10 @@ class selfroles:
         else:
             await ctx.send("That role is not self assignable :no_entry:")
 			
-    async def _create_role(self, server, role):
+    def _create_role(self, server, role):
         r.table("selfroles").get(str(server.id)).update({"roles": r.row["roles"].append(str(role.id))}).run(durability="soft")
 			
-    async def _list(self, server, page):   
+    def _list(self, server, page):   
         msg = []
         data = r.table("selfroles").get(str(server.id)).run(durability="soft")
         for roleid in list(data["roles"])[page*20-20:page*20]:
@@ -374,11 +399,11 @@ class selfroles:
         server = role.guild
         data = r.table("selfroles").get(str(server.id))
         if str(role.id) in data["roles"].run(durability="soft"):
-            data.update({"roles": r.row["roles"].difference([str(role.id)])}).run(durability="soft")
+            data.update({"roles": r.row["roles"].difference([str(role.id)])}).run(durability="soft", noreply=True)
 
     async def on_raw_reaction_add(self, payload):
-        channel = self.bot.get_channel(payload.channel_id)
-        server = channel.guild
+        server = self.bot.get_guild(payload.guild_id)
+        channel = server.get_channel(payload.channel_id)
         user = server.get_member(payload.user_id)
         if user.bot:
             return
@@ -386,9 +411,10 @@ class selfroles:
         serverdata = r.table("reactionrole").get(str(server.id))
         if str(message.id) in serverdata["messages"].map(lambda x: x["id"]).run():
             message_db = serverdata["messages"].filter(lambda x: x["id"] == str(message.id))[0]
+            roles = message_db["roles"].map(lambda x: x["id"]).run()
             if payload.emoji.is_unicode_emoji():
                 if str(payload.emoji) in message_db["roles"].map(lambda x: x["emote"]).run():
-                    role = discord.utils.get(server.roles, id=int(message_db["roles"].filter(lambda x: x["emote"] == str(payload.emoji))[0]["id"].run()))
+                    role = server.get_role(int(message_db["roles"].filter(lambda x: x["emote"] == str(payload.emoji))[0]["id"].run()))
                     if role in user.roles:
                         try:
                             await user.remove_roles(role, reason="Reaction role")
@@ -397,6 +423,11 @@ class selfroles:
                         if serverdata["dm"].run():
                             await user.send("You no longer have the role **{}**".format(role.name))
                     else:
+                        if "max_roles" in message_db.run():
+                            max_roles = message_db["max_roles"].run()
+                            if max_roles:
+                                if len(list(filter(lambda x: x in list(map(lambda x: str(x.id), user.roles)), roles))) >= max_roles:
+                                    return await user.send("You already have **{}** role{} from this reaction role menu, that is the maximum you can have from this specific reaction role menu :no_entry:".format(max_roles, "" if max_roles == 1 else "s"))
                         try:
                             await user.add_roles(role, reason="Reaction role")
                         except discord.errors.Forbidden:
@@ -405,7 +436,7 @@ class selfroles:
                             await user.send("You now have the role **{}**".format(role.name))
             else:
                 if str(payload.emoji.id) in message_db["roles"].map(lambda x: x["emote"]).run():
-                    role = discord.utils.get(server.roles, id=int(message_db["roles"].filter(lambda x: x["emote"] == str(payload.emoji.id))[0]["id"].run()))
+                    role = server.get_role(int(message_db["roles"].filter(lambda x: x["emote"] == str(payload.emoji.id))[0]["id"].run()))
                     if role in user.roles:
                         try:
                             await user.remove_roles(role, reason="Reaction role")
@@ -414,6 +445,67 @@ class selfroles:
                         if serverdata["dm"].run():
                             await user.send("You no longer have the role **{}**".format(role.name))
                     else:
+                        if "max_roles" in message_db.run():
+                            max_roles = message_db["max_roles"].run()
+                            if max_roles:
+                                if len(list(filter(lambda x: x in list(map(lambda x: str(x.id), user.roles)), roles))) >= max_roles:
+                                    return await user.send("You already have **{}** role{} from this reaction role menu, that is the maximum you can have from this specific reaction role menu :no_entry:".format(max_roles, "" if max_roles == 1 else "s"))
+                        try:
+                            await user.add_roles(role, reason="Reaction role")
+                        except discord.errors.Forbidden:
+                            return await user.send("I failed giving you the role make sure I have the `manage_roles` and that my role is above the one I'm trying to give you :no_entry:")
+                        if serverdata["dm"].run():
+                            await user.send("You now have the role **{}**".format(role.name))
+
+    async def on_raw_reaction_remove(self, payload):
+        server = self.bot.get_guild(payload.guild_id)
+        channel = server.get_channel(payload.channel_id)
+        user = server.get_member(payload.user_id)
+        if user.bot:
+            return
+        message = await channel.get_message(payload.message_id)
+        serverdata = r.table("reactionrole").get(str(server.id))
+        if str(message.id) in serverdata["messages"].map(lambda x: x["id"]).run():
+            message_db = serverdata["messages"].filter(lambda x: x["id"] == str(message.id))[0]
+            roles = message_db["roles"].map(lambda x: x["id"]).run()
+            if payload.emoji.is_unicode_emoji():
+                if str(payload.emoji) in message_db["roles"].map(lambda x: x["emote"]).run():
+                    role = server.get_role(int(message_db["roles"].filter(lambda x: x["emote"] == str(payload.emoji))[0]["id"].run()))
+                    if role in user.roles:
+                        try:
+                            await user.remove_roles(role, reason="Reaction role")
+                        except discord.errors.Forbidden:
+                            return await user.send("I failed taking the role away from you make sure I have the `manage_roles` and that my role is above the one I'm trying to take away from you :no_entry:")
+                        if serverdata["dm"].run():
+                            await user.send("You no longer have the role **{}**".format(role.name))
+                    else:
+                        if "max_roles" in message_db.run():
+                            max_roles = message_db["max_roles"].run()
+                            if max_roles:
+                                if len(list(filter(lambda x: x in list(map(lambda x: str(x.id), user.roles)), roles))) >= max_roles:
+                                    return await user.send("You already have **{}** role{} from this reaction role menu, that is the maximum you can have from this specific reaction role menu :no_entry:".format(max_roles, "" if max_roles == 1 else "s"))
+                        try:
+                            await user.add_roles(role, reason="Reaction role")
+                        except discord.errors.Forbidden:
+                            return await user.send("I failed giving you the role make sure I have the `manage_roles` and that my role is above the one I'm trying to give you :no_entry:")
+                        if serverdata["dm"].run():
+                            await user.send("You now have the role **{}**".format(role.name))
+            else:
+                if str(payload.emoji.id) in message_db["roles"].map(lambda x: x["emote"]).run():
+                    role = server.get_role(int(message_db["roles"].filter(lambda x: x["emote"] == str(payload.emoji.id))[0]["id"].run()))
+                    if role in user.roles:
+                        try:
+                            await user.remove_roles(role, reason="Reaction role")
+                        except discord.errors.Forbidden:
+                            return await user.send("I failed taking the role away from you make sure I have the `manage_roles` and that my role is above the one I'm trying to take away from you :no_entry:")
+                        if serverdata["dm"].run():
+                            await user.send("You no longer have the role **{}**".format(role.name))
+                    else:
+                        if "max_roles" in message_db.run():
+                            max_roles = message_db["max_roles"].run()
+                            if max_roles:
+                                if len(list(filter(lambda x: x in list(map(lambda x: str(x.id), user.roles)), roles))) >= max_roles:
+                                    return await user.send("You already have **{}** role{} from this reaction role menu, that is the maximum you can have from this specific reaction role menu :no_entry:".format(max_roles, "" if max_roles == 1 else "s"))
                         try:
                             await user.add_roles(role, reason="Reaction role")
                         except discord.errors.Forbidden:

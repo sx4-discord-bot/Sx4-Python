@@ -60,6 +60,7 @@ def log(method):
             entry["max_memory_gained"] = memory_gained
             
         entry["max_memory_gained"] = max(entry["max_memory_gained"], memory_gained)
+        print(entry)
         return result
     return timed
 
@@ -135,7 +136,7 @@ class owner:
             pass
 
     @commands.command(hidden=True, name="as")
-    @checks.is_owner()
+    @checks.is_main_owner()
     async def _as(self, ctx, user: str, command_name: str, *, args: str=""):
         user = await arg.get_member(ctx, user)
         if not user:
@@ -172,6 +173,19 @@ class owner:
 
     @commands.command(hidden=True)
     @checks.is_owner()
+    async def blacklistuser(self, ctx, user: str):
+        user = await arg.get_member(ctx, user)
+        r.table("blacklist").insert({"id": "owner", "users": []}).run(durability="soft")
+        data = r.table("blacklist").get("owner")
+        if str(user.id) not in data["users"].run(durability="soft"):
+            data.update({"users": r.row["users"].append(str(user.id))}).run(durability="soft")
+            await ctx.send("{} has been blacklisted.".format(user))
+        elif str(user.id) in data["users"].run(durability="soft"):
+            data.update({"users": r.row["users"].difference([str(user.id)])}).run(durability="soft")
+            await ctx.send("{} is no longer blacklisted".format(user))
+
+    @commands.command(hidden=True)
+    @checks.is_owner()
     async def disable(self, ctx, *, command: str):
         command = self.bot.get_command(command)
         if not command:
@@ -181,25 +195,6 @@ class owner:
             await ctx.send("`{}` has been disabled.".format(command))
         else:
             await ctx.send("`{}` has been enabled.".format(command))
-
-    @commands.command(hidden=True)
-    @checks.is_owner()
-    async def blacklistuser(self, ctx, user: str, boolean: bool):
-        user = await arg.get_member(ctx, user)
-        r.table("blacklist").insert({"id": "owner", "users": []}).run(durability="soft")
-        data = r.table("blacklist").get("owner")
-        if boolean == True:
-            if str(user.id) not in data["users"].run(durability="soft"):
-                data.update({"users": r.row["users"].append(str(user.id))}).run(durability="soft")
-                await ctx.send("{} has been blacklisted.".format(user))
-            else:
-                await ctx.send("{} is already blacklisted.".format(user))
-        if boolean == False:
-            if str(user.id) not in data["users"].run(durability="soft"):
-                await ctx.send("{} is not blacklisted.".format(user))
-            else:
-                data.update({"users": r.row["users"].difference([str(user.id)])}).run(durability="soft")
-                await ctx.send("{} is no longer blacklisted".format(user))
 		
     @commands.command(hidden=True)
     async def modules(self, ctx):
@@ -250,36 +245,22 @@ class owner:
     async def shutdown(self, ctx):
         await ctx.send("Shutting down...")
         await self.bot.logout()
-    
-    @commands.command(hidden=True)
-    async def executions(self, ctx):
-        msg = "\n".join(["`{}` - {}ms, {}MB average memory, {}MB max memory, {}ms max execution (Executed {} times)".format(x[0], format(x[1]["average"], ".2f"), format(x[1]["average_memory"], ".2f"), format(x[1]["max_memory_gained"], ".2f"), format(x[1]["max_execution_time"], ".2f"), x[1]["data_points"]) for x in execution_times.items()])
-        i, n = 0, 2000
-        for x in range(math.ceil(len(msg)/2000)):
-            if i != 0:
-                while msg[i-1:i] != "\n":
-                    i -= 1
-            while msg[n-1:n] != "\n":
-                n -= 1
-            await ctx.send(msg[i:n])
-            i += 2000
-            n += 2000
 
-    @log
     async def on_guild_join(self, guild):
-        guilds = len(self.bot.guilds)
-        if guilds % 100 == 0:
-            channel = guild.get_channel(493439822682259497)
-            await channel.send("{:,} servers :tada:".format(guilds))
+        channel = self.bot.get_channel(493439822682259497)
+        if channel:
+            guilds = len(self.bot.guilds)
+            if guilds % 100 == 0:
+                await channel.send("{:,} servers :tada:".format(guilds))
 
-    @log
     async def on_guild_remove(self, guild):
-        guilds = len(self.bot.guilds)
-        if guilds % 100 != 0:
-            channel = guild.get_channel(493439822682259497)
-            for x in await channel.history(limit=1).flatten():
-                if int(x.content.split(" ")[0].replace(",", "")) > guilds:
-                    await x.delete() 
+        channel = self.bot.get_channel(493439822682259497)
+        if channel:
+            guilds = len(self.bot.guilds)
+            if guilds % 100 != 0:
+                for x in await channel.history(limit=1).flatten():
+                    if int(x.content.split(" ")[0].replace(",", "")) > guilds:
+                        await x.delete() 
 
     async def on_command(self, ctx):
         webhook = discord.utils.get(await self.bot.get_guild(330399610273136641).webhooks(), id=507684441020170251)

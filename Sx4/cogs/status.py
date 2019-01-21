@@ -20,17 +20,17 @@ class status:
         while not self.bot.is_closed():
             try:
                 statuses = [
-                    '{:,} servers'.format(len(self.bot.guilds)),
-                    '{:,} users'.format(len(set(self.bot.get_all_members())))
+                    "{:,} servers".format(len(self.bot.guilds)),
+                    "{:,} users".format(len(self.bot.users))
                 ]
                 new_status = statuses[i]
                 await self.bot.change_presence(activity=discord.Activity(name=new_status, type=discord.ActivityType.watching))
             except Exception as e:
                 await self.bot.get_channel(439745234285625355).send(e)
-            if i == 0:
-                i += 1
+            if i == len(statuses) - 1:
+                i = 0
             else:
-                i -= 1
+                i += 1
             await asyncio.sleep(300)
 
 def setup(bot):

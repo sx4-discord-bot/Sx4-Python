@@ -19,6 +19,7 @@ from urllib.request import Request, urlopen
 import json
 import urllib
 from iso639 import languages
+import traceback
 import re
 import os
 from random import choice
@@ -41,6 +42,43 @@ rps_settings = {"rps_wins": 0, "rps_draws": 0, "rps_losses": 0}
 class fun:
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(aliases=["gamesearch"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def steamsearch(self, ctx, *, game_name: str):
+        """Looks up a game on steam and returns info on it aswell as the link to the game page"""
+        try:
+            request = requests.get("http://api.steampowered.com/ISteamApps/GetAppList/v0002/?key=" + Token.steam() + "&format=json", timeout=5).json()["applist"]["apps"]
+        except:
+            return await ctx.send("Request Timed out, try again later :no_entry:")
+        game = sorted(list(filter(lambda x: x["name"].lower() == game_name.lower() or game_name.lower() in x["name"].lower(), request)), key=lambda x: x["name"])
+        if not game:
+            return await ctx.send("No games matched your query (Make sure the game is on Steam) :no_entry:")
+        else:
+            if len(game) > 1:
+                event = await paged.page(ctx, game, selectable=True, function=lambda x: x["name"])
+                if event:
+                    game_id = event["object"]["appid"]
+                else:
+                    return
+            else:
+                game_id = game[0]["appid"] 
+        game = requests.get("https://store.steampowered.com/api/appdetails?appids=" + str(game_id)).json()[str(game_id)]
+        if not game["success"]:
+            return await ctx.send("Something went wrong on steams end, but there is no data for that game :no_entry:")
+        else:
+            game = game["data"]
+        s=discord.Embed(description=game["short_description"])
+        s.set_image(url=game["header_image"])
+        s.set_author(name=game["name"], icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/2000px-Steam_icon_logo.svg.png", url="https://store.steampowered.com/app/" + str(game_id))
+        s.add_field(name="Price", value=game["price_overview"]["final_formatted"] if "price_overview" in game else ("Free" if game["is_free"] else "Unknown"))
+        s.add_field(name="Release Date", value=game["release_date"]["date"] + (" (Coming Soon)" if game["release_date"]["coming_soon"] else ""))
+        s.add_field(name="Required Age", value=game["required_age"] if game["required_age"] != 0 else "No Age Restriction")
+        s.add_field(name="Recommendations", value="{:,}".format(game["recommendations"]["total"]) if "recommendations" in game else "Unknown/None")
+        s.add_field(name="Supported Languages", value=game["supported_languages"].replace("<br>", "\n").replace("</br>", "\n").replace("<strong>", "").replace("</strong>", "").replace("*", "\*"))
+        s.add_field(name="Genres", value="\n".join(map(lambda x: x["description"], game["genres"])))
+        s.set_footer(text="Developed by " + ", ".join(game["developers"]))
+        await ctx.send(embed=s)
 
     @commands.command(aliases=["perksearch", "searchperk"])
     async def dbdperksearch(self, ctx, *, perk: str=None):
@@ -75,24 +113,27 @@ class fun:
                 event = array[0]
             else:
                 event = await paged.page(ctx, array, selectable=True, per_page=15, function=lambda x: x["name"])
-            if event:
-                event2 = await paged.page(ctx, event["rarity"], function=lambda x: x.title().replace("_", " "), selectable=True, return_index=True)
-                if event2 or event2 == 0:
-                    image = "dbd_perks/iconPerks_" + event["image"] + ".png"
-                    description = event["description"].replace("%b", "**").replace("%/b", "**").replace("%i", "*").replace("%/i", "*") % tuple(event["tiers"][int(event2)])
-                    s=discord.Embed(description=description, title=event["name"])
-                    s.add_field(name="Rarity", value=event["rarity"][int(event2)].title().replace("_", " "))
-                    s.add_field(name="Teachable", value="Yes ({})".format(event["owner"].title().replace("_", " ")) if event["owner"] != "ALL" else "No")
-                    s.set_thumbnail(url="attachment://image.png")
-                    await ctx.send(file=discord.File(image, "image.png"), embed=s)
+                if event:
+                    event = event["object"]
+                else:
+                    return
+            event2 = await paged.page(ctx, event["rarity"], function=lambda x: x.title().replace("_", " "), selectable=True)
+            if event2:
+                image = "dbd_perks/iconPerks_" + event["image"] + ".png"
+                description = event["description"].replace("%b", "**").replace("%/b", "**").replace("%i", "*").replace("%/i", "*") % tuple(event["tiers"][event2["index"]])
+                s=discord.Embed(description=description, title=event["name"])
+                s.add_field(name="Rarity", value=event["rarity"][event2["index"]].title().replace("_", " "))
+                s.add_field(name="Teachable", value="Yes ({})".format(event["owner"].title().replace("_", " ")) if event["owner"] != "ALL" else "No")
+                s.set_thumbnail(url="attachment://image.png")
+                await ctx.send(file=discord.File(image, "image.png"), embed=s)
         else:
             event = event[0]
-            event2 = await paged.page(ctx, event["rarity"], function=lambda x: x.title().replace("_", " "), selectable=True, return_index=True)
-            if event2 or event2 == 0:
+            event2 = await paged.page(ctx, event["rarity"], function=lambda x: x.title().replace("_", " "), selectable=True)
+            if event2:
                 image = "dbd_perks/iconPerks_" + event["image"] + ".png"
-                description = event["description"].replace("%b", "**").replace("%/b", "**").replace("%i", "*").replace("%/i", "*") % tuple(event["tiers"][int(event2)])
+                description = event["description"].replace("%b", "**").replace("%/b", "**").replace("%i", "*").replace("%/i", "*") % tuple(event["tiers"][event2["index"]])
                 s=discord.Embed(description=description, title=event["name"])
-                s.add_field(name="Rarity", value=event["rarity"][int(event2)].title().replace("_", " "))
+                s.add_field(name="Rarity", value=event["rarity"][event2["index"]].title().replace("_", " "))
                 s.add_field(name="Teachable", value="Yes ({})".format(event["owner"].title().replace("_", " ")) if event["owner"] != "ALL" else "No")
                 s.set_thumbnail(url="attachment://image.png")
                 await ctx.send(file=discord.File(image, "image.png"), embed=s)
@@ -267,7 +308,7 @@ class fun:
                     author_answer = await self.bot.wait_for("message", check=author_check, timeout=20)
                 except asyncio.TimeoutError:
                     ctx.command.reset_cooldown(ctx)
-                    return await ctx.send("{}'s response timed out :stopwatch:".format(author.name))
+                    return await ctx.send("{}'s response timed out :stopwatch:".format(ctx.author.name))
                 if author_answer:
                     await ctx.author.send("Your answer has been locked in, answers have been sent in {}".format(ctx.channel.mention))
                 if author_answer and user_answer:
@@ -324,15 +365,22 @@ class fun:
                 language = languages.get(part3=language).name
             except:
                 pass
-        elif len(language) > 3:
-            language = language
         request = requests.get("http://localhost:8080/translate/{}?{}".format(language, urllib.parse.urlencode({"q": text.lower()})))
         try:
             await ctx.send(request.json()["message"].replace("'", "`") + " :no_entry:")
         except:
+            input_text = request.json()["from"]["language"]["iso"]
+            if "-" in input_text:
+                input_text = input_text.split("-")[0]
+            if input_text == "iw":
+                input_text = "Hebrew"
+            elif len(input_text) == 2:
+                input_text = languages.get(part1=input_text).name
+            elif len(input_text) == 3:
+                input_text = languages.get(part3=input_text).name
             s=discord.Embed(colour=0x4285f4)
             s.set_author(name="Google Translate", icon_url="https://upload.wikimedia.org/wikipedia/commons/d/db/Google_Translate_Icon.png")
-            s.add_field(name="Input Text ({})".format(languages.get(part1=request.json()["from"]["language"]["iso"]).name), value=html.unescape(request.json()["from"]["text"]["value"]) if request.json()["from"]["text"]["value"] else text, inline=False)
+            s.add_field(name="Input Text ({})".format(input_text), value=html.unescape(request.json()["from"]["text"]["value"]) if request.json()["from"]["text"]["value"] else text, inline=False)
             s.add_field(name="Output Text ({})".format(language.title()), value=request.json()["text"])
             await ctx.send(embed=s)
 
@@ -535,7 +583,7 @@ class fun:
             state = "Snooze"
         if data["personastate"] == 5 or data["personastate"] == 6:
             state = "Online"
-        s=discord.Embed(description="Steam Profile <:steam:392219187184926732>")
+        s=discord.Embed(description="Steam Profile <:steam:530830699821793281>")
         s.set_author(name=data["personaname"], icon_url=data["avatarfull"], url=data["profileurl"])
         s.set_thumbnail(url=data["avatarfull"])
         s.add_field(name="Status", value=state)
@@ -602,12 +650,65 @@ class fun:
             return
         await ctx.send(text[:2000])
         
-    @commands.command(pass_context=True, aliases=["embed"])
-    async def esay(self, ctx, *, text):
+    @commands.command(name="embed", aliases=["esay"])
+    async def _embed(self, ctx, *, text):
         """Say something with the bot in a embed"""
         author = ctx.message.author
         s=discord.Embed(description=text[:2000], colour=author.colour)
         s.set_author(name=author.name, icon_url=author.avatar_url)
+        await ctx.send(embed=s)
+
+    @commands.command()
+    async def devembed(self, ctx, *, embed_json):
+        """An advanced way to create an embed with full customizability as long as you know how to use json\nExample format: {'title': 'text here', 'description': 'text here', 'colour': 'hex code here', 
+        'author': {'name': 'text here', 'icon_url': 'image url here', 'url': 'url here'}, 'footer': {'text': 'text here', 'icon_url': 'image url here'}, fields: [{'name': 'title here', 'value': 'description here', 'inline': true},
+        {'name': 'title here', 'value': 'description here', 'inline': false}], 'image': 'image url here', 'thumbnail': 'url here'}"""
+        hex_re = re.compile("(?:#|)((?:[a-fA-F]|[0-9]){6})")
+        try:
+            embed_json = json.loads(embed_json)
+        except:
+            return await ctx.send("The argument does not follow JSON format make sure all keys are in quotations and you are not missing any syntax :no_entry:")
+        s=discord.Embed()
+        if "title" in embed_json:
+            if len(embed_json["title"]) > 256:
+                return await ctx.send("Embed titles cannot be longer than 256 characters :no_entry:")
+            s.title = embed_json["title"]
+        if "description" in embed_json:
+            if len(embed_json["description"]) > 2048:
+                return await ctx.send("Embed descriptions cannot be longer than 256 characters :no_entry:")
+            s.description = embed_json["description"]
+        if "colour" in embed_json:
+            match = hex_re.match(embed_json["colour"])
+            if not match:
+                return await ctx.send("Invalid hex for embed colour :no_entry:")
+            s.colour = discord.Colour(int(match.group(1), 16))
+        if "fields" in embed_json:
+            if len(embed_json["fields"]) > 25:
+                return await ctx.send("You are only able to have a maximum of 25 field objects in an embed :no_entry:")
+            for i, x in enumerate(embed_json["fields"]):
+                if "name" not in x or "value" not in x:
+                    return await ctx.send("Name and Value are required parameters for fields in an embed (Field at index {}) :no_entry:".format(i))
+                if len(x["name"]) > 256:
+                    return await ctx.send("Field names in embeds can't be more than 256 characters (Field at index {}) :no_entry:".format(i))
+                if len(x["value"]) > 1024:
+                    return await ctx.send("Field values in embeds can't be more than 1024 characters (Field at index {}) :no_entry:".format(i))
+                s.add_field(name=x["name"], value=x["value"], inline=x["inline"] if "inline" in x else True)
+        if "image" in embed_json:
+            s.set_image(url=embed_json["image"])
+        if "thumbnail" in embed_json:
+            s.set_thumbnail(url=embed_json["thumbnail"])
+        if "footer" in embed_json:
+            if "text" not in embed_json["footer"]:
+                return await ctx.send("Text is required in an embed footer :no_entry:")
+            if len(embed_json["footer"]["text"]) > 2048:
+                return await ctx.send("The text in the footer cannot be longer than 2048 characters :no_entry:")
+            s.set_footer(text=embed_json["footer"]["text"], icon_url=embed_json["footer"]["icon_url"] if "icon_url" in embed_json["footer"] else discord.Embed.Empty)
+        if "author" in embed_json:
+            if "name" not in embed_json["author"]:
+                return await ctx.send("Name is required in an embed author :no_entry:")
+            if len(embed_json["author"]["name"]) > 256:
+                return await ctx.send("Author names cannot be longer than 256 characters :no_entry:")
+            s.set_author(name=embed_json["author"]["name"], icon_url=embed_json["author"]["icon_url"] if "icon_url" in embed_json["author"] else discord.Embed.Empty, url=embed_json["author"]["url"] if "url" in embed_json["author"] else "")
         await ctx.send(embed=s)
 
     @commands.command()

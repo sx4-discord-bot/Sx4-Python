@@ -1,38 +1,23 @@
 ﻿import discord
 import asyncio
 from discord.ext import commands
-from random import choice as randchoice
 import time
-import datetime
-import html
 import random
 import math
-from utils import arghelp
-from PIL import Image, ImageFilter, ImageEnhance
 import psutil
+import datetime
 from datetime import datetime, timedelta
-from utils import Token
-from collections import Counter
-from utils import checks
+import urllib
 from urllib.request import Request, urlopen
 import json
-import urllib
 import sys
 import re
 from . import owner as dev
 import os
-from utils import arg
-from random import choice
-from threading import Timer
+from utils import arg, Token, checks, arghelp, paged
+from random import choice, randint
 import requests
 import rethinkdb as r
-from random import randint
-from copy import deepcopy
-from collections import namedtuple, defaultdict, deque
-from copy import deepcopy
-from enum import Enum
-import asyncio
-from difflib import get_close_matches
 
 
 giveaway = {"users": None}
@@ -50,6 +35,174 @@ class general:
         self._stats_task.cancel()
         self._database_check.cancel()
 
+    @commands.command()
+    async def suggest(self, ctx, *, suggestion: str):
+        """Suggest a feature to the current server, if it's set up"""
+        data = r.table("suggestions").get(str(ctx.guild.id))
+        if not data.run():
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        elif not data["channel"].run() or not data["toggle"].run():
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        channel = ctx.guild.get_channel(int(data["channel"].run()))
+        s=discord.Embed(description=suggestion)
+        s.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
+        s.set_footer(text="This suggestion is currently pending")
+        message = await channel.send(embed=s)
+        await message.add_reaction("✅")
+        await message.add_reaction("❌") 
+        await ctx.send("Your suggestion has been sent to {}".format(channel.mention))
+        data.update({"suggestions": r.row["suggestions"].append({"id": str(message.id), "user": str(ctx.author.id), "accepted": None})}).run(durability="soft", noreply=True)
+
+    @commands.group()
+    async def suggestion(self, ctx):
+        """Set up a suggestions system up in your server and monitor it"""
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            r.table("suggestions").insert({"id": str(ctx.guild.id), "suggestions": [], "toggle": False, "channel": None}).run(durability="soft")
+        
+    @suggestion.command(name="toggle")
+    @checks.has_permissions("manage_messages")
+    async def _toggle_(self, ctx):
+        """Toggle suggestions on/off in the current server"""
+        data = r.table("suggestions").get(str(ctx.guild.id))
+        if data["toggle"].run():
+            await ctx.send("Suggestions are now disabled.")
+            data.update({"toggle": False}).run(durability="soft", noreply=True)
+        elif not data["toggle"].run():
+            await ctx.send("Suggestions are now enabled providing you have set a suggestion channel with `{}suggestion channel`".format(ctx.prefix))
+            data.update({"toggle": True}).run(durability="soft", noreply=True)
+
+    @suggestion.command(name="channel")
+    @checks.has_permissions("manage_messages")
+    async def _channel(self, ctx, *, channel: str):
+        """Set the suggestions channel in the current server"""
+        data = r.table("suggestions").get(str(ctx.guild.id))
+        channel = arg.get_text_channel(ctx, channel)
+        if not channel:
+            return await ctx.send("I could not find that text channel :no_entry:")
+        if data["channel"].run() == str(channel.id):
+            return await ctx.send("The suggestions channel is already set to {}".format(channel.mention))
+        await ctx.send("The suggestions channel has been set to {}".format(channel.mention))
+        data.update({"channel": str(channel.id)}).run(durability="soft", noreply=True)
+
+    @suggestion.command()
+    @checks.has_permissions("manage_guild")
+    async def accept(self, ctx, message_id, *, reason: str=None):
+        """Accept a suggestion which has been sent to your servers suggestion channel"""
+        data = r.table("suggestions").get(str(ctx.guild.id))
+        if not data.run():
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        elif not data["channel"].run() or not data["toggle"].run():
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        if str(message_id) in data["suggestions"].map(lambda x: x["id"]).run():
+            message = await ctx.guild.get_channel(int(data["channel"].run())).get_message(message_id)
+            embed = message.embeds[0]
+            embed.colour = 0x5fe468
+            embed.add_field(name="Moderator", value=ctx.author)
+            embed.add_field(name="Reason", value=reason if reason else "No reason given")
+            embed.set_footer(text="Suggestion Accepted")
+            await message.edit(embed=embed)
+            await ctx.send("That suggestion has been accepted <:done:403285928233402378>")
+            suggestions = data["suggestions"].run()
+            message_db = list(filter(lambda x: x["id"] == str(message_id), suggestions))[0]
+            suggestions.remove(message_db)
+            message_db["accepted"] = True
+            suggestions.append(message_db)
+            data.update({"suggestions": suggestions}).run(durability="soft", noreply=True)
+        else:
+            return await ctx.send("That message is not a suggestion message :no_entry:")
+
+    @suggestion.command()
+    @checks.has_permissions("manage_guild")
+    async def deny(self, ctx, message_id: int, *, reason: str=None):
+        """Deny a suggestion which has been sent to your servers suggestion channel"""
+        data = r.table("suggestions").get(str(ctx.guild.id))
+        if not data.run():
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        elif not data["channel"].run() or not data["toggle"].run():
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        if str(message_id) in data["suggestions"].map(lambda x: x["id"]).run():
+            message = await ctx.guild.get_channel(int(data["channel"].run())).get_message(message_id)
+            embed = message.embeds[0]
+            embed.colour = 0xf84b50
+            embed.add_field(name="Moderator", value=ctx.author)
+            embed.add_field(name="Reason", value=reason if reason else "No reason given")
+            embed.set_footer(text="Suggestion Denied")
+            await message.edit(embed=embed)
+            await ctx.send("That suggestion has been denied <:done:403285928233402378>")
+            suggestions = data["suggestions"].run()
+            message_db = list(filter(lambda x: x["id"] == str(message_id), suggestions))[0]
+            suggestions.remove(message_db)
+            message_db["accepted"] = False
+            suggestions.append(message_db)
+            data.update({"suggestions": suggestions}).run(durability="soft", noreply=True)
+        else:
+            return await ctx.send("That message is not a suggestion message :no_entry:")
+
+    @suggestion.command(name="delete", aliases=["wipe"])
+    @checks.has_permissions("manage_guild")
+    async def _delete(self, ctx):
+        """Delete all suggestions which have been sent to your servers suggestion channel"""
+        data = r.table("suggestions").get(str(ctx.guild.id))
+        if not data.run():
+            return await ctx.send("You have no suggestions in your server :no_entry:")
+        elif not data["suggestions"].run():
+            return await ctx.send("You have no suggestions in your server :no_entry:")
+        await ctx.send("Are you sure you want to wipe all data for suggestions in your server? (Respond below)")
+        try:
+            def check(m):
+                return m.channel == ctx.channel and ctx.author == m.author
+            response = await self.bot.wait_for("message", check=check, timeout=30)
+            if response.content.lower() == "yes":
+                await ctx.send("All suggestions have been deleted.")
+                data.update({"suggestions": []}).run(durability="soft", noreply=True)
+            else:
+                await ctx.send("Cancelled.")
+        except asyncio.TimeoutError:
+            await ctx.send("Timed out :stopwatch:")        
+
+    @suggestion.command(name="remove")
+    @checks.has_permissions("manage_guild")
+    async def _remove(self, ctx, message_id: int):
+        """Removes a suggestion which has been sent to your servers suggestion channel"""
+        data = r.table("suggestions").get(str(ctx.guild.id))
+        if not data.run():
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        elif not data["channel"].run() or not data["toggle"].run():
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        if str(message_id) in data["suggestions"].map(lambda x: x["id"]).run():
+            message = await ctx.guild.get_channel(int(data["channel"].run())).get_message(message_id)
+            try:
+                await message.delete()
+            except:
+                pass
+            await ctx.send("That suggestion has been deleted <:done:403285928233402378>")
+            data.update({"suggestions": r.row["suggestions"].filter(lambda x: x["id"] != str(message_id))}).run(durability="soft", noreply=True)
+        else:
+            return await ctx.send("That message is not a suggestion message :no_entry:")
+
+    @suggestion.command(name="list")
+    async def _list(self, ctx):
+        """List all suggestions which have been sent to your servers suggestion channel"""
+        data = r.table("suggestions").get(str(ctx.guild.id)).run()
+        if not data:
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        elif not data["channel"] or not data["toggle"]:
+            return await ctx.send("Suggestions are not set up in this server :no_entry:")
+        elif not data["suggestions"]:
+            return await ctx.send("No suggestions have been sent yet :no_entry:")
+        url = "https://discordapp.com/channels/{}/{}/".format(ctx.guild.id, data["channel"])
+        def function(x):
+            if x["accepted"] == None:
+                accepted = "Pending"
+            elif x["accepted"] == True:
+                accepted = "Accepted"
+            else:
+                accepted = "Denied"
+            return "[{}'s Suggestion - {}]({})".format(self.bot.get_user(int(x["user"])).name if self.bot.get_user(int(x["user"])) else x["user"], accepted, url + x["id"])
+        await paged.page(ctx, sorted(data["suggestions"], key=lambda x: int(x["id"])), indexed=False, function=function, per_page=20, author={"name": "Suggestions", "icon_url": ctx.guild.icon_url})
+
     @commands.group()
     async def imagemode(self, ctx):
         """Set image mode on in a channel it'll delete any messages which are not an image"""
@@ -64,10 +217,7 @@ class general:
         """Type this is the channel you want to turn image mode on/off for"""
         data = r.table("imagemode").get(str(ctx.guild.id))
         if str(ctx.channel.id) in data["channels"].map(lambda x: x["id"]).run():
-            deleted = data["channels"].filter(lambda x: x["id"] == str(ctx.channel.id))[0]
-            new_list = data["channels"].run()
-            new_list.remove(deleted)
-            data.update({"channels": new_list}).run(durability="soft")
+            data.update({"channels": r.row["channels"].filter(lambda x: x["id"] != str(ctx.channel.id))}).run(durability="soft")
             await ctx.send("Image mode is now disabled in this channel.")
         else:
             channel = {"id": str(ctx.channel.id), "slowmode": "0", "users": []}
@@ -116,19 +266,12 @@ class general:
 
     @commands.command()
     async def invitegenerator(self, ctx, bot: str, *permissions):
-        "Generates an invite for any specific bot with permissions of your choice"
-        if re.search("<@!(.*)>" if "!" in bot else "<@(.*)>", bot):
-            bot = discord.utils.get(self.bot.get_all_members(), id=int(re.search("<@!(.*)>" if "!" in bot else "<@(.*)>", bot).group(1)))
-        elif "#" in bot and bot[len(bot)-4:].isdigit():
-            regex = re.search("(.*)#(.*)", bot)
-            bot = discord.utils.get(self.bot.get_all_members(), name=regex.group(1), discriminator=regex.group(2))
-        else:
-            try:
-                bot = discord.utils.get(self.bot.get_all_members(), id=int(bot))
-            except:
-                bot = discord.utils.get(self.bot.get_all_members(), name=bot)
-        if not bot or not bot.bot:
-            return await ctx.send("Invalid bot :no_entry:")
+        """Generates an invite for any specific bot with permissions of your choice"""
+        bot = await arg.get_member(ctx, bot)
+        if not bot:
+            return await ctx.send("I could not find that bot :no_entry:")
+        elif not bot.bot:
+            return await ctx.send("`{}` is not a bot :no_entry:".format(bot))
         value = 0
         if permissions:
             for x in permissions:
@@ -244,6 +387,7 @@ class general:
 
 
     @commands.command(aliases=["updates", "changelog"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def changes(self, ctx, date: str=None):
         """View changes which have recently happened on the bot or on a specific date"""
         message = None
@@ -272,7 +416,7 @@ class general:
             else:
                 return await ctx.send("Invalid date format :no_entry:")
         if not message:
-            return await ctx.send("I could not find changes from that date (Make sure the date is within 100 days within today) :no_entry:")
+            return await ctx.send("I could not find changes from that date (Make sure the date is within 100 days within today and isn't in the future) :no_entry:")
         bugfixes = message.content.split("\n\n")[2]
         updates = message.content.split("\n\n")[4]
         announcements = message.content.split("\n\n")[6]
@@ -311,32 +455,10 @@ class general:
         """View how many invites you have or a user has"""
         if not user:
             user = ctx.author
-        elif "<" in user and "@" in user:
-            userid = user.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            user2 = discord.utils.get(ctx.guild.members, id=int(userid))
-            if not user2:
-                user = discord.utils.get(self.bot.get_all_members(), id=int(userid))
-            else:
-                user = user2
-        elif "#" in user and user[len(user) - 4:].isdigit(): 
-            splituser = user.split("#")
-            user2 = discord.utils.get(ctx.guild.members, name=splituser[0], discriminator=splituser[1])
-            if not user2:
-                user = discord.utils.get(self.bot.get_all_members(), name=splituser[0], discriminator=splituser[1])
-            else:
-                user = user2
         else:
-            try:
-                int(user)
-                user = await self.bot.get_user_info(user)
-            except:
-                user2 = discord.utils.get(ctx.guild.members, name=user)
-                if not user2:
-                    user = discord.utils.get(self.bot.get_all_members(), name=user)
-                else:
-                    user = user2
-        if not (isinstance(user, discord.Member) or isinstance(user, discord.User)):
-            return await ctx.send("I could not find that user :no_entry:")
+            user = await arg.get_member(ctx, user)
+            if not user:
+                return await ctx.send("I could not find that user :no_entry:")
         amount = 0
         total = 0
         entries = {}
@@ -397,14 +519,11 @@ class general:
         if page < 1 or page > math.ceil(len(entries["user"])/10):
             return await ctx.send("Invalid Page :no_entry:")
         sorted_invites = sorted(entries["user"].items(), key=lambda x: x[1]["uses"], reverse=True)
-        msg, i, place = "", page*10-10, 0
-        for x in sorted_invites:
-            if str(ctx.author.id) in map(lambda x: x[0], sorted_invites):
-                place += 1
-                if x[0] == str(ctx.author.id):
-                    break 
-            else:
-                place = None
+        msg, i = "", page*10-10
+        try:
+            place = list(map(lambda x: x[0], sorted_invites)).index(str(ctx.author.id))
+        except:
+            place = None
         for x in sorted_invites[page*10-10:page*10]:
             i += 1
             percent = (x[1]["uses"]/total)*100
@@ -412,9 +531,9 @@ class general:
                 percent = "<1"
             else:
                 percent = round(percent)
-            user = discord.utils.get(ctx.guild.members, id=int(x[0]))
+            user = ctx.guild.get_member(int(x[0]))
             if not user:
-                user = "Unknown user"
+                user = x[0]
             msg += "{}. `{}` - {:,} {} ({}%)\n".format(i, user, x[1]["uses"], "invite" if x[1]["uses"] == 1 else "invites", percent)
         s=discord.Embed(title="Invites Leaderboard", description=msg, colour=0xfff90d)
         s.set_footer(text="{}'s Rank: {} | Page {}/{}".format(ctx.author.name, "#{}".format(place) if place else "Unranked", page, math.ceil(len(entries["user"])/10)), icon_url=ctx.author.avatar_url)
@@ -589,6 +708,7 @@ class general:
                 await ctx.send(embed=s)
         
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def dblowners(self, ctx, *, user: str=None):
         """Look up the developers of a bot on discord bot list"""
         if not user:
@@ -620,11 +740,15 @@ class general:
         await ctx.send("{}'s Owners: {}".format(data["username"], msg[:-2]))
         
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def dbltag(self, ctx, *, dbl_tag):
         """Shows the top 10 bots (sorted by monthly upvotes) in the tag form there you can select and view 1"""
-        url = "https://discordbots.org/api/bots?search=tags:{}&limit=10&sort=monthlyPoints&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot,tags".format(urllib.parse.urlencode({"": dbl_tag}).replace("=", ""))
-        request = Request(url, headers={"Authorization": Token.dbl()})
-        data = json.loads(urlopen(request).read().decode())
+        url = "https://discordbots.org/api/bots?search=tag:{}&limit=10&sort=monthlyPoints&fields=shortdesc,username,discriminator,server_count,points,avatar,prefix,lib,date,monthlyPoints,invite,id,certifiedBot,tags".format(urllib.parse.urlencode({"": dbl_tag}).replace("=", ""))
+        try:
+            request = requests.get(url, headers={"Authorization": Token.dbl()}, timeout=2)
+        except:
+            return await ctx.send("That tag could not be found :no_entry:")
+        data = request.json()
         n = 0
         msg = ""
         tag = None
@@ -762,6 +886,7 @@ class general:
         await ctx.send(embed=s)
         
     @commands.command(pass_context=True)
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def botlist(self, ctx, page: int=None):
         """A list of the bots with the most servers on discord bot list"""
         if not page:
@@ -900,34 +1025,15 @@ class general:
         "Look at Sx4s' shards"
         s=discord.Embed(colour=0xffff00)
         s.set_author(name="Shard Info!", icon_url=self.bot.user.avatar_url)
-        s.set_footer(text="> indicates what shard your server is in", icon_url=ctx.author.avatar_url)
+        s.set_footer(text="> indicates what shard your server is in | Users are not unique", icon_url=ctx.author.avatar_url)
+        servers = self.bot.guilds
         for x in range(self.bot.shard_count):
             if x == ctx.guild.shard_id:
                 guildshard = ">"
             else:
                 guildshard = ""
-            s.add_field(name="{} Shard {}".format(guildshard, x + 1), value="{} servers\n{} users\n{}ms".format(len([guild for guild in self.bot.guilds if guild.shard_id == x]), len([user for user in list(set(self.bot.get_all_members())) if user.guild.shard_id == x]), round(self.bot.latencies[x][1]*1000)))
+            s.add_field(name="{} Shard {}".format(guildshard, x + 1), value="{:,} servers\n{:,} users\n{}ms".format(len([guild for guild in servers if guild.shard_id == x]), sum([guild.member_count for guild in servers if guild.shard_id == x]), round(self.bot.latencies[x][1]*1000)))
         await ctx.send(embed=s)
-
-    @commands.command(pass_context=True)
-    @commands.cooldown(1, 60, commands.BucketType.user)
-    async def dm(self, ctx, user: discord.Member, *, text):
-        """Dm a user using me"""
-        author = ctx.message.author 
-        server = ctx.guild
-        channel = ctx.message.channel
-        s=discord.Embed(title="You received a Message :mailbox_with_mail:", colour=0xfff90d)
-        s.add_field(name="Message", value=text, inline=False)
-        s.add_field(name="Author", value=author)
-        s.set_thumbnail(url=author.avatar_url)
-        try:
-            await user.send(embed=s)
-        except:
-            await ctx.send("I am unable to send a message to that user :no_entry:")
-            ctx.command.reset_cooldown(ctx)
-            return
-        await ctx.send("I have sent a message to **{}** <:done:403285928233402378>".format(user))
-        
         
     @commands.command(aliases=["shared"])
     async def sharedservers(self, ctx, user=None, page: int=None):
@@ -1045,6 +1151,8 @@ class general:
         server = ctx.guild
         page = 1
         number = len(role.members)
+        if number < 1:
+            return await ctx.send("There is no one in this role :no_entry:")
         users = "\n".join([str(x) for x in sorted(role.members, key=lambda x: x.name.lower())][page*20-20:page*20])
         s=discord.Embed(description=users, colour=0xfff90d)
         s.set_author(name="Users in " + role.name + " ({})".format(number), icon_url=server.icon_url)
@@ -1226,7 +1334,7 @@ class general:
         colour = int(colour, 16)
         s=discord.Embed(colour=discord.Colour(value=colour))
         s.set_author(name="{}'s Icon".format(server.name), icon_url=server.icon_url, url=server.icon_url_as(format="png", size=1024))
-        s.set_image(url=server.icon_url.replace("webp", "png"))
+        s.set_image(url=server.icon_url_as(format="png", size=1024))
         await ctx.send(embed=s)
         
     @commands.group(pass_context=True)
@@ -1324,7 +1432,6 @@ class general:
             return
         await ctx.send("The trigger **{}** has been removed <:done:403285928233402378>".format(trigger))
         
-    @dev.log    
     async def on_message(self, message):
         server = message.guild
         statsdata = r.table("botstats").get("stats")
@@ -1333,10 +1440,11 @@ class general:
         imagemodedata = r.table("imagemode").get(str(server.id))
         if message.author == self.bot.user:
             statsdata.update({"messages": r.row["messages"] + 1}).run(durability="soft", noreply=True)
-        if server.id not in map(lambda x: x["id"], self._stats):
-            self._stats.append({"id": server.id, "messages": 1, "members": 0})
-        else:
-            list(filter(lambda x: x["id"] == server.id, self._stats))[0]["messages"] += 1
+        if not message.author.bot:
+            if server.id not in map(lambda x: x["id"], self._stats):
+                self._stats.append({"id": server.id, "messages": 1, "members": 0})
+            else:
+                list(filter(lambda x: x["id"] == server.id, self._stats))[0]["messages"] += 1
         if message.author == self.bot.user:
             return
         if triggerdata.run():
@@ -1356,19 +1464,21 @@ class general:
                 channel = imagemodedata["channels"].filter(lambda x: x["id"] == str(message.channel.id))[0]
                 users = channel["users"]
                 usersran = channel["users"].run()
+                supported = ["png", "jpg", "jpeg", "gif", "webp", "mp4", "gifv", "mov"]
                 if not message.attachments:
+                    embeds = message.embeds
+                    if embeds:
+                        image_type = embeds[0].type
+                    else:
+                        await message.delete()
+                        return await message.channel.send("{}, You can only send images in this channel :no_entry:".format(message.author.mention), delete_after=10)
+                else:
+                    attach = message.attachments[0].url
+                    index = attach.rfind(".") + 1
+                    image_type = attach[index:]
+                if image_type not in supported:
                     await message.delete()
-                    image_only = await message.channel.send("{}, You can only send images in this channel :no_entry:".format(message.author.mention))
-                    await asyncio.sleep(10)
-                    await image_only.delete()
-                attach = message.attachments[0].url
-                supported = ["png", "jpg", "jpeg", "gif", "webp"]
-                index = attach.rfind(".") + 1
-                if attach[index:] not in supported:
-                    await message.delete()
-                    image_only = await message.channel.send("{}, You can only send images in this channel :no_entry:".format(message.author.mention))
-                    await asyncio.sleep(10)
-                    await image_only.delete()
+                    return await message.channel.send("{}, You can only send images in this channel :no_entry:".format(message.author.mention), delete_after=10)
                 else:
                     if int(channel["slowmode"].run()) != 0:
                         if str(message.author.id) not in users.map(lambda x: x["id"]).run():
@@ -1378,9 +1488,7 @@ class general:
                             if message.created_at.timestamp() - users.filter(lambda x: x["id"] == str(message.author.id))[0]["timestamp"].run() < int(channel["slowmode"].run()):
                                 time = users.filter(lambda x: x["id"] == str(message.author.id))[0]["timestamp"].run() - message.created_at.timestamp() + int(channel["slowmode"].run())
                                 await message.delete()
-                                cooldown = await message.channel.send("{}, You can send another image in {}".format(message.author.mention, self.format_time_activity(time)))
-                                await asyncio.sleep(10)
-                                await cooldown.delete()
+                                await message.channel.send("{}, You can send another image in {}".format(message.author.mention, self.format_time_activity(time)), delete_after=10)
                             else:
                                 user = users.filter(lambda x: x["id"] == str(message.author.id))[0].run()
                                 usersran.remove(user)
@@ -1408,11 +1516,15 @@ class general:
         await ctx.send("{}'s ID: `{}`".format(server.name, server.id))
         
     @commands.command(pass_context=True, aliases=["cid"])
-    async def channelid(self, ctx):
+    async def channelid(self, ctx, *, channel: str=None):
         """Get a channels id"""
-        channel = ctx.message.channel
+        if not channel:
+            channel = ctx.message.channel
+        else:
+            channel = arg.get_text_channel(ctx, channel)
+            if not channel:
+                return await ctx.send("I could not find that channel :no_entry:")
         await ctx.send("<#{}> ID: `{}`".format(channel.id, channel.id))
-    
         
     @commands.command(pass_context=True, aliases=["uinfo", "user"])
     async def userinfo(self, ctx, *, user: str=None):
@@ -1422,7 +1534,7 @@ class general:
         if not user:
             user = author
         else:
-            user = await arg.get_member(ctx, user)
+            user = await arg.get_member_info(ctx, user)
             if not user:
                 return await ctx.send("Invalid user :no_entry:")
         if user not in ctx.guild.members:
@@ -1447,13 +1559,16 @@ class general:
                     description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
                 elif user.activity.url:
                     description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
+                author_name = str(user) + (" 📱" if user.is_on_mobile() else "")
+            else:
+                author_name = str(user)
             if user.bot:
                 bot = "Yes"
             else:
                 bot = "No"
             joined_discord = user.created_at.strftime("%d %b %Y %H:%M")
             s=discord.Embed(description=description, timestamp=datetime.utcnow())
-            s.set_author(name=user, icon_url=user.avatar_url)
+            s.set_author(name=author_name, icon_url=user.avatar_url)
             s.set_thumbnail(url=user.avatar_url)
             s.add_field(name="User ID", value=user.id)
             s.add_field(name="Joined Discord", value=joined_discord)
@@ -1486,7 +1601,7 @@ class general:
             description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
         roles=[x.mention for x in user.roles if x.name != "@everyone"][::-1][:20]
         s=discord.Embed(description=description, colour=user.colour, timestamp=datetime.utcnow())
-        s.set_author(name=user.name, icon_url=user.avatar_url)
+        s.set_author(name=user.name + (" 📱" if user.is_on_mobile() else ""), icon_url=user.avatar_url)
         s.set_thumbnail(url=user.avatar_url)
         s.add_field(name="Joined Discord", value=joined_discord)
         s.add_field(name="Joined {}".format(server.name), value=joined_server)
@@ -1498,7 +1613,7 @@ class general:
         s.add_field(name="User's ID", value="{}".format(user.id))
         s.set_footer(text="Join Position: {} | Requested by {}".format(self.prefixfy(input), author))
         s.add_field(name="Highest Role", value=user.top_role)
-        s.add_field(name="Number of Roles", value=len(user.roles)) 
+        s.add_field(name="Number of Roles", value=len(user.roles) - 1) 
         if not roles:
             s.add_field(name="Roles", value="None", inline=False) 
         else:
@@ -1575,7 +1690,7 @@ class general:
         s.set_footer(text="Requested by {}".format(author))
         await ctx.send(embed=s)
         
-    @commands.command(pass_context=True)
+    @commands.command()
     async def serverstats(self, ctx):
         server = ctx.guild
         serverdata = r.table("stats").get(str(server.id)).run(durability="soft")
@@ -1585,7 +1700,8 @@ class general:
         s.add_field(name="Messages Sent Today", value=serverdata["messages"] if serverdata else "0")
         await ctx.send(embed=s)
         
-    @commands.command(pass_context=True)
+    @commands.command()
+    @commands.cooldown(1, 7, commands.BucketType.user)
     async def stats(self, ctx):
         """View the bots live stats"""
         server = ctx.guild
@@ -1673,8 +1789,7 @@ class general:
             return "{} {}".format(round(m), "minute" if round(m) == 1 else "minutes")
         else:
             return "{} {}".format(round(s), "second" if round(s) == 1 else "seconds")
-        
-    @dev.log
+
     async def on_member_join(self, member):
         server = member.guild
         r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run(durability="soft", noreply=True)
@@ -1682,8 +1797,7 @@ class general:
             self._stats.append({"id": server.id, "messages": 0, "members": 1})
         else:
             list(filter(lambda x: x["id"] == server.id, self._stats))[0]["members"] += 1
-
-    @dev.log   
+ 
     async def on_member_remove(self, member):
         server = member.guild
         r.table("stats").insert({"id": str(server.id), "messages": 0, "members": 0}).run(durability="soft", noreply=True)
@@ -1691,8 +1805,7 @@ class general:
             self._stats.append({"id": server.id, "messages": 0, "members": -1})
         else:
             list(filter(lambda x: x["id"] == server.id, self._stats))[0]["members"] -= 1
-
-    @dev.log    
+   
     async def on_command(self, ctx):
         botdata = r.table("botstats").get("stats")
         if str(ctx.author.id) not in botdata["users"].run(durability="soft"):
@@ -1709,13 +1822,13 @@ class general:
 
     async def checktime(self):
         while not self.bot.is_closed():
-            if datetime.utcnow().strftime("%H") == "23":
+            if datetime.utcnow().hour == 23:
                 botdata = r.table("botstats").get("stats")
                 servers = len(self.bot.guilds) - botdata["servercountbefore"].run()
                 s=discord.Embed(colour=0xffff00, timestamp=datetime.utcnow())
                 s.set_author(name="Bot Logs", icon_url=self.bot.user.avatar_url)
                 if 86400/botdata["commands"].run(durability="soft") >= 1:
-                    s.add_field(name="Average Command Usage", value="1 every {}s ({})".format(round(86400/botdata["commands"].run(durability="soft")), botdata["commands"].run()))
+                   s.add_field(name="Average Command Usage", value="1 every {}s ({})".format(round(86400/botdata["commands"].run(durability="soft")), botdata["commands"].run()))
                 else:
                     s.add_field(name="Average Command Usage", value="{} every second ({})".format(round(botdata["commands"].run(durability="soft")/86400), botdata["commands"].run()))
                 s.add_field(name="Servers", value="{} ({})".format(len(self.bot.guilds), "+" + str(servers) if servers >= 0 else servers), inline=False)
@@ -1743,7 +1856,7 @@ class general:
             for x in data.run():
                 if str(after.id) in x["users"]:
                     try:
-                        author = {x.id: x for x in self.bot.get_all_members()}[int(x["id"])]
+                        author = self.bot.get_user(int(x["id"]))
                     except:
                         continue
                     data.update({"users": r.row["users"].difference([str(after.id)])}).run(durability="soft", noreply=True)

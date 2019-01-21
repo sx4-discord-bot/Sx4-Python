@@ -8,7 +8,7 @@ from random import choice as randchoice
 from random import randint
 from utils import arghelp
 from copy import deepcopy
-from utils import checks
+from utils import checks, dateify
 from calendar import monthrange
 from enum import Enum
 from collections import Counter
@@ -54,28 +54,6 @@ class economy:
 
     def __init__(self, bot):
         self.bot = bot
-
-    @commands.command()
-    async def crates(self, ctx, user: str=None):
-        """View all the crates you have or a user has"""
-        if not user:
-            user = ctx.author
-        else:
-            user = await arg.get_member(ctx, user)
-            if not user: 
-                return await ctx.send("Invalid user :no_entry:")
-        userdata = r.table("bank").get(str(user.id)).run()
-        if not userdata:
-            crates = "None"
-        else:
-            items = sorted(filter(lambda x: x["name"] in map(lambda x: x["name"], shop["crates"]), userdata["items"]), key=lambda x: x["amount"], reverse=True)
-            if not items:
-                crates = "None"
-            else:
-                crates = "\n".join(["{} x{}".format(x["name"], x["amount"]) for x in items])
-        s=discord.Embed(description=crates, colour=user.colour)
-        s.set_author(name="{}'s Crates".format(user.name), icon_url=user.avatar_url)
-        await ctx.send(embed=s)
 
     @commands.group()
     async def crate(self, ctx):
@@ -124,9 +102,9 @@ class economy:
         crate = self.get_item(shop["crates"], crate)
         if not crate:
             return await ctx.send("That's not a valid crate :no_entry:")
-        if crate["name"] == "Present Crate" and datetime.datetime.utcnow().strftime("%d/%m") != "25/12":
-            return await ctx.send("It's not christmas yet :no_entry:")
         user_crate = self.get_user_item(authordata["items"].run(), crate["name"])
+        if crate["name"] == "Present Crate" and datetime.datetime.utcnow().strftime("%d/%m") != "25/12":
+            return await ctx.send("It's not christmas yet, {} till you can open your present :no_entry:".format(dateify.get((datetime.datetime(datetime.datetime.utcnow().year + (1 if datetime.datetime.utcnow().day >= 25 and datetime.datetime.utcnow().month == 12 else 0), 12, 25, 00, 00) - datetime.datetime.utcnow()).total_seconds())))
         if amount > user_crate["amount"]:
             return await ctx.send("You do not own that many `{}` :no_entry:".format(crate["name"]))
         items = shop["miners"] + mine["items"] + shop["boosters"] + list(filter(lambda x: not x["hidden"], shop["crates"])) + wood["wood"]
@@ -197,7 +175,7 @@ class economy:
 
             await locals()["__eval_function__"]()
         except:
-            await ctx.send(traceback.format_exc())
+            await ctx.send("```py\n" + traceback.format_exc() + "```")
             
     @commands.command(hidden=True)
     @checks.is_owner()
@@ -981,7 +959,7 @@ class economy:
         colour = ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
         colour = int(colour, 16)
         userdata = r.table("bank").get(str(user.id)).run(durability="soft")
-        all_items = shop["picitems"] + shop["items"] + mine["items"] + shop["roditems"] + shop["miners"] + shop["boosters"] + shop["crates"]
+        all_items = shop["picitems"] + shop["items"] + mine["items"] + shop["roditems"] + shop["miners"] + shop["boosters"] + shop["crates"] + wood["wood"]
         if userdata:
             user_data = userdata
             worth = 0
@@ -1071,23 +1049,6 @@ class economy:
             await message.edit(content="You double your money! **+${:,}**".format(authordata["balance"].run(durability="soft")))
             authordata.update({"winnings": r.row["winnings"] + r.row["balance"], "balance": r.row["balance"] * 2}).run(durability="soft")
         ctx.command.reset_cooldown(ctx)
-            
-    @commands.command()
-    async def shop(self, ctx):    
-        """Check what you can buy"""
-        authordata = r.table("bank").get(str(ctx.author.id))
-        s=discord.Embed(description="Sx4 shop use your currency in Sx4 to buy items", colour=0xfff90d)
-        s.set_author(name="Shop", icon_url=self.bot.user.avatar_url)
-        for item in shop["roditems"]:
-            s.add_field(name=item["name"], value="Price: {}\nCraft: {}\nDurability: {}".format("${:,}".format(item["price"]) if item["price"] else "Not Buyable", "\n".join(["{} {}".format(x[1], x[0]) for x in item["craft"]]) if item["craft"] else "Not Craftable", item["durability"]))
-        for item in shop["picitems"]:
-            s.add_field(name=item["name"], value="Price: {}\nCraft: {}\nDurability: {}".format("${:,}".format(item["price"]) if item["price"] else "Not Buyable", "\n".join(["{} {}".format(x[1], x[0]) for x in item["craft"]]) if item["craft"] else "Not Craftable", item["durability"]))
-        try:    
-            s.set_footer(text="Use s?shopbuy <item> to buy an item. | Your balance: ${:,}".format(authordata["balance"].run(durability="soft")))
-        except:
-            s.set_footer(text="Use s?shopbuy <item> to buy an item. | Your balance: $0")
-        
-        await ctx.send(embed=s)
 
     @commands.group()
     async def miner(self, ctx):
@@ -1220,12 +1181,63 @@ class economy:
                     authordata.update({"items": items, "minertime": ctx.message.created_at.timestamp()}).run(durability="soft", noreply=True)
                 else:
                     authordata.update({"minertime": ctx.message.created_at.timestamp()}).run(durability="soft", noreply=True)
+
+    @commands.group(name="pickaxe", aliases=["pick"])
+    async def _pickaxe_(self, ctx):
+        """Some commands where you can buy and view pickaxes"""
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            self._set_bank(ctx.author)
+
+    @_pickaxe_.command(name="buy")
+    async def buy____(self, ctx, *, item: str):
+        """Buy a pickaxe from the pickaxe shop"""
+        pickaxe = self.get_item(shop["picitems"], item)
+        if not pickaxe:
+            return await ctx.send("I could not find that pickaxe :no_entry:")
+        author = ctx.author
+        authordata = r.table("bank").get(str(author.id))   
+        if pickaxe["price"]:
+            if self.has_pickaxe(author):
+                return await ctx.send("You already own a pickaxe, sell your pickaxe and try again :no_entry:")
+                    
+            author_data = authordata.run(durability="soft")
+                    
+            if author_data["balance"] >= pickaxe["price"]:
+                items = self.add_mats(author_data["items"], [(pickaxe["name"], 1)], {"upgrades": 0, "multiplier": pickaxe["multiplier"], "rand_min": pickaxe["rand_min"], "rand_max": pickaxe["rand_max"], "durability": pickaxe["durability"], "price": pickaxe["price"]})
+                authordata.update({"balance": r.row["balance"] - pickaxe["price"], "items": items, "pickdur": pickaxe["durability"]}).run(durability="soft")
+                            
+                return await ctx.send("You just bought a {} for **${:,}** :ok_hand:".format(pickaxe["name"], pickaxe["price"]))
+            else:
+                return await ctx.send("You don't have enough money to buy that item :no_entry:")
+        else:
+            return await ctx.send("This pickaxe is not buyable :no_entry:")
+    
+    @_pickaxe_.command(name="shop")
+    async def shop____(self, ctx):
+        """View all the available pickaxes"""
+        authordata = r.table("bank").get(str(ctx.author.id))
+        s=discord.Embed(description="Sx4 shop use your currency in Sx4 to buy pickaxes", colour=0xfff90d)
+        s.set_author(name="Shop", icon_url=self.bot.user.avatar_url)
+        for item in shop["picitems"]:
+            s.add_field(name=item["name"], value="Price: {}\nCraft: {}\nDurability: {}".format("${:,}".format(item["price"]) if item["price"] else "Not Buyable", "\n".join(["{} {}".format(x[1], x[0]) for x in item["craft"]]) if item["craft"] else "Not Craftable", item["durability"]))
+        try:    
+            s.set_footer(text="Use s?pickaxe buy <item> to buy an item. | Your balance: ${:,}".format(authordata["balance"].run(durability="soft")))
+        except:
+            s.set_footer(text="Use s?pickaxe buy <item> to buy an item. | Your balance: $0")
         
-    @commands.command(aliases=["pick"])
-    async def pickaxe(self, ctx, *, user: discord.Member=None):
-        """Displays your pickaxe if you have one"""
+        await ctx.send(embed=s)
+
+    @_pickaxe_.command(name="info")
+    async def __info(self, ctx, *, user: str=None):
+        """Displays your or another users pickaxe if you have one"""
         if not user:
             user = ctx.author 
+        else:
+            user = arg.get_server_member(ctx, user)
+            if not user:
+                return await ctx.send("I could not find that user :no_entry:")
         
         userdata = r.table("bank").get(str(user.id))
         if userdata.run():
@@ -1526,7 +1538,7 @@ class economy:
             list = self.remove_mats(list, [("Tax Avoider", 1)])
             authordata.update({"items": list}).run(durability="soft")
         s=discord.Embed(description="You have gifted **${:,}** to **{}**\n\n{}'s new balance: **${:,}**\n{}'s new balance: **${:,}**".format(amount, user.name, author.name, authordata["balance"].run(durability="soft"), user.name, userdata["balance"].run(durability="soft") if user != self.bot.user else taxdata["tax"].run(durability="soft")), colour=author.colour)
-        s.set_author(name="{} → {}".format(author.name, user.name), icon_url="https://png.kisspng.com/20171216/8cb/5a355146d99f18.7870744715134436548914.png")
+        s.set_author(name="{} → {}".format(author.name, user.name), icon_url="https://cdn0.iconfinder.com/data/icons/social-messaging-ui-color-shapes/128/money-circle-green-3-512.png")
         s.set_footer(text="{}".format("${:,} ({}%) tax was taken".format(tax, round((tax/fullamount)*100))))
         await ctx.send(embed=s)
 		
@@ -1561,7 +1573,7 @@ class economy:
             usercount = user_item["amount"] + amount
             authorcount = author_item["amount"] - amount
             s=discord.Embed(description="You have gifted **{} {}** to **{}**\n\n{}'s new {} amount: **{} {}**\n{}'s new {} amount: **{} {}**".format(amount, item.title(), user.name, author.name, item.title(), authorcount, item.title(), user.name, item.title(), usercount, item.title()), colour=author.colour)
-            s.set_author(name="{} → {}".format(author.name, user.name), icon_url="https://png.kisspng.com/20171216/8cb/5a355146d99f18.7870744715134436548914.png")
+            s.set_author(name="{} → {}".format(author.name, user.name), icon_url="https://cdn0.iconfinder.com/data/icons/social-messaging-ui-color-shapes/128/money-circle-green-3-512.png")
             s.set_footer(text="Tax: ${:,} ({}%)".format(tax, round((tax/price_item)*100)))
             await ctx.send(embed=s)
             author_items = authordata["items"].run(durability="soft")
@@ -1676,6 +1688,7 @@ class economy:
             items = self.upgrade_item(items, user_pickaxe, {"rand_min": round(shop_pickaxe["rand_min"] * 0.02), "rand_max": round(shop_pickaxe["rand_min"] * 0.02), "upgrades": 1, "price": shop_pickaxe["price"] * 0.015})
         elif upgrade.lower() == "durability":
             items = self.upgrade_item(items, user_pickaxe, {"durability": 2, "upgrades": 1, "price": shop_pickaxe["price"] * 0.015})
+            authordata.update({"pickdur": r.row["pickdur"] + 2}).run(durability="soft", noreply=True)
         elif upgrade.lower() == "multiplier":
             items = self.upgrade_item(items, user_pickaxe, {"multiplier": shop_pickaxe["multiplier"] * 0.01, "upgrades": 1, "price": shop_pickaxe["price"] * 0.015})
         else: 
@@ -1688,6 +1701,8 @@ class economy:
         """Upgrade your fishing rod"""
         authordata = r.table("bank").get(str(ctx.author.id))
         user_rod = self.get_user_rod(ctx.author)
+        if not user_rod or not authordata["items"].run():
+            return await ctx.send("You do not have a rod :no_entry:")
         shop_rod = self.get_exact_item(shop["roditems"], user_rod["name"])
         items = authordata["items"].run()
         if not user_rod or not authordata.run():
@@ -1703,6 +1718,7 @@ class economy:
             items = self.upgrade_item(items, user_rod, {"rand_min": round(shop_rod["rand_min"] * 0.02), "rand_max": round(shop_rod["rand_min"] * 0.02), "upgrades": 1, "price": shop_rod["price"] * 0.015})
         elif upgrade.lower() == "durability":
             items = self.upgrade_item(items, user_rod, {"durability": 2, "upgrades": 1, "price": shop_rod["price"] * 0.015})
+            authordata.update({"roddur": r.row["roddur"] + 2}).run(durability="soft", noreply=True)
         else: 
             return await ctx.send("That is not a valid upgrade for your rod :no_entry:")
         authordata.update({"items": items, "balance": r.row["balance"] - price}).run(durability="soft")
@@ -1726,6 +1742,7 @@ class economy:
             user_axe.update(updated)
         if upgrade.lower() == "durability":
             items = self.upgrade_item(items, user_axe, {"durability": 2, "upgrades": 1, "price": shop_axe["price"] * 0.015})
+            authordata.update({"axedur": r.row["axedur"] + 2}).run(durability="soft", noreply=True)
         elif upgrade.lower() == "multiplier":
             items = self.upgrade_item(items, user_axe, {"multiplier": shop_axe["multiplier"] * 0.01, "upgrades": 1, "price": shop_axe["price"] * 0.015})
         else: 
@@ -1865,7 +1882,7 @@ class economy:
             
         event = await paged.page(ctx, filtered, selectable=True, per_page=5, function=lambda item: "\n**Name:** " + item["item"]["name"] + "\n**Price:** ${:,}".format(int(item["price"])) + "\n" + ("**Durability:** {}".format(item["durability"]) + ("/{}\n".format(item["item"]["durability"]) if "durability" in item["item"] else "\n") if "durability" in item else "") + ("**Upgrades:** {}\n".format(item["item"]["upgrades"]) if "upgrades" in item["item"] else "") + ("**Amount:** " + str(item["item"]["amount"]) + "\n"))
         if event:
-            item = event["item"]
+            item = event["object"]["item"]
             if self.get_exact_item(shop["picitems"], item["name"]):
                 if self.has_pickaxe(ctx.author):
                     return await ctx.send("You already have a pickaxe :no_entry:")
@@ -1875,17 +1892,17 @@ class economy:
             elif self.get_exact_item(shop["axes"], item["name"]):
                 if self.has_axe(ctx.author):
                     return await ctx.send("You already have an axe :no_entry:")
-            if event not in auctiondata.run(durability="soft"):
+            if event["object"] not in auctiondata.run(durability="soft"):
                 await ctx.send("That item was recently bought :no_entry:")
                 return
-            auctiondata.get(event["id"]).delete().run(durability="soft")
+            auctiondata.get(event["object"]["id"]).delete().run(durability="soft")
                 
             if self.get_exact_item(shop["picitems"], item["name"]):
-                authordata.update({"pickdur": event["durability"]}).run(durability="soft")
+                authordata.update({"pickdur": event["object"]["durability"]}).run(durability="soft")
             elif self.get_exact_item(shop["roditems"], item["name"]):
-                authordata.update({"roddur": event["durability"]}).run(durability="soft")
+                authordata.update({"roddur": event["object"]["durability"]}).run(durability="soft")
             elif self.get_exact_item(shop["axes"], item["name"]):
-                authordata.update({"axedur": event["durability"]}).run(durability="soft")
+                authordata.update({"axedur": event["object"]["durability"]}).run(durability="soft")
                 
             items = self.add_mats(authordata["items"].run(), [(item["name"], item["amount"])], {x[0]: x[1] for x in item.items() if x[0] != "amount" and x[0] != "name"})
             authordata.update({"items": items}).run(durability="soft")
@@ -1926,6 +1943,7 @@ class economy:
                 final_item = self.get_exact_item(all_items, item)
                 durability = None
             user_item = self.get_user_item(author_items, final_item["name"]) 
+            user_item.update({"amount": amount})
             if user_item["amount"] < amount:
                 await ctx.send("You don't have that amount of `{}` to sell :no_entry:".format(user_item["name"]))
                 return            
@@ -1970,49 +1988,100 @@ class economy:
 
         event = await paged.page(ctx, filtered, selectable=True, per_page=5, function=lambda item: "\n**Name:** " + item["item"]["name"] + "\n**Price:** ${:,}".format(int(item["price"])) + "\n" + ("**Durability:** {}".format(item["durability"]) + ("/{}\n".format(item["item"]["durability"]) if "durability" in item["item"] else "\n") if "durability" in item else "") + ("**Upgrades:** {}\n".format(item["item"]["upgrades"]) if "upgrades" in item["item"] else "") + "**Price Per Item:** ${}\n".format(format(int(item["price"])/item["item"]["amount"], ".2f")) + ("**Amount:** {:,}".format(item["item"]["amount"]) + "\n"))
         if event:
-            item = event["item"]
-            if event not in auctiondata.run(durability="soft"):
+            item = event["object"]["item"]
+            if event["object"] not in auctiondata.run(durability="soft"):
                 await ctx.send("That item was recently bought :no_entry:")
                 return
-            owner = discord.utils.get(self.bot.get_all_members(), id=int(event["ownerid"]))
+            owner = discord.utils.get(self.bot.get_all_members(), id=int(event["object"]["ownerid"]))
             if owner:
                 if owner == author:
                     await ctx.send("You can't buy your own items :no_entry:")
                     return
-            if int(event["price"]) > authordata["balance"].run(durability="soft"):
+            if int(event["object"]["price"]) > authordata["balance"].run(durability="soft"):
                 await ctx.send("You don't have enough money for that item :no_entry:")
                 return
-            auctiondata.get(event["id"]).delete().run(durability="soft")
+            auctiondata.get(event["object"]["id"]).delete().run(durability="soft")
             
-            authordata.update({"balance": r.row["balance"] - int(event["price"])}).run(durability="soft")
+            authordata.update({"balance": r.row["balance"] - int(event["object"]["price"])}).run(durability="soft")
             if owner:
                 if r.table("bank").get(str(owner.id)).run(durability="soft"):
-                    r.table("bank").get(str(owner.id)).update({"balance": r.row["balance"] + int(event["price"])}).run(durability="soft")
+                    r.table("bank").get(str(owner.id)).update({"balance": r.row["balance"] + int(event["object"]["price"])}).run(durability="soft")
                 
             if self.get_exact_item(shop["picitems"], item["name"]):
-                authordata.update({"pickdur": event["durability"]}).run(durability="soft")
+                authordata.update({"pickdur": event["object"]["durability"]}).run(durability="soft")
             elif self.get_exact_item(shop["roditems"], item["name"]):
-                authordata.update({"roddur": event["durability"]}).run(durability="soft")
+                authordata.update({"roddur": event["object"]["durability"]}).run(durability="soft")
             elif self.get_exact_item(shop["axes"], item["name"]):
-                authordata.update({"axedur": event["durability"]}).run(durability="soft")
+                authordata.update({"axedur": event["object"]["durability"]}).run(durability="soft")
                 
             items = self.add_mats(authordata["items"].run(), [(item["name"], item["amount"])], {x[0]: x[1] for x in item.items() if x[0] != "amount" and x[0] != "name"})
             authordata.update({"items": items}).run(durability="soft")
-            await ctx.send("You just bought `{} {}` for **${:,}** :tada:".format(item["amount"], item["name"], int(event["price"])))
+            await ctx.send("You just bought `{} {}` for **${:,}** :tada:".format(item["amount"], item["name"], int(event["object"]["price"])))
             try:
-                await owner.send("Your `{}` just got bought on the auction house, it was sold for **${:,}** :tada:".format(item["name"], int(event["price"])))
+                await owner.send("Your `{}` just got bought on the auction house, it was sold for **${:,}** :tada:".format(item["name"], int(event["object"]["price"])))
             except:
                 pass
 
-    @commands.command(aliases=["rod", "fishing_rod"])
-    async def fishingrod(self, ctx, user: discord.Member=None):
+    @commands.group(aliases=["rod", "fishing_rod"])
+    async def fishingrod(self, ctx):
+        """Some commands where you can buy and view fishing rods"""
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            self._set_bank(ctx.author)
+
+    @fishingrod.command(name="buy")
+    async def ___buy_(self, ctx, item: str):
+        """Buy a fishing rod from the fishing rod shop"""
+        rod = self.get_item(shop["roditems"], item)
+        author = ctx.author
+        authordata = r.table("bank").get(str(author.id))
+        if not rod:
+            return await ctx.send("I could not find that fishing rod :no_entry:")
+        if rod["price"]:
+            if self.has_rod(author):
+                return await ctx.send("You already own a fishing rod, sell your rod and try again :no_entry:")
+                    
+            author_data = authordata.run(durability="soft")
+                
+            if author_data["balance"] >= rod["price"]:
+                items = self.add_mats(author_data["items"], [(rod["name"], 1)], {"upgrades": 0, "rand_min": rod["rand_min"], "rand_max": rod["rand_max"], "durability": rod["durability"], "price": rod["price"]})
+                authordata.update({"balance": r.row["balance"] - rod["price"], "items": items, "roddur": rod["durability"]}).run(durability="soft")
+                    
+                return await ctx.send("You just bought a {} for **${:,}** :ok_hand:".format(rod["name"], rod["price"]))
+            else:
+                return await ctx.send("You don't have enough money to buy that item :no_entry:")
+        else:
+            return await ctx.send("This rod is not buyable :no_entry:")
+
+    @fishingrod.command(name="shop")
+    async def ____shop(self, ctx):
+        """Check what fishing rods you can buy"""
+        authordata = r.table("bank").get(str(ctx.author.id))
+        s=discord.Embed(description="Sx4 shop use your currency in Sx4 to buy fishing rods", colour=0xfff90d)
+        s.set_author(name="Shop", icon_url=self.bot.user.avatar_url)
+        for item in shop["roditems"]:
+            s.add_field(name=item["name"], value="Price: {}\nCraft: {}\nDurability: {}".format("${:,}".format(item["price"]) if item["price"] else "Not Buyable", "\n".join(["{} {}".format(x[1], x[0]) for x in item["craft"]]) if item["craft"] else "Not Craftable", item["durability"]))
+        try:    
+            s.set_footer(text="Use s?fishingrod buy <item> to buy an item. | Your balance: ${:,}".format(authordata["balance"].run(durability="soft")))
+        except:
+            s.set_footer(text="Use s?fishingrod buy <item> to buy an item. | Your balance: $0")
+        
+        await ctx.send(embed=s)
+
+    @fishingrod.command(name="info")
+    async def _info(self, ctx, user: str=None):
         """View your or a users fishing rod"""
         if not user:
             user = ctx.author 
-        self._set_bank(user)
-        msg = ""
+        else:
+            user = arg.get_server_member(ctx, user)
+            if not user:
+                return await ctx.send("I could not find that user :no_entry:")
         
         userdata = r.table("bank").get(str(user.id))
+        if not userdata.run():
+            return await ctx.send("This user does not have a fishing rod :no_entry:")
         item = self.get_user_rod(user)
         if not item:
             return await ctx.send("That user does not have a fishing rod :no_entry:")
@@ -2042,7 +2111,11 @@ class economy:
         items = authordata["items"].run()
         if not authordata["fishtime"].run(durability="soft"):
             if rod:
-                money = randint(rod["rand_min"], rod["rand_max"])
+                try:
+                    money = randint(rod["rand_min"], rod["rand_max"])
+                except KeyError:
+                    rod = self.get_item(shop["roditems"], rod["name"])
+                    money = randint(rod["rand_min"], rod["rand_max"])
                 authordata.update({"roddur": r.row["roddur"] - 1}).run(durability="soft")
                 msg = "Your fishing rod broke in the process" if authordata["roddur"].run(durability="soft") <= 0 else ""
                 if authordata["roddur"].run(durability="soft") <= 0:
@@ -2062,7 +2135,11 @@ class economy:
             return await ctx.send("You are too early, come collect your money again in {}".format(time))
         else:
             if rod:
-                money = randint(rod["rand_min"], rod["rand_max"])
+                try:
+                    money = randint(rod["rand_min"], rod["rand_max"])
+                except KeyError:
+                    rod = self.get_item(shop["roditems"], rod["name"])
+                    money = randint(rod["rand_min"], rod["rand_max"])
                 authordata.update({"roddur": r.row["roddur"] - 1}).run(durability="soft")
                 msg = "Your fishing rod broke in the process" if authordata["roddur"].run(durability="soft") <= 0 else ""
                 if authordata["roddur"].run(durability="soft") <= 0:
@@ -2232,49 +2309,6 @@ class economy:
         s.set_author(name="Auction House", icon_url=self.bot.user.avatar_url)
         s.set_footer(text="Page {}/{}".format(page, math.ceil(len(type)/5)))
         await ctx.send(embed=s) 
-            
-    @commands.command(aliases=["buy"])
-    async def shopbuy(self, ctx, *, item: str):
-        """Buy something from the shop"""
-        pickaxe = self.get_item(shop["picitems"], item)
-        rod = self.get_item(shop["roditems"], item)
-        author = ctx.author
-        self._set_bank(author)
-        authordata = r.table("bank").get(str(author.id))   
-        if pickaxe:
-            if pickaxe["price"]:
-                if self.has_pickaxe(author):
-                    return await ctx.send("You already own a pickaxe, sell your pickaxe and try again :no_entry:")
-                    
-                author_data = authordata.run(durability="soft")
-                    
-                if author_data["balance"] >= pickaxe["price"]:
-                    items = self.add_mats(author_data["items"], [(pickaxe["name"], 1)], {"upgrades": 0, "multiplier": pickaxe["multiplier"], "rand_min": pickaxe["rand_min"], "rand_max": pickaxe["rand_max"], "durability": pickaxe["durability"], "price": pickaxe["price"]})
-                    authordata.update({"balance": r.row["balance"] - pickaxe["price"], "items": items, "pickdur": pickaxe["durability"]}).run(durability="soft")
-                            
-                    return await ctx.send("You just bought a {} for **${:,}** :ok_hand:".format(pickaxe["name"], pickaxe["price"]))
-                else:
-                    return await ctx.send("You don't have enough money to buy that item :no_entry:")
-            else:
-                return await ctx.send("This pickaxe is not buyable :no_entry:")
-        elif rod:
-            if rod["price"]:
-                if self.has_rod(author):
-                    return await ctx.send("You already own a fishing rod, sell your rod and try again :no_entry:")
-                    
-                author_data = authordata.run(durability="soft")
-                
-                if author_data["balance"] >= rod["price"]:
-                    items = self.add_mats(author_data["items"], [(rod["name"], 1)], {"upgrades": 0, "rand_min": rod["rand_min"], "rand_max": rod["rand_max"], "durability": rod["durability"], "price": rod["price"]})
-                    authordata.update({"balance": r.row["balance"] - rod["price"], "items": items, "roddur": rod["durability"]}).run(durability="soft")
-                    
-                    return await ctx.send("You just bought a {} for **${:,}** :ok_hand:".format(rod["name"], rod["price"]))
-                else:
-                    return await ctx.send("You don't have enough money to buy that item :no_entry:")
-            else:
-                return await ctx.send("This rod is not buyable :no_entry:")
-        else:
-            await ctx.send("That is not an item :no_entry:")
 
     @commands.command()
     async def craft(self, ctx, *, item: str):
@@ -2322,6 +2356,35 @@ class economy:
             await arghelp.send(self.bot, ctx)
         else:
             self._set_bank(ctx.author)
+
+    @axe.command()
+    async def info(self, ctx, user: str=None):
+        if not user:
+            user = ctx.author 
+        else:
+            user = arg.get_server_member(ctx, user)
+            if not user:
+                return await ctx.send("I could not find that user :no_entry:")
+        
+        userdata = r.table("bank").get(str(user.id))
+        if userdata.run():
+            if self.has_axe(user):
+                item = self.get_user_axe(user)
+                if "upgrades" not in item:
+                    axe = self.get_exact_item(shop["picitems"], item["name"])
+                    item.update({"upgrades": 0, "rand_min": axe["rand_min"], "rand_max": axe["rand_max"], "durability": axe["durability"], "multiplier": axe["multiplier"], "price": axe["price"]})
+                s=discord.Embed(colour=user.colour)
+                s.set_author(name="{}'s {}".format(user.name, item["name"], icon_url=user.avatar_url), icon_url=user.avatar_url)
+                s.add_field(name="Durability", value="{}/{}".format(userdata["axedur"].run(durability="soft"), item["durability"]), inline=False)
+                s.add_field(name="Current Price", value="$" + str(round(item["price"]/item["durability"] * userdata["axedur"].run(durability="soft"))), inline=False)
+                s.add_field(name="Original Price", value= "$" + str(item["price"]), inline=False)
+                s.add_field(name="Upgrades", value=item["upgrades"], inline=False)
+                s.set_thumbnail(url="https://www.shareicon.net/data/2016/09/02/823994_ax_512x512.png")
+                await ctx.send(embed=s)
+            else:
+                await ctx.send("That user does not have a axe :no_entry:")
+        else:
+            await ctx.send("That user does not have a axe :no_entry:")      
 
     @axe.command(name="buy")
     async def __buy___(self, ctx, axe: str):
@@ -2431,8 +2494,10 @@ class economy:
         materials = ""
         self._set_bank(author)
         authordata = r.table("bank").get(str(author.id))
+        if "picktime" not in authordata.run():
+            authordata.update({"picktime": None}).run(durability="soft", noreply=True)
         if not self.has_pickaxe(author):
-            return await ctx.send("You do not own a pickaxe, you can buy one at the `{}shop`".format(ctx.prefix))
+            return await ctx.send("You do not own a pickaxe, you can buy one at the `{}pickaxe shop`".format(ctx.prefix))
         item = self.get_user_pickaxe(author)
         if "upgrades" not in item:
             pick = self.get_exact_item(shop["picitems"], item["name"])
@@ -2511,23 +2576,43 @@ class economy:
         
         userdata = r.table("bank").get(str(user.id)).run(durability="soft")
         if not userdata:
-            msg = "None"
+            bal = 0
+            item = None
         else:
+            bal = userdata["balance"]
             items = sorted(userdata["items"], key=lambda x: x["amount"], reverse=True)
-            msg = ""
-            for x in items:
-                if self.get_exact_item(shop["roditems"], x["name"]):
-                    msg += "{} x{} ({:,} Durability)\n".format(x["name"], x["amount"], userdata["roddur"])
-                elif self.get_exact_item(shop["picitems"], x["name"]):
-                    msg += "{} x{} ({:,} Durability)\n".format(x["name"], x["amount"], userdata["pickdur"])
-                elif self.get_exact_item(shop["axes"], x["name"]):
-                    msg += "{} x{} ({:,} Durability)\n".format(x["name"], x["amount"], userdata["axedur"])
-                else:
-                    msg += "{} x{}\n".format(x["name"], x["amount"])
-            if msg == "":
-                msg = "None"
-        s=discord.Embed(description=msg, colour=user.colour)
+            if not items:
+                item = None
+            else:
+                item = {"tools": [], "factories": [], "miners": [], "materials": [], "wood": [], "boosters": [], "crates": []}
+                for x in items:
+                    if self.get_exact_item(shop["roditems"], x["name"]):
+                        item["tools"].append("{} x{} ({:,} Durability)".format(x["name"], x["amount"], userdata["roddur"]))
+                    elif self.get_exact_item(shop["picitems"], x["name"]):
+                        item["tools"].append("{} x{} ({:,} Durability)".format(x["name"], x["amount"], userdata["pickdur"]))
+                    elif self.get_exact_item(shop["axes"], x["name"]):
+                        item["tools"].append("{} x{} ({:,} Durability)".format(x["name"], x["amount"], userdata["axedur"]))
+                    elif self.get_exact_item(factories_all["factory"], x["name"]):
+                        item["factories"].append("{} x{}".format(x["name"], x["amount"]))
+                    elif self.get_exact_item(shop["crates"], x["name"]):
+                        item["crates"].append("{} x{}".format(x["name"], x["amount"]))
+                    elif self.get_exact_item(shop["miners"], x["name"]):
+                        item["miners"].append("{} x{}".format(x["name"], x["amount"]))
+                    elif self.get_exact_item(mine_all["items"], x["name"]):
+                        item["materials"].append("{} x{}".format(x["name"], x["amount"]))
+                    elif self.get_exact_item(wood["wood"], x["name"]):
+                        item["wood"].append("{} x{}".format(x["name"], x["amount"]))
+                    elif self.get_exact_item(shop["boosters"], x["name"]):
+                        item["boosters"].append("{} x{}".format(x["name"], x["amount"]))
+        if item:
+            s=discord.Embed(colour=user.colour)
+            for x in sorted(item.items(), key=lambda x: len(x[1])):
+                if x[1]:
+                    s.add_field(name=x[0].title(), value="\n".join(x[1]))
+        else:
+            s=discord.Embed(description="This user has no items", colour=user.colour)
         s.set_author(name=user.name +"'s Items", icon_url=user.avatar_url)
+        s.set_footer(text="If a category isn't shown it means you have no items in that category | Balance: ${:,}".format(bal))
         await ctx.send(embed=s)
             
     def _set_bank(self, author):
@@ -2538,6 +2623,7 @@ class economy:
         "fishtime": None, "factorytime": None, "picktime": None}).run(durability="soft")
 
     @commands.group(aliases=["lb"])  
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def leaderboard(self, ctx):
         """See where you're ranked"""
         if ctx.invoked_subcommand is None:
@@ -2569,22 +2655,20 @@ class economy:
         elif option.lower() == "month":
             for x in votessx4.items():
                 for y in x[1]["votes"]:
-                    if datetime.datetime.fromtimestamp(y["time"]).month == datetime.date.today().month:
+                    if datetime.datetime.fromtimestamp(y["time"]).month == datetime.date.today().month and datetime.datetime.fromtimestamp(y["time"]).year == datetime.date.today().year:
                         counter[x[0]] += 1
             for x in votesjockie.items():
                 for y in x[1]["votes"]:
-                    if datetime.datetime.fromtimestamp(y["time"]).month == datetime.date.today().month:
+                    if datetime.datetime.fromtimestamp(y["time"]).month == datetime.date.today().month and datetime.datetime.fromtimestamp(y["time"]).year == datetime.date.today().year:
                         counter[x[0]] += 1
         votes = counter.most_common()
         if page < 1 or page > math.ceil(len(votes)/10):
             return await ctx.send("Invalid Page :no_entry:")
         entries = []
         data = votes
-        users = {user.id: user for user in self.bot.get_all_members()}
         for user_data in data:
-            try: 
-                user = users[int(user_data[0])]
-            except:
+            user = self.bot.get_user(int(user_data[0]))
+            if not user:
                 continue
             entry = {}
             entry["votes"] = user_data[1]
@@ -2610,7 +2694,7 @@ class economy:
         """View the leaderboard for a specific item and who has the most of it"""
         if not page:
             page = 1
-        all_items = shop["items"] + mine_all["items"] + shop["miners"] + shop["boosters"] + factories_all["factory"] + shop["picitems"] + shop["roditems"]
+        all_items = shop["items"] + mine_all["items"] + shop["miners"] + shop["boosters"] + factories_all["factory"] + shop["picitems"] + shop["roditems"] + shop["crates"] + wood["wood"]
         try:
             item = list(filter(lambda x: x["name"].lower() == item.lower(), all_items))[0]
         except:
@@ -2625,11 +2709,9 @@ class economy:
             return await ctx.send("No one has that item :no_entry:")
         users = counter.most_common()
         entries = []
-        user = {user.id: user for user in self.bot.get_all_members()}
         for user_data in users:
-            try: 
-                user2 = user[int(user_data[0])]
-            except:
+            user2 = self.bot.get_user(int(user_data[0]))
+            if not user2:
                 continue
             entry = {}
             entry["items"] = user_data[1]
@@ -2665,8 +2747,7 @@ class economy:
         if page <= 0: 
             await ctx.send("Invalid page :no_entry:") 
             return                
-        msg = ""
-        
+        msg = ""   
         i = page*10-10
         n = 0
         sortedrep2 = list
@@ -2680,7 +2761,7 @@ class economy:
             n = None
         for x in sortedrep:
             i = i + 1
-            user = discord.utils.get(self.bot.get_all_members(), id=int(x["id"]))
+            user = self.bot.get_user(int(x["id"]))
             if not user:
                 user = "Unknown User"
             msg+= "{}. `{}` - {} reputation\n".format(i, user, x["rep"])
@@ -2695,11 +2776,9 @@ class economy:
             page = 1
         entries = []
         data = r.table("bank").run(durability="soft")
-        users = {user.id: user for user in self.bot.get_all_members()}
         for user_data in data:
-            try: 
-                user = users[int(user_data["id"])]
-            except:
+            user = self.bot.get_user(int(user_data["id"]))
+            if not user:
                 continue
             entry = {}
             entry["winnings"] = user_data["winnings"]
@@ -2733,11 +2812,9 @@ class economy:
             page = 1
         entries = []
         data = r.table("bank").run(durability="soft")
-        users = {user.id: user for user in self.bot.get_all_members()}
         for user_data in data:
-            try: 
-                user = users[int(user_data["id"])]
-            except:
+            user = self.bot.get_user(int(user_data["id"]))
+            if not user:
                 continue
             entry = {}
             entry["balance"] = user_data["balance"]
@@ -2776,15 +2853,39 @@ class economy:
             if not user:
                 return await ctx.send("Invalid User :no_entry:")
         userdata = r.table("bank").get(str(user.id))
-        if amount[0:1] == "+":
+        if not userdata.run():
+            self._set_bank(user)
+        if amount[:1] == "+":
             userdata.update({"balance": r.row["balance"] + int(amount[1:len(amount)])}).run(durability="soft")
             await ctx.send("**{}** has been given an extra **${}**".format(user, amount[1:len(amount)]))
-        elif amount[0:1] == "-":
+        elif amount[:1] == "-":
             userdata.update({"balance": r.row["balance"] - int(amount[1:len(amount)])}).run(durability="soft")
             await ctx.send("**{}** has had **${}** taken off their balance".format(user, amount[1:len(amount)]))
         else:
             userdata.update({"balance": int(amount)}).run(durability="soft")
             await ctx.send("**{}** has had their balance set to **${}**".format(user, amount))
+
+    @commands.command(hidden=True)
+    @checks.is_main_owner()
+    async def itemset(self, ctx, user: str, *, item: str):
+        if not user:
+            user = ctx.author
+        else:
+            user = await arg.get_member(ctx, user)
+            if not user:
+                return await ctx.send("Invalid User :no_entry:")
+        all_items = shop["items"] + mine_all["items"] + shop["miners"] + shop["boosters"] + wood["wood"] + factories_all["factory"] + shop["crates"] + shop["picitems"] + shop["roditems"] + shop["axes"]
+        item, amount = self.convert(item)
+        actual_item = self.get_item(all_items, item[1:])
+        userdata = r.table("bank").get(str(user.id))
+        if item[:1] == "+":
+            items = self.add_mats(userdata["items"].run(), [(actual_item["name"], amount)])
+            userdata.update({"items": items}).run(durability="soft")
+            await ctx.send("**{}** has been given `{} {}`".format(user, amount, actual_item["name"]))
+        elif item[:1] == "-":
+            items = self.remove_mats(userdata["items"].run(), [(actual_item["name"], amount)])
+            userdata.update({"items": items}).run(durability="soft")
+            await ctx.send("**{}** has had `{} {}` taken off them".format(user, amount, actual_item["name"]))
         
     @commands.command()
     async def bankstats(self, ctx):
@@ -2821,11 +2922,12 @@ class economy:
         
         all_items = shop["picitems"] + shop["items"] + mine["items"] + shop["roditems"] + shop["miners"] + shop["boosters"] + shop["crates"] + wood["wood"]
         bank_data = r.table("bank").run(durability="soft")
-        users = {user.id: user for user in self.bot.get_all_members()}
 
         for user_data in bank_data:
             try:
-                user = users[int(user_data["id"])]
+                user = self.bot.get_user(int(user_data["id"]))
+                if not user:
+                    continue
                 worth = 0
 
                 items = [item for item in all_items if item["name"] in map(lambda x: x["name"], user_data["items"])]
@@ -2921,7 +3023,7 @@ class economy:
                 break            
         for x in sortedstreak:
             i = i + 1
-            user = discord.utils.get(self.bot.get_all_members(), id=int(x["id"]))
+            user = self.bot.get_user(int(x["id"]))
             if not user:
                 user = "Unknown User"
             msg+= "{}. `{}` - {} day streak\n".format(i, user, x["streak"])
@@ -2982,17 +3084,17 @@ class economy:
         if not authormarriage.run() or not authormarriage["marriedto"].run():
             return await ctx.send("You are not married to that user :no_entry:")
         if not user:
-            users = {x.id: x for x in self.bot.get_all_members()}
-            event = await paged.page(ctx, authormarriage["marriedto"].run(), selectable=True, function=lambda x: users[int(x)] if int(x) in users else x)
+            event = await paged.page(ctx, authormarriage["marriedto"].run(), selectable=True, function=lambda x: self.bot.get_user(int(x)) if self.bot.get_user(int(x)) else x)
             if event:
-                user = await arg.get_member(ctx, event)
-                usermarriage = r.table("marriage").get(event)
+                user_id = event["object"]
+                user = await arg.get_member(ctx, user_id)
+                usermarriage = r.table("marriage").get(user_id)
                 await ctx.send("Feels bad **{}**, Argument?".format(user.name))
                 if author == user:
-                    authormarriage.update({"marriedto": r.row["marriedto"].difference([event])}).run(durability="soft")
+                    authormarriage.update({"marriedto": r.row["marriedto"].difference([user_id])}).run(durability="soft")
                 else:
                     try:
-                        authormarriage.update({"marriedto": r.row["marriedto"].difference([event])}).run(durability="soft")
+                        authormarriage.update({"marriedto": r.row["marriedto"].difference([user_id])}).run(durability="soft")
                     except:
                         pass
                     try:
@@ -3030,8 +3132,8 @@ class economy:
         list = []
         if usermarriage:
             for x in usermarriage["marriedto"]:
-                user2 = await self.bot.get_user_info(x)
-                list.append(str(user2) + " ({})".format(x))
+                user2 = self.bot.get_user(int(x))
+                list.append((str(user2) + " " if user2 else "") + "({})".format(x))
         else:
             return await ctx.send("That user is not married to anyone :no_entry:")
         await ctx.send(embed=discord.Embed(description="\n".join(list) if list != [] else "No one :(").set_author(name=str(user), icon_url=user.avatar_url))
@@ -3302,6 +3404,11 @@ class economy:
             updated = current
             if updated["amount"] > 0:
                 items.append(updated)
+        return items
+
+    def replace_item(self, items, item, new_item):
+        items.remove(item)
+        items.append(new_item)
         return items
 
     def update_item(self, items, item_name, additional: dict):

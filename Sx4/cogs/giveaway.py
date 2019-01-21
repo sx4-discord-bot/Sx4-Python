@@ -120,12 +120,16 @@ class giveaway:
         def check_winner(m):
             return m.channel == ctx.channel and m.author == ctx.author and m.content.isdigit()
         def check_time(m):
-            if m.content.lower() == "cancel" and m.channel == ctx.channel and m.author == ctx.author:
-                return True
             if m.channel == ctx.channel and m.author == ctx.author:
-                seconds = ctime.convert(m.content)
-                if seconds >= 120 and seconds <= 31556926:
+                if m.content.lower() == "cancel":
                     return True
+                else:
+                    try:
+                        seconds = ctime.convert(m.content.lower())
+                    except ValueError:
+                        return False
+                    if seconds >= 120 and seconds <= 31556926:
+                        return True
         def check_channel(m):
             if m.channel == ctx.channel and m.author == ctx.author:
                 if m.content.lower() == "cancel":
@@ -184,7 +188,7 @@ class giveaway:
             return
         serverdata.update({"giveaway#": r.row["giveaway#"] + 1}).run(durability="soft")
         id = serverdata["giveaway#"].run(durability="soft")
-        giveaway_seconds = ctime.convert(time2.content)
+        giveaway_seconds = ctime.convert(time2.content.lower())
         starttime = datetime.utcnow().timestamp()
         endtime = datetime.utcnow().timestamp() + giveaway_seconds
         s=discord.Embed(title=title.content, description="Enter by reacting with :tada:\n\nThis giveaway is for **{}**\nDuration: **{}**\nWinners: **{}**".format(item.content, self.giveaway_time(starttime, endtime), int(winners.content)), timestamp=datetime.fromtimestamp(datetime.utcnow().timestamp() + giveaway_seconds))

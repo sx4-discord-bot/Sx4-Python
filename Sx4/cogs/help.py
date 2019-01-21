@@ -57,7 +57,7 @@ class help:
                     cogcommandsnum = len("\n".join(["`{}` - {}".format(x, self.bot.cogs[commandname.lower()].bot.all_commands[x].help) for x in self.bot.cogs[commandname.lower()].bot.all_commands if self.bot.all_commands[x].module[5:].lower() == commandname.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases]))
                     pages = math.ceil(cogcommandsnum / 2000)
                     commandnumber = len([x for x in self.bot.cogs[commandname.lower()].bot.all_commands if self.bot.all_commands[x].module[5:].lower() == commandname.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases])
-                    cogcommands = "\n".join(["`{}` - {}".format(x, self.bot.cogs[commandname.lower()].bot.all_commands[x].help) for x in self.bot.cogs[commandname.lower()].bot.all_commands if self.bot.all_commands[x].module[5:].lower() == commandname.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases])
+                    cogcommands = "\n".join(sorted(["`{}` - {}".format(x, self.bot.cogs[commandname.lower()].bot.all_commands[x].help) for x in self.bot.cogs[commandname.lower()].bot.all_commands if self.bot.all_commands[x].module[5:].lower() == commandname.lower() and self.bot.all_commands[x].hidden == False and x not in self.bot.all_commands[x].aliases], key=lambda x: x))
                     n = 0
                     m = 2000
                     for x in range(pages):

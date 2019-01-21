@@ -207,8 +207,8 @@ class antiad:
 
     async def on_member_join(self, member):
         server = member.guild
-        if reinvite.match(member.name):
-            if r.table("antiad").get(str(server.id))["baninvites"].run() == True:
+        if r.table("antiad").get(str(server.id))["baninvites"].run() == True:
+            if reinvite.match(member.name):
                 try:
                     invite = await self.bot.get_invite(reinvite.match(member.name).group(1))
                     if invite.guild == server:

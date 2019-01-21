@@ -1,4 +1,3 @@
-
 import re
 import discord
 import logging
@@ -21,6 +20,7 @@ class music:
 
     def __init__(self, bot):
         self.bot = bot
+        self.votes = []
         self.timeout = bot.loop.create_task(self.check_timeout())
         if not hasattr(bot, 'lavalink'):
             lavalink.Client(ws_port=2086, rest_port=2333, bot=bot, password='youshallnotpass', shard_count=self.bot.shard_count, loop=self.bot.loop, log_level=logging.DEBUG)
@@ -28,16 +28,19 @@ class music:
 
     async def _events(self, event):
         if isinstance(event, lavalink.Events.TrackStartEvent):
-            event.player.store("voted", [])
+            if event.player.guild_id not in map(lambda x: x["id"], self.votes):
+                self.votes.append({"id": event.player.guild_id, "votes": []})
+            else:
+                list(filter(lambda x: x["id"] == event.player.guild_id, self.votes))[0]["votes"] = []
             channel = event.player.fetch('channel')
-            author = discord.utils.get(self.bot.get_all_members(), id=event.track.requester)
+            author = self.bot.get_user(event.track.requester)
             if channel:
                 channel = self.bot.get_channel(channel)
                 if channel:
                     s=discord.Embed()
                     s.set_author(name="Now Playing", url=event.track.uri)
                     s.add_field(name="Song", value="[{}]({})".format(event.track.title, event.track.uri), inline=False)
-                    s.add_field(name="Duration", value=self.format_time(event.track.duration))
+                    s.add_field(name="Duration", value=self.format_time(event.track.duration) if not event.track.stream else "Stream (Unknown)")
                     if author:
                         s.set_footer(text="Requested by {}".format(author), icon_url=author.avatar_url)
                     s.set_thumbnail(url=event.track.thumbnail)
@@ -48,11 +51,6 @@ class music:
                 channel = self.bot.get_channel(channel)
                 if channel:
                     await channel.send(embed=discord.Embed(title="Queue Ended", description="If you enjoyed it would be greatly appreciated if you upvoted the bot, you can do so here: **https://discordbots.org/bot/440996323156819968/vote**\n\nIf you enjoy using Sx4 and want to go that extra mile and help Sx4 run you can donate here: **https://www.patreon.com/Sx4**"))
-        elif isinstance(event, lavalink.Events.TrackEndEvent):
-            try:
-                event.player.delete("votes")
-            except:
-                pass
         
     def __unload(self):
         self.timeout.cancel()
@@ -70,13 +68,15 @@ class music:
             return await ctx.send("I'm not in a voice channel :no_entry:")
         if not player.is_playing:
             return await ctx.send("Nothing is currently playing :no_entry:")
+        if not player.current.can_seek:
+            return await ctx.send("You cannot seek in this song, this may be because it's a stream :no_entry:")
         if player.fetch('sessionowner') == ctx.author.id or player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members):
             match = position_re.match(position)
             if match:
-                hours = int(match.group(1)) if match.group(1) else None
+                hours = int(match.group(1)) if match.group(1) else 0
                 minutes = int(match.group(2))
                 seconds = int(match.group(3))
-                time = (((hours*3600) if hours else 0) + (minutes*60) + seconds) * 1000
+                time = ((hours * 3600) + (minutes * 60) + seconds) * 1000
             elif position.isdigit():
                 time = player.position + int(position) * 1000
             elif position.startswith("-"):
@@ -141,7 +141,7 @@ class music:
             for track in tracks:
                 player.add(requester=ctx.author.id, track=track)
             s.description = "Enqueued {} with **{}** tracks <:done:403285928233402378>".format(results['playlistInfo']['name'], len(tracks))
-            await self.bot.get_channel(player.fetch('channel')).send(embed=s)
+            await ctx.send(embed=s)
         else:
             track = results["tracks"][0]
             player.add(requester=ctx.author.id, track=track)
@@ -156,13 +156,13 @@ class music:
             s.set_author(name="Added to Queue", icon_url=ctx.author.avatar_url)
             s.set_thumbnail(url="https://img.youtube.com/vi/{}/default.jpg".format(track["info"]["identifier"]))
             s.add_field(name="Song", value="[{}]({})".format(track["info"]["title"], track["info"]["uri"]), inline=False)
-            s.add_field(name="Duration", value=self.format_time(track["info"]["length"]), inline=True)
+            s.add_field(name="Duration", value=self.format_time(track["info"]["length"]) if not track["info"]["isStream"] else "Stream (Unknown)", inline=True)
             s.add_field(name="Position in Queue", value=index)
             if timetill != 0:
                 s.add_field(name="Estimated time till playing", value=self.format_time(timetill-track["info"]["length"]))
             else:
                 s.add_field(name="Estimated time till playing", value="Next")
-            await self.bot.get_channel(player.fetch('channel')).send(embed=s)
+            await ctx.send(embed=s)
         if not player.is_playing:
             await player.play()
 
@@ -202,7 +202,7 @@ class music:
             if queue_length != 0:
                 player.queue[:queue_length], player.queue[queue_length:] = player.queue[queue_length:], player.queue[:queue_length]
             s.description = "Enqueued {} with **{}** tracks <:done:403285928233402378>".format(results['playlistInfo']['name'], len(tracks))
-            await self.bot.get_channel(player.fetch('channel')).send(embed=s)
+            await ctx.send(embed=s)
         else:
             queue_length = len(player.queue)
             track = results["tracks"][0]
@@ -212,16 +212,17 @@ class music:
             s.set_author(name="Added to Queue", icon_url=ctx.author.avatar_url)
             s.set_thumbnail(url="https://img.youtube.com/vi/{}/default.jpg".format(track["info"]["identifier"]))
             s.add_field(name="Song", value="[{}]({})".format(track["info"]["title"], track["info"]["uri"]), inline=False)
-            s.add_field(name="Duration", value=self.format_time(track["info"]["length"]), inline=True)
+            s.add_field(name="Duration", value=self.format_time(track["info"]["length"]) if not track["info"]["isStream"] else "Stream (Unknown)", inline=True)
             s.add_field(name="Position in Queue", value="Next")
             s.add_field(name="Estimated time till playing", value="Next")
-            await self.bot.get_channel(player.fetch('channel')).send(embed=s)
+            await ctx.send(embed=s)
         if not player.is_playing:
             await player.play()
         await player.skip()
 
     @commands.command()
     async def movesong(self, ctx, track_index: int, new_index: int):
+        """Moves a song index to another index in the queue"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
         if player.fetch("sessionowner") in map(lambda c: c.id, player.connected_channel.members) and player.fetch("sessionowner") != ctx.author.id:
             return await ctx.send("You have to be the session owner to use this command :no_entry:")
@@ -285,7 +286,7 @@ class music:
                     await response.delete()
                 except:
                     pass
-                await self.bot.get_channel(player.fetch('channel')).send(embed=s)
+                await ctx.send(embed=s)
                 if not player.is_playing:
                     await player.play()
         except asyncio.TimeoutError:
@@ -342,7 +343,7 @@ class music:
                 s.set_author(name="Added to Queue", icon_url=ctx.author.avatar_url)
                 s.set_thumbnail(url="https://img.youtube.com/vi/{}/default.jpg".format(track["info"]["identifier"]))
                 s.add_field(name="Song", value="[{}]({})".format(track["info"]["title"], track["info"]["uri"]), inline=False)
-                s.add_field(name="Duration", value=self.format_time(track["info"]["length"]), inline=True)
+                s.add_field(name="Duration", value=self.format_time(track["info"]["length"]) if not track["info"]["isStream"] else "Stream (Unknown)", inline=True)
                 s.add_field(name="Position in Queue", value=index)
                 if timetill != 0:
                     s.add_field(name="Estimated time till playing", value=self.format_time(timetill-track["info"]["length"]))
@@ -350,7 +351,7 @@ class music:
                     s.add_field(name="Estimated time till playing", value="Next")
                 await response.delete()
                 await message.delete()
-                await self.bot.get_channel(player.fetch('channel')).send(embed=s)
+                await ctx.send(embed=s)
                 if not player.is_playing:
                     await player.play()
         except asyncio.TimeoutError:
@@ -367,7 +368,6 @@ class music:
         if player.fetch("sessionowner") == ctx.author.id or player.fetch("sessionowner") not in map(lambda x: x.id, player.connected_channel.members):
             player.queue.clear()
             await player.disconnect()
-            player.delete("votes")
             await ctx.send("Disconnected <:done:403285928233402378>")
         else:
             await ctx.send("Only the session owner can disconnect the bot :no_entry:")
@@ -452,6 +452,10 @@ class music:
             return await ctx.send("I'm not connected to a voice channel :no_entry:")
         if not player.is_playing:
             return await ctx.send("Nothing is currently playing :no_entry:")
+        try:
+            guild_data = list(filter(lambda x: x["id"] == str(ctx.guild.id), self.votes))[0]
+        except IndexError:
+            guild_data = None
         if player.current.requester not in map(lambda c: c.id, player.connected_channel.members) and player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members):
             await ctx.send("Skipped.")
             await player.skip()
@@ -460,8 +464,33 @@ class music:
                 await ctx.send("Skipped.")
                 await player.skip()
             else:
-                await ctx.send("Only the session owner can skip songs :no_entry:")
+                if not guild_data:
+                    return await ctx.send("Only the session owner can skip songs :no_entry:")
+                if ctx.author.id in guild_data["votes"]:
+                    return await ctx.send("You have already voted to skip :no_entry:")
+                guild_data["votes"].append(ctx.author.id)
+                if len(guild_data["votes"]) >= math.ceil(len(list(filter(lambda x: not x.bot, player.connected_channel.members)))*0.51):
+                    await ctx.send("Skipped.")
+                    await player.skip() 
+                else:
+                    await ctx.send("Skip? ({}/{} votes)".format(len(guild_data["votes"]), math.ceil(len(list(filter(lambda x: not x.bot, player.connected_channel.members)))*0.51)))
 
+    @commands.command()
+    async def volume(self, ctx, volume: int=None):
+        """Set the volume of the bot"""
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+        if not volume:
+            return await ctx.send("Volume is currently set to **{}%**".format(player.volume))
+        if not player.is_connected:
+            return await ctx.send("I'm not connected to a voice channel :no_entry:")
+        if player.fetch("sessionowner") not in map(lambda c: c.id, player.connected_channel.members):
+            await player.set_volume(volume)
+            await ctx.send("Set the volume to **{}%**".format(player.volume))
+        elif player.fetch("sessionowner") == ctx.author.id:
+            await player.set_volume(volume)
+            await ctx.send("Set the volume to **{}%**".format(player.volume))
+        else:
+            return await ctx.send("Only the session owner can changed the volume :no_entry:")
 
     @commands.command()
     async def remove(self, ctx, index: int):
@@ -486,7 +515,7 @@ class music:
         else:
             return await ctx.send("You are not the session owner or the user who requested this song :no_entry:")
 
-    @commands.command()
+    @commands.command(aliases=["loop"])
     async def repeat(self, ctx):
         """Repeat the queue"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -572,6 +601,16 @@ class music:
             return '%02d:%02d' % (m, s)
         else:
             return '%02d:%02d:%02d' % (h, m, s)       
+
+    @join.after_invoke
+    @play.after_invoke
+    @playlist.after_invoke
+    @playnow.after_invoke
+    @search.after_invoke
+    async def deafen(self, ctx):
+        if ctx.me.voice:
+            if not ctx.me.voice.deaf:
+                await ctx.me.edit(deafen=True)
 
     async def check_timeout(self):
         while not self.bot.is_closed():

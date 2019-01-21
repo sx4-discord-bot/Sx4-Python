@@ -23,11 +23,11 @@ async def prefix_function(bot, message):
     user = r.table("prefix").get(str(message.author.id)).run()
     server = r.table("prefix").get(str(message.guild.id)).run()
     if user and user["prefixes"] != []:
-        return [x.encode().decode() for x in user["prefixes"]] + ['<@440996323156819968> ']
+        return [x.encode().decode() for x in user["prefixes"]] + ['<@440996323156819968> ', '<@!440996323156819968> ']
     elif server and server["prefixes"] != []:
-        return [x.encode().decode() for x in server["prefixes"]] + ['<@440996323156819968> ']
+        return [x.encode().decode() for x in server["prefixes"]] + ['<@440996323156819968> ', '<@!440996323156819968> ']
     else:
-        return ['s?', 'S?', 'sx4 ', '<@440996323156819968> ']
+        return ['s?', 'S?', 'sx4 ', '<@440996323156819968> ', '<@!440996323156819968> ']
    
 bot = commands.AutoShardedBot(command_prefix=prefix_function, case_insensitive=False)
 logging.basicConfig(level=logging.INFO)
@@ -52,10 +52,19 @@ async def on_ready():
         except Exception as e:
             print(e)
     setattr(bot, "uptime", datetime.datetime.utcnow().timestamp())
+
+@bot.event
+async def on_shard_ready(shard_id):
+    guild = bot.get_guild(330399610273136641)
+    webhook = discord.utils.get(await guild.webhooks(), id=527878836055179275)
+    s=discord.Embed(colour=0x5fe468, timestamp=datetime.datetime.utcnow())
+    s.set_author(name=str(bot.user), icon_url=bot.user.avatar_url)
+    s.add_field(name="Shard", value=shard_id)
+    s.set_footer(text="Connected")
+    await webhook.send(embed=s)
 		
 @bot.event 
 async def on_message(message):
-    await bot.wait_until_ready()
     ctx = await bot.get_context(message)
     serverdata = r.table("blacklist").get(str(message.guild.id))
     if not ctx.command:
@@ -117,7 +126,6 @@ async def on_message(message):
 
 @bot.event 
 async def on_message_edit(before, after):
-    await bot.wait_until_ready()
     ctx = await bot.get_context(after)
     serverdata = r.table("blacklist").get(str(after.guild.id))
     if before.content == after.content:
@@ -299,8 +307,8 @@ async def on_command_error(ctx, error, *args, **kwargs):
     else:
         s=discord.Embed(title="Error", description="You have came across an error! [Support Server](https://discord.gg/PqJNcfB)\n{}".format(str(error)).replace("Command raised an exception: ", ""))
         await channel.send(embed=s)
-        await bot.get_channel(439745234285625355).send("```Server: {}\nTime: {}\nCommand: {}\nAuthor: {}\n\n{}```".format(ctx.message.guild, datetime.datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S"), ctx.command, ctx.message.author, "".join(traceback.format_exception(type(error), error, error.__traceback__, 1000))))
         print("".join(traceback.format_exception(type(error), error, error.__traceback__)))
+        await bot.get_channel(439745234285625355).send("```py\nServer: {}\nTime: {}\nCommand: {}\nAuthor: {}\n\n{}```".format(ctx.message.guild, datetime.datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S"), ctx.command, ctx.message.author, "".join(traceback.format_exception(type(error), error, error.__traceback__, 1000))))
         
 		
 class Main:
@@ -374,5 +382,5 @@ bot.on_error = on_error
 		
 bot.add_cog(Main(bot))
 
-bot.run(Token.bot())
+bot.run(Token.bot(), reconnect=True)
 

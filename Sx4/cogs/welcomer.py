@@ -64,25 +64,18 @@ class welcomer:
                 try: 
                     banner = ctx.message.attachments[0].url.replace(".gif", ".png").replace(".webp", ".png")
                     data.update({"banner": banner}).run(durability="soft")
-                    await ctx.send("Your banner for image welcomer has been set.")
-                    return
+                    return await ctx.send("Your banner for image welcomer has been set.")
                 except:
                     pass
             data.update({"banner": None}).run(durability="soft")
             await ctx.send("Your banner for image welcomer has been reset.")
             return
-        banner = banner.replace(".gif", ".png").replace(".webp", ".png")
-        if "https://" in banner or "http://" in banner:
-            if ".png" in banner or ".jpg" in banner:
-                if "cdn.discordapp.com" in banner or "i.imgur.com" in banner:
-                    data.update({"banner": banner}).run(durability="soft")
-                    await ctx.send("Your banner for image welcomer has been set.")
-                else:
-                    await ctx.send("Invalid image url, has to be an imgur or discord image :no_entry:")
-            else:
-                await ctx.send("Invalid image url, has to be a jpeg or png image :no_entry:")
-        else:
-            await ctx.send("Invalid image url, needs to be an actual link :no_entry:")
+        try:
+            requests.get(url=banner, stream=True)
+        except:
+            await ctx.send("Invalid image url :no_entry:")
+        data.update({"banner": banner}).run(durability="soft")
+        await ctx.send("Your banner for image welcomer has been set.")
 
         
     @commands.group()
@@ -282,7 +275,6 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         
     async def on_member_join(self, member): 
         server = member.guild
-        author = member
         data = r.table("welcomer").get(str(server.id)).run(durability="soft")
         message = data["message"]
         channel = data["channel"]
@@ -298,9 +290,9 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
         if data["toggle"] == True and data["imgwelcomertog"] == True:
             if data["dm"] == True:
-                await member.send(content=message, file=self.image_welcomer(author, server))
+                await member.send(content=message, file=self.image_welcomer(member, server))
             elif data["dm"] == False:
-                await self.webhook_send(channel=channel, content=message, file=self.image_welcomer(author, server))
+                await self.webhook_send(channel=channel, content=message, file=self.image_welcomer(member, server))
         elif data["toggle"] == True and data["imgwelcomertog"] == False:
             if data["dm"] == True:
                 await member.send(content=message)
@@ -308,9 +300,9 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
                 await self.webhook_send(channel=channel, content=message)
         elif data["toggle"] == False and data["imgwelcomertog"] == True:
             if data["dm"] == True:
-                await member.send(file=self.image_welcomer(author, server))
+                await member.send(file=self.image_welcomer(member, server))
             elif data["dm"] == False:
-                await self.webhook_send(channel=channel, file=self.image_welcomer(author, server))    
+                await self.webhook_send(channel=channel, file=self.image_welcomer(member, server))    
         else:
             pass
             
@@ -335,8 +327,6 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
             message = message.replace("{server.members}", "{:,}".format(len(server.members)))
             message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
             await self.webhook_send(channel=channel, content=message)
-        else:
-            pass
 
     def image_welcomer(self, author, server):
         data = r.table("welcomer").get(str(server.id)).run(durability="soft")
@@ -406,7 +396,6 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         temp.seek(0)
         return discord.File(temp, "result.png")
 
-    @dev.log
     async def webhook_send(self, channel, content=None, file=None):
         if self.avatar is None:
             try:

@@ -56,9 +56,11 @@ class autorole:
             users = list(set(filter(lambda m: not m.bot, server.members)))
         elif subarg.lower() == "bots":
             users = list(set(filter(lambda m: m.bot, server.members)))
+        else:
+            return await ctx.send("Invalid filter argument :no_entry:")
         if not data["role"].run(durability="soft"):
             return await ctx.send("You need to set the autorole before you can use this :no_entry:")
-        role = discord.utils.get(server.roles, id=int(data["role"].run(durability="soft")))
+        role = ctx.guild.get_role(int(data["role"].run(durability="soft")))
         if not role:
             return await ctx.send("The auto role which is set was deleted or no longer exists :no_entry:")
         members = len([x for x in users if role not in x.roles])
@@ -113,7 +115,7 @@ class autorole:
     async def on_member_join(self, member):
         server = member.guild
         data = r.table("autorole").get(str(server.id))
-        role = discord.utils.get(server.roles, id=int(data["role"].run(durability="soft")))
+        role = server.get_role(int(data["role"].run(durability="soft")))
         if data["toggle"].run(durability="soft") == True: 
             await member.add_roles(role, reason="Autorole")
 		

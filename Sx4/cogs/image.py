@@ -37,7 +37,7 @@ class image:
         self.bot = bot
 
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def hot(self, ctx, user_or_image: str=None):
         """The specified user/image will be called hot by will smith"""
         if ctx.message.attachments and not user_or_image:
@@ -61,7 +61,7 @@ class image:
         await send_file(ctx, main)
 
     @commands.command(name="discord")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def _discord(self, ctx, user: str, *, discord_text: str):
         if len(discord_text) > 2000:
             return await ctx.send("You can not have more than 2000 characters :no_entry:")
@@ -121,7 +121,7 @@ class image:
         await send_file(ctx, background)
 
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def flag(self, ctx, flag_initial: str, *, user: discord.Member=None):
         if not user:
             user = ctx.author
@@ -137,7 +137,7 @@ class image:
         await send_file(ctx, avatar)
 
     @commands.command()
-    @commands.cooldown(1, 15, commands.BucketType.user)
+    @commands.cooldown(1, 15, commands.BucketType.guild)
     async def christmas(self, ctx, user_or_image: str=None, enhance: int=None):
         """Turn an image into a christmas themed one"""
         if not user_or_image:
@@ -239,7 +239,7 @@ class image:
 
     @commands.command(hidden=True)
     @checks.is_owner()
-    @commands.cooldown(1, 15, commands.BucketType.user)
+    @commands.cooldown(1, 15, commands.BucketType.guild)
     async def halloween(self, ctx, user_or_image: str=None, enhance: int=None):
         """Turn an image into a halloween themed one"""
         if not user_or_image:
@@ -332,27 +332,9 @@ class image:
                 os.remove("avatar.gif")
             except:
                 pass
-
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def rip(self, ctx, *, user: discord.Member=None):
-        if not user:
-            user = ctx.author
-        avatar = getImage(user.avatar_url)
-        image = Image.open("rip.jpg").convert("RGBA")
-        avatar = avatar.resize((260, 260))
-        draw = ImageDraw.Draw(image)
-        font = ImageFont.truetype("arial.ttf", 30)
-        left = 355
-        for x in range(len(user.name)):
-            left -= 8
-        draw.text((left, 410), "Here lies {}".format(user.name), (0, 0, 0), font=font)
-        image.paste(avatar, (285, 145), avatar)
-        image.save("image.png")
-        await send_file(ctx, image)
         
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def trash(self, ctx, user_or_imagelink: str=None):
         """Make someone look like trash"""
         channel = ctx.message.channel
@@ -391,7 +373,7 @@ class image:
             await ctx.send("Not a valid user or image url :no_entry:")
 
     @commands.command(aliases=["www"]) 
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def whowouldwin(self, ctx, user_or_imagelink: str, user_or_imagelink2: str=None):
         """Who would win out of 2 images"""
         channel = ctx.message.channel
@@ -455,7 +437,7 @@ class image:
             await ctx.send("Not a valid user or image url :no_entry:")
             
     @commands.command() 
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def fear(self, ctx, user_or_imagelink: str=None):
         """Make someone look feared of"""
         channel = ctx.message.channel
@@ -494,7 +476,7 @@ class image:
             await ctx.send("Not a valid user or image url :no_entry:")
         
     @commands.command() 
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def emboss(self, ctx, user_or_imagelink: str=None):
         """Make a profile picture emboss"""
         channel = ctx.message.channel
@@ -532,12 +514,17 @@ class image:
             await ctx.send("Not a valid user or image url :no_entry:")
             
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def ship(self, ctx, user1: discord.Member, user2: discord.Member=None):
+    @commands.cooldown(1, 5, commands.BucketType.guild)
+    async def ship(self, ctx, user1: str, *, user2: str=None):
         """Ship 2 users"""
         if not user2:
-            user2 = user1
+            user2 = arg.get_server_member(ctx, user1)
             user1 = ctx.message.author
+        else:
+            user1 = arg.get_server_member(ctx, user1)
+            user2 = arg.get_server_member(ctx, user2)
+        if not user1 or not user2:
+            return await ctx.send("Invalid user :no_entry:")
         shipname = str(user1.name[:math.ceil(len(user1.name)/2)]) + str(user2.name[math.ceil(len(user2.name)/2):])
         state = random.getstate()
         random.seed(user2.id + user1.id)
@@ -560,7 +547,7 @@ class image:
         await ctx.send(content="Ship Name: **{}**\nLove Percentage: **{}%**".format(shipname, number), file=discord.File(temp, "result.png"))
 
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def vr(self, ctx, user_or_imagelink: str=None):
         """Make someone feel emotional in vr"""	
         channel = ctx.message.channel
@@ -603,7 +590,7 @@ class image:
 					
             
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def shit(self, ctx, user_or_imagelink: str=None):
         """Choose who you want to be shit"""
         channel = ctx.message.channel
@@ -720,7 +707,7 @@ class image:
             await ctx.send("Not a valid user or image url :no_entry:")
             
     @commands.command(aliases=["tweet"])
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def trumptweet(self, ctx, *, text: str):
         """Make trump say something on twitter"""
         channel = ctx.message.channel
@@ -754,7 +741,7 @@ class image:
         await send_file(ctx, img)
 
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def scroll(self, ctx, *, text: str):
         """The terrible truth"""
         channel = ctx.message.channel
@@ -793,7 +780,7 @@ class image:
         await send_file(ctx, img)
             
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def colour(self, ctx, *, colour: str=None):
         """View a colours hex code and RGB and a image with the colour, if a colour is not specified it will get a random one"""
         if not colour:
@@ -839,7 +826,7 @@ class image:
             pass
          
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def drift(self, ctx, user: discord.Member, textleft: str, textright: str=None):
         """Drift away from something, any words over 10 characters will be ignored"""
         channel = ctx.message.channel
@@ -959,7 +946,7 @@ def get_file_gif(image, frames):
     return discord.File(temp, "result.gif")
 
 def getImage(url):
-    r = requests.get(url, stream=True)
+    r = requests.get(url, stream=True, timeout=3)
     img = Image.open(r.raw).convert('RGBA')
     return img
         
