@@ -123,12 +123,12 @@ class selfroles:
                 else:
                     emote = emote_db
             s = message.embeds[0]
-            content = "{}: {}\n\n".format(str(emote), role.mention)
+            content = "{}: {}\n\n".format(str(emote), "<@&{}>".format(role.id))
             try:
                 before = s.description
                 s.description = s.description.replace(content, "")
                 if before == s.description:
-                    content = "\n\n{}: {}".format(str(emote), role.mention)
+                    content = "\n\n{}: {}".format(str(emote), "<@&{}>".format(role.id))
                     s.description = s.description.replace(content, "")
             except:
                 pass
@@ -144,6 +144,48 @@ class selfroles:
             serverdata.update({"messages": message_new}).run(durability="soft")
         else:
             return await ctx.send("Invalid Message :no_entry:")
+
+    @reactionrole.command()
+    @checks.has_permissions("manage_roles")
+    async def forceremove(self, ctx, message_id: int):
+        """Removes all deleted roles from the reactionrole menu"""
+        serverdata = r.table("reactionrole").get(str(ctx.guild.id))
+        if str(message_id) in serverdata["messages"].map(lambda x: x["id"]).run():
+            message_db = serverdata["messages"].filter(lambda x: x["id"] == str(message_id))[0]
+            message = await self.bot.get_channel(int(message_db["channel"].run())).get_message(message_id)
+            s = message.embeds[0]
+            dataToRemove = {} 
+            for x in message_db["roles"].map(lambda x: x["id"]).run():
+                role = ctx.guild.get_role(int(x))
+                if role not in ctx.guild.roles:
+                    role_db = message_db["roles"].filter(lambda y: y["id"] == x)[0]
+                    emote_db = role_db["emote"].run()
+                    if emote_db.isdigit():
+                        emote = self.bot.get_emoji(int(emote_db))
+                    else:
+                        emote = emote_db
+                    await message.remove_reaction(emote, ctx.me)
+                    dataToRemove.update({"id": x, "emote": emote_db})
+                    content = "{}: {}\n\n".format(str(emote), "<@&{}>".format(x))
+                    try:
+                        before = s.description
+                        s.description = s.description.replace(content, "")
+                        if before == s.description:
+                            content = "\n\n{}: {}".format(str(emote), "<@&{}>".format(x))
+                            s.description = s.description.replace(content, "")
+                    except:
+                        pass
+            await message.edit(embed=s)
+            new_message = message_db.run()
+            new_message["roles"].remove(dataToRemove)
+            message_new = serverdata["messages"].run()
+            message_new.remove(message_db.run())
+            message_new.append(new_message)
+            await ctx.send("All roles which were deleted on the reactionrole menu have been removed from it.")
+            serverdata.update({"messages": message_new}).run(durability="soft")
+        else:
+            return await ctx.send("Invalid Message :no_entry:")
+
 
     @reactionrole.command()
     @checks.has_permissions("manage_roles")
@@ -400,6 +442,13 @@ class selfroles:
         data = r.table("selfroles").get(str(server.id))
         if str(role.id) in data["roles"].run(durability="soft"):
             data.update({"roles": r.row["roles"].difference([str(role.id)])}).run(durability="soft", noreply=True)
+
+    async def on_raw_message_delete(self, payload):
+        server = self.bot.get_guild(payload.guild_id)
+        serverdata = r.table("reactionrole").get(str(server.id))
+        if str(payload.message_id) in serverdata["messages"].map(lambda x: x["id"]).run():
+            serverdata.update({"messages": r.row["messages"].filter(lambda x: x["id"] != str(payload.message_id))}).run(durability="soft", noreply=True)
+            
 
     async def on_raw_reaction_add(self, payload):
         server = self.bot.get_guild(payload.guild_id)

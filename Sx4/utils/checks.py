@@ -12,7 +12,7 @@ def is_owner_check(ctx):
 
 def is_main_owner():
     def predicate(ctx):
-        if ctx.author.id == 402557516728369153:
+        if ctx.author.id in [402557516728369153, 190551803669118976]:
             return True
     return commands.check(predicate)
 

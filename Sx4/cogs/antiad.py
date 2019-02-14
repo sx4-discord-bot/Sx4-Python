@@ -228,6 +228,8 @@ class antiad:
         author = message.author
         channel = message.channel
         data = r.table("antiad").get(str(serverid))
+        if not data.run():
+            return
         if author == self.bot.user:
             return
         if data["modtoggle"].run(durability="soft") == False:
@@ -323,6 +325,8 @@ class antiad:
         author = before.author
         channel = before.channel
         data = r.table("antiad").get(str(serverid))
+        if not data.run():
+            return
         if author == self.bot.user:
             return
         if data["modtoggle"].run(durability="soft") == False:
@@ -334,11 +338,8 @@ class antiad:
         if data["bottoggle"].run(durability="soft") == False:
             if author.bot:
                 return
-        try:
-            if str(channel.id) in data["channels"].run(durability="soft"):
-                return
-        except:
-            pass
+        if str(channel.id) in data["channels"].run(durability="soft"):
+            return
         if data["toggle"].run(durability="soft") == True:
             if reinvite.match(after.content):
                 try:

@@ -18,11 +18,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageSeq
 from urllib.request import Request, urlopen
 import re
 import json
+import aiohttp
 import urllib.request
 from utils import data
 import requests
-from utils.PagedResult import PagedResult
-from utils.PagedResult import PagedResultData
 import random
 from random import choice
 import asyncio
@@ -37,107 +36,66 @@ class image:
         self.bot = bot
 
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def hot(self, ctx, user_or_image: str=None):
         """The specified user/image will be called hot by will smith"""
         if ctx.message.attachments and not user_or_image:
             url = ctx.message.attachments[0].url
         elif not ctx.message.attachments and not user_or_image:
-            url = ctx.author.avatar_url
+            url = ctx.author.avatar_url_as(format="png")
         else:
             user = await arg.get_member(ctx, user_or_image)
             if not user:
                 url = user_or_image
             else:
-                url = user.avatar_url
-        try:
-            avatar = getImage(url).resize((400, 300))
-        except:
-            return await ctx.send("Invalid user/image :no_entry:")
-        image = Image.open("thats-hot-meme.png").resize((419, 493))
-        main = Image.new('RGBA', (419, 493), (255, 255, 255, 0))
-        main.paste(avatar, (8, 213), avatar)
-        main.paste(image, (0, 0), image)
-        await send_file(ctx, main)
+                url = user.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/hot?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "hot.png"))
+                elif f.status == 400:
+                    await ctx.send(await f.text())
+                else:
+                    await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
     @commands.command(name="discord")
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def _discord(self, ctx, user: str, *, discord_text: str):
-        if len(discord_text) > 2000:
-            return await ctx.send("You can not have more than 2000 characters :no_entry:")
-        user = await arg.get_member(ctx, user)
+        user = arg.get_server_member(ctx, user)
         if not user:
-            return await ctx.send("Invalid User :no_entry:")
+            return await ctx.send("Invalid user :no_entry:")
         if discord_text.lower().endswith(" --white"):
             white = True
             discord_text = discord_text[:-8]
         else: 
             white = False
-        bot = getImage("https://cdn.discordapp.com/emojis/441255212582174731.png").resize((60, 60))
-        breaks = len([x for x in discord_text if x == "\n"])
-        length = 66 if user.bot else 0
-        text = ImageFont.truetype("whitney/whitney-book.otf", 34)
-        textsize = text.getsize(discord_text)
-        times = math.ceil(len(discord_text)/50)
-        height = (times * 36) + (breaks * 36)
-        n, m, final_text = 0, 50, ""
-        for x in range(times):
-            if n != 0:
-                while discord_text[n-1:n] != " " and len(discord_text) != n:
-                    if n != 0:
-                        n -= 1
-                    else:
-                        n = ((x + 1) * 50) - 50
-                        break
-            while discord_text[m-1:m] != " " and len(discord_text) != m:
-                if m != 0:
-                    m -= 1
+        url = "http://localhost:8443/api/discord?image={}&theme={}&{}&colour={}&{}&bot={}".format(user.avatar_url_as(format="png"), "dark" if not white else "white", urllib.parse.urlencode({"text": discord_text}),
+        str(user.colour)[1:], urllib.parse.urlencode({"name": user.display_name}), user.bot)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "discord.png"))
+                elif f.status == 400:
+                    await ctx.send(await f.text())
                 else:
-                    m = (x + 1) * 50
-                    break
-            final_text += discord_text[n:m] + "\n"
-            n += 50
-            m += 50
-        def circlefy(image):
-            size = (image.size[0] * 6, image.size[1] * 6)
-            mask = Image.new('L', size, 0)
-            draw = ImageDraw.Draw(mask) 
-            draw.ellipse((0, 0) + size, fill=255)
-            mask = mask.resize(image.size)
-            image.putalpha(mask)
-            return image
-        avatar = getImage(user.avatar_url).resize((100, 100))
-        background = Image.new("RGBA", (1000, 115 + height), (54, 57, 63) if not white else (255, 255, 255))
-        draw = ImageDraw.Draw(background)
-        name = ImageFont.truetype("whitney/Whitney-Medium.ttf", 40)
-        time = ImageFont.truetype("whitney/WhitneyLight.ttf", 24)
-        background.paste(circlefy(avatar), (20, 10), circlefy(avatar))
-        namesize = name.getsize(user.display_name)
-        if user.bot:
-            background.paste(bot, (160 + namesize[0] + 10, 2), bot)
-        draw.text((160, 6), user.display_name, (user.colour.r, user.colour.g, user.colour.b), font=name)
-        draw.text((170 + namesize[0] + length, (namesize[1]/2) - 2), "Today at " + datetime.datetime.utcnow().strftime("%H:%M"), (122, 125, 130), font=time)
-        draw.text((160, namesize[1] + 20), final_text, (116, 127, 141) if white else (255, 255, 255), font=text)
-        await send_file(ctx, background)
+                    await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def flag(self, ctx, flag_initial: str, *, user: discord.Member=None):
         if not user:
             user = ctx.author
-        try:
-            flag = getImage("http://www.geonames.org/flags/x/{}.gif".format(flag_initial))
-        except:
-            return await ctx.send("Invalid flag initial :no_entry:")
-        avatar = getImage(user.avatar_url)
-        avatar = avatar.resize((200, 200))
-        flag = flag.resize((200, 200))
-        flag.putalpha(100)
-        avatar.paste(flag, (0, 0), flag)
-        await send_file(ctx, avatar)
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/flag?image={}&flag={}".format(user.avatar_url_as(format="png"), flag_initial)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "flag.png"))
+                elif f.status == 400:
+                    await ctx.send(await f.text())
+                else:
+                    await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
     @commands.command()
-    @commands.cooldown(1, 15, commands.BucketType.guild)
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def christmas(self, ctx, user_or_image: str=None, enhance: int=None):
         """Turn an image into a christmas themed one"""
         if not user_or_image:
@@ -237,9 +195,8 @@ class image:
             except:
                 pass
 
-    @commands.command(hidden=True)
-    @checks.is_owner()
-    @commands.cooldown(1, 15, commands.BucketType.guild)
+    @commands.command()
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def halloween(self, ctx, user_or_image: str=None, enhance: int=None):
         """Turn an image into a halloween themed one"""
         if not user_or_image:
@@ -334,7 +291,7 @@ class image:
                 pass
         
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def trash(self, ctx, user_or_imagelink: str=None):
         """Make someone look like trash"""
         channel = ctx.message.channel
@@ -343,183 +300,109 @@ class image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = ctx.message.author.avatar_url
-        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
-            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            try:
-                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
-            except:
-                await ctx.send("Invalid user :no_entry:")
-                return
-            url = user.avatar_url
+                url = ctx.author.avatar_url_as(format="png")
         else:
-            try:
-                user = ctx.message.guild.get_member_named(user_or_imagelink)
-                url = user.avatar_url
-            except:
-                try:
-                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    url = user.avatar_url
-                except:
-                    url = user_or_imagelink
-        try:
-            img2 = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
-            img = Image.open("trash-meme.jpg")
-            img2 = img2.resize((385, 384))
-            img2 = img2.filter(ImageFilter.GaussianBlur(radius=7.0))
-            img.paste(img2, (384, 0))
-            await send_file(ctx, img)
-        except:
-            await ctx.send("Not a valid user or image url :no_entry:")
+            user = arg.get_server_member(ctx, user_or_imagelink)
+            if not user:
+                url = user_or_imagelink
+            else:
+                url = user.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/trash?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "flag.png"))
+                elif f.status == 400:
+                    await ctx.send(await f.text())
+                else:
+                    await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
     @commands.command(aliases=["www"]) 
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def whowouldwin(self, ctx, user_or_imagelink: str, user_or_imagelink2: str=None):
         """Who would win out of 2 images"""
-        channel = ctx.message.channel
-        author = ctx.message.author
-        if not user_or_imagelink:
-            url1 = ctx.message.author.avatar_url
-        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
-            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            try:
-                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
-                if not user:
-                    return await ctx.send("Invalid user :no_entry:")
-            except:
-                await ctx.send("Invalid user :no_entry:")
-                return
-            url1 = user.avatar_url
+        channel = ctx.channel
+        author = ctx.author
+        user = arg.get_server_member(ctx, user_or_imagelink)
+        if not user:
+            url1 = user_or_imagelink
         else:
-            try:
-                user = ctx.message.guild.get_member_named(user_or_imagelink)
-                if not user:
-                    return await ctx.send("Invalid user :no_entry:")
-                url1 = user.avatar_url
-            except:
-                try:
-                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    if not user:
-                        return await ctx.send("Invalid user :no_entry:")
-                    url1 = user.avatar_url
-                except:
-                    url1 = user_or_imagelink
+            url1 = user.avatar_url_as(format="png")
         if not user_or_imagelink2:
-            url2 = ctx.message.author.avatar_url
-        elif "<" in user_or_imagelink2 and "@" in user_or_imagelink2:
-            userid = user_or_imagelink2.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            try:
-                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
-            except:
-                await ctx.send("Invalid user :no_entry:")
-                return
-            url2 = user.avatar_url
-        else:
-            try:
-                user = ctx.message.guild.get_member_named(user_or_imagelink2)
-                url2 = user.avatar_url
-            except:
-                try:
-                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink2))
-                    url2 = user.avatar_url
-                except:
-                    url2 = user_or_imagelink2
-        try:
-            img2 = getImage(url1.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
-            img3 = getImage(url2.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
-            img = Image.open("whowouldwin.png").convert("RGBA")
-            img2 = img2.resize((400, 400))
-            img3 = img3.resize((400, 400))
-            img.paste(img2, (30, 180), img2)
-            img.paste(img3, (510, 180), img3)
-            await send_file(ctx, img)
-        except:
-            await ctx.send("Not a valid user or image url :no_entry:")
+            url2 = author.avatar_url_as(format="png")
+        else: 
+            user = arg.get_server_member(ctx, user_or_imagelink2)
+            if not user:
+                url2 = user_or_imagelink2
+            else:
+                url2 = user.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/www?firstImage={}&secondImage={}".format(url1, url2)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "www.png"))
+                elif f.status == 400:
+                    await ctx.send(await f.text())
+                else:
+                    await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
             
     @commands.command() 
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def fear(self, ctx, user_or_imagelink: str=None):
         """Make someone look feared of"""
-        channel = ctx.message.channel
-        author = ctx.message.author
+        channel = ctx.channel
+        author = ctx.author
         if not user_or_imagelink:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = ctx.message.author.avatar_url
-        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
-            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            try:
-                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
-            except:
-                await ctx.send("Invalid user :no_entry:")
-                return
-            url = user.avatar_url
+                url = author.avatar_url_as(format="png")
         else:
-            try:
-                user = ctx.message.guild.get_member_named(user_or_imagelink)
-                url = user.avatar_url
-            except:
-                try:
-                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    url = user.avatar_url
-                except:
-                    url = user_or_imagelink
-        try:
-            img = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
-            img2 = Image.open("fear-meme.png")
-            img = img.resize((251, 251))
-            img2.paste(img, (260, 517))
-            img2.save("result.png")
-            await send_file(ctx, img2)
-        except:
-            await ctx.send("Not a valid user or image url :no_entry:")
+            user = arg.get_server_member(ctx, user_or_imagelink)
+            if not user:
+                url = user_or_imagelink
+            else:
+                url = user.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/fear?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "fear.png"))
+                elif f.status == 400:
+                    await ctx.send(await f.text())
+                else:
+                    await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
         
     @commands.command() 
-    @commands.cooldown(1, 5, commands.BucketType.guild)
-    async def emboss(self, ctx, user_or_imagelink: str=None):
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def emboss(self, ctx, user_or_image: str=None):
         """Make a profile picture emboss"""
-        channel = ctx.message.channel
-        author = ctx.message.author
-        if not user_or_imagelink:
+        channel = ctx.channel
+        author = ctx.author
+        if not user_or_image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = ctx.message.author.avatar_url
-        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
-            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            try:
-                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
-            except:
-                await ctx.send("Invalid user :no_entry:")
-                return
-            url = user.avatar_url
+                url = author.avatar_url_as(format="png")
         else:
-            try:
-                user = ctx.message.guild.get_member_named(user_or_imagelink)
-                url = user.avatar_url
-            except:
-                try:
-                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    url = user.avatar_url
-                except:
-                    url = user_or_imagelink
-        try:
-            im = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
-            image = im.filter(ImageFilter.EMBOSS) 
-            image = ImageEnhance.Contrast(image).enhance(4.0)
-            image = image.filter(ImageFilter.SMOOTH)
-            await send_file(ctx, image)
-        except:
-            await ctx.send("Not a valid user or image url :no_entry:")
+            user = arg.get_server_member(ctx, user_or_image)
+            if not user:
+                url = user_or_image
+            else:
+                url = user.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/emboss?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "emboss.png"))
+                elif f.status == 400:
+                    await ctx.send(await f.text())
+                else:
+                    await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
             
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def ship(self, ctx, user1: str, *, user2: str=None):
         """Ship 2 users"""
         if not user2:
             user2 = arg.get_server_member(ctx, user1)
-            user1 = ctx.message.author
+            user1 = ctx.author
         else:
             user1 = arg.get_server_member(ctx, user1)
             user2 = arg.get_server_member(ctx, user2)
@@ -530,146 +413,95 @@ class image:
         random.seed(user2.id + user1.id)
         number = randint(0, 100)
         random.setstate(state)
-        u1avatar = user1.avatar_url
-        u2avatar = user2.avatar_url
-        user1 = getImage(u1avatar.replace("gif", "png").replace("webp", "png"))
-        user2 = getImage(u2avatar.replace("gif", "png").replace("webp", "png"))
-        user1 = user1.resize((280, 280))
-        user2 = user2.resize((280, 280))
-        heart = Image.open("heart.png")
-        image = Image.new('RGBA', (880, 280), (255, 255, 255, 0))
-        image.paste(user1, (0, 0))
-        image.paste(heart, (280, 0))
-        image.paste(user2, (600, 0))
-        temp = BytesIO()
-        image.save(temp, "png")
-        temp.seek(0)
-        await ctx.send(content="Ship Name: **{}**\nLove Percentage: **{}%**".format(shipname, number), file=discord.File(temp, "result.png"))
+        u1avatar = user1.avatar_url_as(format="png")
+        u2avatar = user2.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/ship?firstImage={}&secondImage={}".format(u1avatar, u2avatar)) as f:
+                if f.status == 200:
+                    await ctx.send(content="Ship Name: **{}**\nLove Percentage: **{}%**".format(shipname, number), file=discord.File(f.content, "ship.png"))
+                elif f.status == 400:
+                    return await ctx.send(await f.text())
+                else:
+                    return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.guild)
-    async def vr(self, ctx, user_or_imagelink: str=None):
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def vr(self, ctx, user_or_image: str=None):
         """Make someone feel emotional in vr"""	
-        channel = ctx.message.channel
-        author = ctx.message.author
-        if not user_or_imagelink:
+        channel = ctx.channel
+        author = ctx.author
+        if not user_or_image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = ctx.message.author.avatar_url
-        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
-            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            try:
-                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
-            except:
-                await ctx.send("Invalid user :no_entry:")
-                return
-            url = user.avatar_url
+                url = author.avatar_url_as(format="png")
         else:
-            try:
-                user = ctx.message.guild.get_member_named(user_or_imagelink)
-                url = user.avatar_url
-            except:
-                try:
-                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    url = user.avatar_url
-                except:
-                    url = user_or_imagelink
-        try:
-            img2 = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
-            img = Image.open("vr.png").convert("RGBA")
-            img = img.resize((493, 511))
-            image = Image.new('RGBA', (493, 511), (255, 255, 255, 0))
-            img2 = img2.resize((225, 150))
-            img2.convert('RGBA')
-            image.paste(img2, (15, 310), img2)
-            image.paste(img, (0, 0), img)
-            await send_file(ctx, image)
-        except:
-            await ctx.send("Not a valid user or image url :no_entry:")
+            user = arg.get_server_member(ctx, user_or_image)
+            if not user:
+                url = user_or_image
+            else:
+                url = user.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/vr?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "vr.png"))
+                elif f.status == 400:
+                    return await ctx.send(await f.text())
+                else:
+                    return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 					
             
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.guild)
-    async def shit(self, ctx, user_or_imagelink: str=None):
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def shit(self, ctx, user_or_image: str=None):
         """Choose who you want to be shit"""
-        channel = ctx.message.channel
-        author = ctx.message.author
-        if not user_or_imagelink:
+        channel = ctx.channel
+        author = ctx.author
+        if not user_or_image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = ctx.message.author.avatar_url
-        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
-            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            try:
-                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
-            except:
-                await ctx.send("Invalid user :no_entry:")
-                return
-            url = user.avatar_url
+                url = author.avatar_url_as(format="png")
         else:
-            try:
-                user = ctx.message.guild.get_member_named(user_or_imagelink)
-                url = user.avatar_url
-            except:
-                try:
-                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    url = user.avatar_url
-                except:
-                    url = user_or_imagelink
-        try:
-            img2 = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
-            img = Image.open("shit-meme.png").convert("RGBA")
-            image = Image.new('RGBA', (763, 1080), (255, 255, 255, 0))
-            img2 = img2.resize((185, 185))
-            img2 = img2.rotate(50, expand=True)
-            img2.convert('RGBA')
-            image.paste(img2, (215, 675), img2)
-            image.paste(img, (0, 0), img)
-            await send_file(ctx, image)
-        except:
-            await ctx.send("Not a valid user or image url :no_entry:")
+            user = arg.get_server_member(ctx, user_or_image)
+            if not user:
+                url = user_or_image
+            else:
+                url = user.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/shit?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "shit.png"))
+                elif f.status == 400:
+                    return await ctx.send(await f.text())
+                else:
+                    return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
     @commands.command()
-    async def beautiful(self, ctx, user_or_imagelink: str=None):
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def beautiful(self, ctx, user_or_image: str=None):
         """Turn something to a masterpiece"""
-        channel = ctx.message.channel
-        author = ctx.message.author
-        if not user_or_imagelink:
+        channel = ctx.channel
+        author = ctx.author
+        if not user_or_image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = ctx.message.author.avatar_url
-        elif "<" in user_or_imagelink and "@" in user_or_imagelink:
-            userid = user_or_imagelink.replace("@", "").replace("<", "").replace(">", "").replace("!", "")
-            try:
-                user = discord.utils.get(ctx.message.guild.members, id=int(userid))
-            except:
-                await ctx.send("Invalid user :no_entry:")
-                return
-            url = user.avatar_url
+                url = author.avatar_url_as(format="png")
         else:
-            try:
-                user = ctx.message.guild.get_member_named(user_or_imagelink)
-                url = user.avatar_url
-            except:
-                try:
-                    user = discord.utils.get(ctx.message.guild.members, id=int(user_or_imagelink))
-                    url = user.avatar_url
-                except:
-                    url = user_or_imagelink
-        try:
-            img2 = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
-            img = Image.open("beautiful.png").convert("RGBA")
-            img2 = img2.resize((90, 104))
-            img2 = img2.rotate(1, expand=True)
-            img2.convert('RGBA')
-            img.paste(img2, (253, 25), img2)
-            img.paste(img2, (256, 222), img2)
-            await send_file(ctx, img)
-        except:
-            await ctx.send("Not a valid user or image url :no_entry:")
+            user = arg.get_server_member(ctx, user_or_image)
+            if not user:
+                url = user_or_image
+            else:
+                url = user.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/beautiful?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "beautiful.png"))
+                elif f.status == 400:
+                    return await ctx.send(await f.text())
+                else:
+                    return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
             
     @commands.command()
     async def gay(self, ctx, user_or_imagelink: str=None):
@@ -680,68 +512,66 @@ class image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = ctx.message.author.avatar_url
+                url = author.avatar_url_as(format="png")
         else:
-            user = await arg.get_member(ctx, user_or_imagelink)
+            user = arg.get_server_member(ctx, user_or_imagelink)
             if not user:
                 return await ctx.send("Invalid user :no_entry:")
             else:
-                url = user.avatar_url
-        try:
-            img = getImage(url.replace("gif", "png").replace("webp", "png").replace("<", "").replace(">", ""))
-            img = img.resize((600, 600))
-            red = Image.new("RGBA", (600, 100), (255, 0, 0, 125))
-            orange = Image.new("RGBA", (600, 100), (255, 69, 0, 125))
-            yellow = Image.new("RGBA", (600, 100), (255, 220, 0, 125))
-            green = Image.new("RGBA", (600, 100), (0, 100, 0, 125))
-            blue = Image.new("RGBA", (600, 100), (0, 0, 220, 125))
-            purple = Image.new("RGBA", (600, 100), (138, 43, 226, 125))
-            img.paste(red, (0, 0), red)
-            img.paste(orange, (0, 100), orange)
-            img.paste(yellow, (0, 200), yellow)
-            img.paste(green, (0, 300), green)
-            img.paste(blue, (0, 400), blue)
-            img.paste(purple, (0, 500), purple)
-            await send_file(ctx, img)
-        except:
-            await ctx.send("Not a valid user or image url :no_entry:")
+                url = user.avatar_url_as(format="png")
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/gay?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "gay.png"))
+                elif f.status == 400:
+                    return await ctx.send(await f.text())
+                else:
+                    return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
             
-    @commands.command(aliases=["tweet"])
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def trumptweet(self, ctx, *, text: str):
         """Make trump say something on twitter"""
-        channel = ctx.message.channel
-        author = ctx.message.author
-        if len(text) > 280:
-            await ctx.send("No more than 280 characters (Twitters limit) :no_entry:")
+        channel = ctx.channel
+        author = ctx.author
+        if len(text) > 250:
+            await ctx.send("No more than 250 characters :no_entry:")
             return
-        img = Image.open("trumptweet-meme.png")
-        draw = ImageDraw.Draw(img)
-        n = 0
-        m = 70
-        number = 0
-        times = 0 
-        size = 25
-        description = ""
-        for x in range(math.ceil(len(str(text))/70)+1):
-            number += 1
-            if [x for x in text if " " in x]:
-                for x in range(len([x for x in text if " " in x])+1):
-                    while text[m-1:m] != " " and m != 0 and m != len(str(text)):
-                        m -= 1
-                    times += 70
-                    if m == 0:
-                        n = times - 70
-                        m = times
-            description += text[n:m] + "\n"
-            n = m
-            m += 70
-        font = ImageFont.truetype("arial.ttf", size)
-        draw.text((60, 125), description, (0, 0, 0), font=font)
-        await send_file(ctx, img)
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/trump?text={}".format(text)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "trump.png"))
+                elif f.status == 400:
+                    return await ctx.send(await f.text())
+                else:
+                    return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def tweet(self, ctx, user: str, *, text: commands.clean_content(fix_channel_mentions=True)):
+        """Tweet from your or another users account"""
+        await ctx.channel.trigger_typing()
+        user = arg.get_server_member(ctx, user)
+        if not user:
+            return await ctx.send("I could not find that user :no_entry:")
+        if len(text) > 250:
+            await ctx.send("No more than 250 characters :no_entry:")
+            return
+        retweets = randint(1, ctx.guild.member_count)
+        likes = randint(1, ctx.guild.member_count)
+        urls = list(map(lambda x: x.avatar_url_as(format="png", size=128), random.sample(ctx.guild.members, min(ctx.guild.member_count, 10, likes))))
+        data = {"displayName": user.display_name, "name": user.name, "avatarUrl": user.avatar_url_as(format="png", size=128), "urls": urls, "likes": likes, "retweets": retweets, "text": text}
+        async with aiohttp.ClientSession() as session:
+            async with session.post("http://localhost:8443/api/tweet", json=data, headers={"Content-Type": "application/json"}) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "tweet.png"))
+                elif f.status == 400:
+                    return await ctx.send(await f.text())
+                else:
+                    return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def scroll(self, ctx, *, text: str):
         """The terrible truth"""
         channel = ctx.message.channel
@@ -754,16 +584,14 @@ class image:
         n = 0
         m = 12
         char = 12
-        number = 0
         times = 0 
         size = 20
         description = ""
-        if (math.ceil(len(str(text))/12)+1) >=6:
-            for x in range((math.ceil(len(str(text))/12)+1) - 6):
+        if (math.ceil(len(str(text))/char)+1) >=6:
+            for x in range((math.ceil(len(str(text))/char)+1) - 6):
                 size -= 3
                 char += 1
         for x in range(math.ceil(len(str(text))/char)+1):
-            number += 1
             if [x for x in text if " " in x]:
                 for x in range(len([x for x in text if " " in x])+1):
                     while text[m-1:m] != " " and m != 0 and m != len(str(text)):
@@ -780,7 +608,7 @@ class image:
         await send_file(ctx, img)
             
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def colour(self, ctx, *, colour: str=None):
         """View a colours hex code and RGB and a image with the colour, if a colour is not specified it will get a random one"""
         if not colour:
@@ -826,7 +654,7 @@ class image:
             pass
          
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def drift(self, ctx, user: discord.Member, textleft: str, textright: str=None):
         """Drift away from something, any words over 10 characters will be ignored"""
         channel = ctx.message.channel
@@ -927,21 +755,21 @@ class image:
         del entries
 
 
-async def send_file(ctx, image):
+async def send_file(ctx, img):
     temp = BytesIO()
-    image.save(temp, "png")
+    img.save(temp, "png")
     temp.seek(0)
     await ctx.send(file=discord.File(temp, "result.png"))
 
-def get_file(image):
+def get_file(img):
     temp = BytesIO()
-    image.save(temp, "png")
+    img.save(temp, "png")
     temp.seek(0)
     return discord.File(temp, "result.png")
 
-def get_file_gif(image, frames):
+def get_file_gif(img, frames):
     temp = BytesIO()
-    image.save(temp, "gif", save_all=True, append_images=frames)
+    img.save(temp, "gif", save_all=True, append_images=frames)
     temp.seek(0)
     return discord.File(temp, "result.gif")
 

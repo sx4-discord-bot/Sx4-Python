@@ -9,7 +9,7 @@ import re
 import psutil
 import requests
 import logging
-from utils import arghelp, ctime, arg
+from utils import arghelp, ctime, arg, dateify
 import asyncio
 from urllib.request import Request, urlopen
 import json
@@ -44,7 +44,26 @@ class mod:
             r.table("blacklist").insert({"id": str(ctx.guild.id), "commands": [], "disabled": []}).run(durability="soft")
 
     @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 3, commands.BucketType.guild)
+    @checks.has_permissions("move_members")
+    async def voicekick(self, ctx, *, user: str):
+        """Kick a user from a voice channel (Disconnects the user)"""
+        user = arg.get_server_member(ctx, user)
+        if not user:
+            return await ctx.send("I could not find that user :no_entry:")
+        if user == ctx.author:
+            return await ctx.send("You cannot voice kick yourself :no_entry:")
+        if not user.voice:
+            return await ctx.send("This user is not in a voice channel :no_entry:")
+        if not user.voice.channel:
+            return await ctx.send("This user is not in a voice channel :no_entry:")
+        channel = await ctx.guild.create_voice_channel("Temporary Voice Kick Channel")
+        await user.move_to(channel, reason="Voice Kick")
+        await channel.delete()
+        await ctx.send("**{}** has been voice kicked <:done:403285928233402378>:ok_hand:".format(user))
+
+    @commands.command()
+    @commands.cooldown(1, 3, commands.BucketType.guild)
     @checks.has_permissions("manage_messages")
     async def removereactions(self, ctx, message_id: int):
         """Removes all reactions off a message (Has to be used in the same channel as the message)"""
@@ -585,15 +604,15 @@ class mod:
                                 value += permsjson[x.lower()]
                                 successfulperms.append(x.lower())
                             except: 
-                                pass
+                                return await ctx.send("`{}` is not a valid permission :no_entry:".format(x.lower()))
                     else:
                         try:
                             value += permsjson[x.lower()]
                             successfulperms.append(x.lower())
                         except: 
-                            pass
+                            return await ctx.send("`{}` is not a valid permission :no_entry:".format(x.lower()))
                 if value == 0:
-                    return await ctx.send("None of the permissions you gave in the argument were valid/the user or role didn't have them, make sure they are formatted like so `manage_messages`, `manage_guild` :no_entry:")
+                    return await ctx.send("The user already has those permissions :no_entry:")
             if str(user.id) not in data["users"].map(lambda x: x["id"]).run(durability="soft"):
                 perms = {"id": str(user.id), "perms": value}
                 data.update({"users": r.row["users"].append(perms)}).run(durability="soft")
@@ -604,25 +623,22 @@ class mod:
             if permissions:
                 for x in permissions:
                     if data["roles"].filter(lambda x: x["id"] == str(role.id)).run(durability="soft"):
-                        try:
-                            if x in map(lambda x: x[0], filter(lambda x: x[1] == True, discord.Permissions(data["roles"].filter(lambda x: x["id"] == str(role.id))[0]["perms"].run(durability="soft")))):
-                                pass
-                        except:
+                        if x in map(lambda x: x[0], filter(lambda x: x[1] == True, discord.Permissions(data["roles"].filter(lambda x: x["id"] == str(role.id))[0]["perms"].run(durability="soft")))):
                             pass
                         else:
                             try:
                                 value += permsjson[x.lower()]
                                 successfulperms.append(x.lower())
                             except: 
-                                pass
+                                return await ctx.send("`{}` is not a valid permission :no_entry:".format(x.lower()))
                     else:
                         try:
                             value += permsjson[x.lower()]
                             successfulperms.append(x.lower())
                         except: 
-                            pass
+                            return await ctx.send("`{}` is not a valid permission :no_entry:".format(x.lower()))
                 if value == 0:
-                    return await ctx.send("None of the permissions you gave in the argument were valid/the user or role didn't have them, make sure they are formatted like so `manage_messages`, `manage_guild` :no_entry:")
+                    return await ctx.send("The role already has those permissions :no_entry:")
             if str(role.id) not in data["roles"].map(lambda x: x["id"]).run(durability="soft"):
                 perms = {"id": str(role.id), "perms": value}
                 data.update({"roles": r.row["roles"].append(perms)}).run(durability="soft")
@@ -652,9 +668,9 @@ class mod:
                             value += permsjson[x.lower()]
                             successfulperms.append(x.lower())
                         except: 
-                            pass
+                            return await ctx.send("`{}` is not a valid permission :no_entry:".format(x.lower()))
                 if value == 0:
-                    return await ctx.send("None of the permissions you gave in the argument were valid/the user or role didn't have them, make sure they are formatted like so `manage_messages`, `manage_guild` :no_entry:")
+                    return await ctx.send("The user doesn't have those permissions :no_entry:")
             else:
                 return await ctx.send("Permissions are a required argument :no_entry:")
             if str(user.id) not in data["users"].map(lambda x: x["id"]).run(durability="soft"):
@@ -675,9 +691,9 @@ class mod:
                             value += permsjson[x.lower()]
                             successfulperms.append(x.lower())
                         except: 
-                            pass
+                            return await ctx.send("`{}` is not a valid permission :no_entry:".format(x.lower()))
                 if value == 0:
-                    return await ctx.send("None of the permissions you gave in the argument were valid/the user or role didn't have them, make sure they are formatted like so `manage_messages`, `manage_guild` :no_entry:")
+                   return await ctx.send("The role doesn't have those permissions :no_entry:")
             else:
                 return await ctx.send("Permissions are a required argument :no_entry:")
             if str(role.id) not in data["roles"].map(lambda x: x["id"]).run(durability="soft"):
@@ -921,10 +937,11 @@ class mod:
 		
     @commands.command()
     @checks.has_permissions("manage_roles", "mention_everyone")
-    async def announce(self, ctx, role: discord.Role, *, text: str):
+    async def announce(self, ctx, role: str, *, text: str):
         """Send an announcement in the channel you want by using the command in the channel you want choose a role you want to use and some text and the rest the bot will do"""
-        if role.name == "@everyone" and ctx.channel.permissions_for(ctx.author).mention_everyone == False:
-            await ctx.send("You do not have the permissions to mention everyone so you can not use announce to do it :no_entry:")
+        role = arg.get_role(ctx, role)
+        if not role:
+            return await ctx.send("I could not find that role :no_entry:")
         try:
             await ctx.message.delete()
         except: 
@@ -934,6 +951,8 @@ class mod:
         except:
             await ctx.send("I'm not able to edit that role :no_entry:") 
             return
+        if role.name == "@everyone" or role.name == "@here":
+            return await ctx.send(role.name + ", " + text + " - " + str(ctx.message.author))
         await ctx.send(role.mention + ", " + text + " - " + str(ctx.message.author))
         await role.edit(mentionable=False)
     
@@ -969,11 +988,14 @@ class mod:
                     await ctx.send("You are not in a voice channel :no_entry:")
                     return
             else:
-                return await ctx.send("That user is not in a voice channel :no_entry:")
+                return await ctx.send("You are not in a voice channel :no_entry:")
         else:
             channel = arg.get_voice_channel(ctx, to_channel)
             if not channel:
                 return await ctx.send("I could not find that voice channel :no_entry:")
+        if not user.voice:
+            await ctx.send("That user isn't in a voice channel :no_entry:")
+            return
         if not user.voice.channel:
             await ctx.send("That user isn't in a voice channel :no_entry:")
             return
@@ -984,15 +1006,19 @@ class mod:
         await ctx.send("Moved **{}** to `{}`".format(user, channel.name))
         
         
-    @commands.command()
+    @commands.command(alaises=["nick", "nickname"])
     @checks.has_permissions("manage_nicknames")
-    async def rename(self, ctx, user: discord.Member, *, nickname=None): 
+    async def rename(self, ctx, user: str, *, nickname=None): 
         """Rename a user"""
         author = ctx.author
+        user = arg.get_server_member(ctx, user)
+        if not user:
+            return await ctx.send("I could not find that user :no_entry:")
         if not nickname:
             nickname = user.name
-        if author.top_role.position <= user.top_role.position and author != ctx.guild.owner:
-            return await ctx.send("You cannot rename someone higher or equal than your top role :no_entry:")
+        if author != user:
+            if author.top_role.position <= user.top_role.position and author != ctx.guild.owner:
+                return await ctx.send("You cannot rename someone higher or equal than your top role :no_entry:")
         try:
             await user.edit(nick=nickname)
         except discord.errors.Forbidden:
@@ -1016,10 +1042,10 @@ class mod:
             amount = 100
         try:
             deleted = await channel.purge(limit=amount, before=ctx.message, check=lambda m: m.author == user)
-            await ctx.message.delete()
         except discord.HTTPException:
-            await ctx.send("I cannot delete messages 14 days or older :no_entry:")
-            return
+            return await ctx.send("I cannot delete messages 14 days or older :no_entry:")
+        try:
+            await ctx.message.delete()
         except:
             pass
         
@@ -1039,10 +1065,10 @@ class mod:
             limit = 100
         try:
             deleted = await channel.purge(limit=limit, before=ctx.message, check=lambda e: e.author.bot)
-            await ctx.message.delete()
         except discord.HTTPException:
-            await ctx.send("I cannot delete messages 14 days or older :no_entry:")
-            return
+            return await ctx.send("I cannot delete messages 14 days or older :no_entry:")
+        try:
+            await ctx.message.delete()
         except:
             pass
 
@@ -1063,10 +1089,10 @@ class mod:
             return word.lower() in m.content.lower()
         try:
             deleted = await channel.purge(limit=limit, before=ctx.message, check=check)
-            await ctx.message.delete()
         except discord.HTTPException:
-            await ctx.send("I cannot delete messages 14 days or older :no_entry:")
-            return
+            return await ctx.send("I cannot delete messages 14 days or older :no_entry:")
+        try:
+            await ctx.message.delete()
         except:
             pass
         
@@ -1086,10 +1112,10 @@ class mod:
             limit = 100
         try:
             deleted = await channel.purge(limit=limit, before=ctx.message)
-            await ctx.message.delete()
         except discord.HTTPException:
-            await ctx.send("I cannot delete messages 14 days or older :no_entry:")
-            return
+            return await ctx.send("I cannot delete messages 14 days or older :no_entry:")
+        try:
+            await ctx.message.delete()
         except:
             pass
             
@@ -1367,7 +1393,7 @@ class mod:
         destination = user
         can_ban = channel.permissions_for(ctx.me).ban_members
         if not can_ban:
-            await ctx.send("I need the `BAN_MEMBERS` permission :no_entry:")
+            await ctx.send("I need the `ban_members` permission :no_entry:")
             return
         if user == self.bot.user:
             await ctx.send("I'm not going to ban myself ¯\_(ツ)_/¯")
@@ -1457,10 +1483,7 @@ class mod:
         for x in await guild.audit_logs(limit=100, action=discord.AuditLogAction.ban).flatten():
             if x.target == user:
                 author = x.user
-                if x.reason != "":
-                    reason = x.reason
-                else:
-                    reason = None
+                reason = x.reason if x.reason else None
                 break
         action = "Ban"
         server = guild
@@ -1475,10 +1498,7 @@ class mod:
         for x in await guild.audit_logs(limit=100, action=discord.AuditLogAction.unban).flatten():
             if x.target == user:
                 author = x.user
-                if x.reason != "":
-                    reason = x.reason
-                else:
-                    reason = None
+                reason = x.reason if x.reason else None
                 break
         action = "Unban"
         server = guild
@@ -1496,24 +1516,17 @@ class mod:
         channel = ctx.message.channel
         action = "Mute"
         if channel.permissions_for(user).administrator:
-            await ctx.send("That user has administrator perms, why would i even try :no_entry:")
-            return
+            return await ctx.send("That user has administrator perms, why would i even try :no_entry:")
         if not channel.permissions_for(user).send_messages:
-            await ctx.send("{} is already muted :no_entry:".format(user))
-            return
+            return await ctx.send("{} is already muted :no_entry:".format(user))
         if user.top_role.position >= author.top_role.position and ctx.author != ctx.guild.owner:
-            if author == server.owner:
-                pass
-            else:
-                await ctx.send("You can not mute someone higher than your own role :no_entry:")
-                return
+            return await ctx.send("You can not mute someone higher than your own role :no_entry:")
         overwrite = ctx.channel.overwrites_for(user)
         overwrite.send_messages = False
         try:
             await channel.set_permissions(user, overwrite=overwrite)
         except discord.errors.Forbidden:
-            await ctx.send("I do not have permissions to edit the current channel :no_entry:")
-            return
+            return await ctx.send("I do not have permissions to edit the current channel :no_entry:")
         await ctx.send("**{}** has been muted <:done:403285928233402378>".format(user))
         try:
             await _log(self.bot, author, server, action, reason, user)
@@ -1563,19 +1576,17 @@ class mod:
     async def on_member_join(self, member):
         server = member.guild
         serverdata = r.table("mute").get(str(server.id))
-        user = serverdata["users"].filter(lambda x: x["id"] == str(member.id))[0].run()
-        try:
+        if serverdata.run():
+            user = serverdata["users"].filter(lambda x: x["id"] == str(member.id))[0].run()
             if user["toggle"] == True:
                 role = discord.utils.get(server.roles, name="Muted - Sx4")
                 await member.add_roles(role, reason="Mute evasion")
-        except:
-            pass
         
     @commands.command()
     @checks.has_permissions("manage_messages")
-    async def mute(self, ctx, user: discord.Member, time_and_unit=None, *, reason: str=None):
+    async def mute(self, ctx, user: discord.Member, time_and_unit: str=None, *, reason: str=None):
         """Mute a user for a certain amount of time
-        Example: s?mute @Shea#4444 20m (this will mute the user for 20 minutes)"""
+        Example: s?mute @Shea#6653 20m (this will mute the user for 20 minutes)"""
         server = ctx.message.guild
         channel = ctx.message.channel
         author = ctx.message.author
@@ -1590,70 +1601,18 @@ class mod:
             await ctx.send("That user has administrator perms, why would i even try :no_entry:")
             return
         if user.top_role.position >= author.top_role.position and ctx.author != ctx.guild.owner:
-            if author == server.owner:
-                pass
-            else:
-                await ctx.send("You can not mute someone higher than your own role :no_entry:")
-                return
+            await ctx.send("You can not mute someone higher than your own role :no_entry:")
+            return
         if not time_and_unit: 
             time2 = 1800
-            time = "30"
-            unit = "minutes"
         else:
             try:
-                unit = time_and_unit[len(time_and_unit)-1:len(time_and_unit)]
+                time2 = ctime.convert(time_and_unit)
             except ValueError:
-                await ctx.send("Invalid time unit :no_entry:")
-                return
-            try:
-                time = time_and_unit[0:len(time_and_unit)-1]
-            except ValueError:
-                await ctx.send("Invalid time unit :no_entry:")
-                return
-            if unit == "s":
-                try:
-                    time2 = int(time)
-                except ValueError:
-                    await ctx.send("Invalid time unit :no_entry:")
-                    return
-                if time == "1":
-                    unit = "second"
-                else:
-                    unit = "seconds"
-            elif unit == "m":
-                try:
-                    time2 = int(time) * 60
-                except ValueError:
-                    await ctx.send("Invalid time unit :no_entry:")
-                    return
-                if time == "1":
-                    unit = "minute"
-                else:
-                    unit = "minutes"
-            elif unit == "h":
-                try:
-                    time2 = int(time) * 3600
-                except ValueError:
-                    await ctx.send("Invalid time unit :no_entry:")
-                    return
-                if time == "1":
-                    unit = "hour"
-                else:
-                    unit = "hours"
-            elif unit == "d":
-                try:
-                    time2 = int(time) * 86400
-                except ValueError:
-                    await ctx.send("Invalid time unit :no_entry:")
-                    return
-                if time == "1":
-                    unit = "day"
-                else:
-                    unit = "days"
-            else:
-                await ctx.send("Invalid time unit :no_entry:")
-                return
-        action = "Mute ({} {})".format(time, unit)
+                return await ctx.send("Invalid time and unit :no_entry:")
+            if time2 < 1:
+                return await ctx.send("The mute can't be less than a second :no_entry:")
+        action = "Mute ({})".format(dateify.get(time2))
         role = discord.utils.get(server.roles, name="Muted - Sx4")
         overwrite = discord.PermissionOverwrite()
         overwrite.send_messages = False
@@ -1673,7 +1632,7 @@ class mod:
         except: 
             await ctx.send("I cannot add the mute role to the user :no_entry:")
             return
-        await ctx.send("**{}** has been muted for {} {} <:done:403285928233402378>".format(user, time, unit))
+        await ctx.send("**{}** has been muted for {} <:done:403285928233402378>".format(user, dateify.get(time2)))
         try:
             await _log(self.bot, author, server, action, reason, user)
         except:
@@ -1690,7 +1649,7 @@ class mod:
         try:
             s=discord.Embed(title="You have been muted in {} :speak_no_evil:".format(server.name), colour=0xfff90d, timestamp=__import__('datetime').datetime.utcnow())
             s.add_field(name="Moderator", value="{} ({})".format(author, str(author.id)), inline=False)
-            s.add_field(name="Time", value="{} {}".format(time, unit), inline=False)
+            s.add_field(name="Time", value="{}".format(dateify.get(time2)), inline=False)
             if reason:
                 s.add_field(name="Reason", value=reason, inline=False)
             await user.send(embed=s)
@@ -1787,11 +1746,12 @@ class mod:
                     pass
                 else:
                     serverdata.update({"users": r.row["users"].filter(lambda x: x["id"] != str(user.id))}).run(durability="soft", noreply=True)
-                for x in await server.audit_logs(limit=1).flatten():
-                    if x.action == discord.AuditLogAction.member_role_update:
+                for x in await server.audit_logs(limit=100, action=discord.AuditLogAction.member_role_update).flatten():
+                    if x.target.id == after.id:
                         author = x.user
                         if x.reason != "":
                             reason = x.reason
+                        break
                 if author == self.bot.user:
                     return
                 action = "Unmute"
@@ -1800,11 +1760,12 @@ class mod:
                 except:
                     pass
             if role in after.roles and role not in before.roles:
-                for x in await server.audit_logs(limit=1).flatten():
-                    if x.action == discord.AuditLogAction.member_role_update:
+                for x in await server.audit_logs(limit=100, action=discord.AuditLogAction.member_role_update).flatten():
+                    if x.target.id == after.id:
                         author = x.user
                         if x.reason != "":
                             reason = x.reason
+                        break
                 if author == self.bot.user:
                     return
                 action = "Mute (Infinite)"
@@ -2004,7 +1965,7 @@ class mod:
                 action = "Mute {} ({} Warning)".format(self.format_mute(time), self.suffix(currentwarning["warning"]))
             elif currentwarning["action"] == "kick":
                 if not checks.has_permissions("kick_members").__closure__[0].cell_contents(ctx):
-                    return await ctx.send("You need the kick_members permission to warrn this user again :no_entry:")
+                    return await ctx.send("You need the kick_members permission to warn this user again :no_entry:")
                 try:
                     await server.kick(user, reason="Kick made by {}".format(author))
                 except:
@@ -2018,7 +1979,7 @@ class mod:
                 action = "Kick ({} Warning)".format(self.suffix(currentwarning["warning"]))
             elif currentwarning["action"] == "ban":
                 if not checks.has_permissions("ban_members").__closure__[0].cell_contents(ctx):
-                    return await ctx.send("You need the ban_members permission to warrn this user again :no_entry:")
+                    return await ctx.send("You need the ban_members permission to warn this user again :no_entry:")
                 try:
                     await server.ban(user, reason="Ban made by {}".format(author))
                 except:
@@ -2335,6 +2296,7 @@ async def _log(bot, author, server, action, reason, user):
                 reasontext = "None (Update using `s?modlog case {} <reason>`)".format(number)
             else:
                 reasontext = reason
+            serverdata.update({"case#": r.row["case#"] + 1}).run(durability="soft")
             s=discord.Embed(title="Case {} | {}".format(number, action), timestamp=datetime.datetime.utcnow())
             s.add_field(name="User", value=user)
             s.add_field(name="Moderator", value=authortext, inline=False)
@@ -2348,7 +2310,7 @@ async def _log(bot, author, server, action, reason, user):
             case2["reason"] = reason if reason else None
             case2["time"] = datetime.datetime.utcnow().timestamp()
             case2["message"] = str(message.id)
-            serverdata.update({"case": r.row["case"].append(case2), "case#": r.row["case#"] + 1}).run(durability="soft")
+            serverdata.update({"case": r.row["case"].append(case2)}).run(durability="soft")
     r.table("offence").insert({"id": str(user.id), "offences": []}).run(durability="soft")
     userdata = r.table("offence").get(str(user.id))
     proof = None
@@ -2362,6 +2324,6 @@ async def _log(bot, author, server, action, reason, user):
     offence["action"] = action.replace("(Automatic)", "")
     offence["reason"] = "None Given" if not reason else reason
     userdata.update({"offences": r.row["offences"].append(offence)}).run(durability="soft")
-        
+
 def setup(bot): 
     bot.add_cog(mod(bot))

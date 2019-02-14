@@ -108,100 +108,120 @@ class giveaway:
 
     @giveaway.command()
     @checks.has_permissions("manage_roles")
-    async def setup(self, ctx):
+    async def setup(self, ctx, channel: str=None, winners: int=None, duration: str=None, *, giveaway_item: str=None):
         """Setup a giveaway, minimum time 120 seconds"""
         giveaway = {}
         server = ctx.guild
         serverdata = r.table("giveaway").get(str(server.id))
-        def checkchar(m):
-            return m.channel == ctx.channel and m.author == ctx.author and len(m.content) <= 256
-        def check(m):
-            return m.channel == ctx.channel and m.author == ctx.author and len(m.content) <= 2000
-        def check_winner(m):
-            return m.channel == ctx.channel and m.author == ctx.author and m.content.isdigit()
-        def check_time(m):
-            if m.channel == ctx.channel and m.author == ctx.author:
-                if m.content.lower() == "cancel":
-                    return True
-                else:
-                    try:
-                        seconds = ctime.convert(m.content.lower())
-                    except ValueError:
-                        return False
-                    if seconds >= 120 and seconds <= 31556926:
+        if channel and duration and giveaway_item and winners:
+            title = "Giveaway"
+        else:
+            def checkchar(m):
+                return m.channel == ctx.channel and m.author == ctx.author and len(m.content) <= 256
+            def check(m):
+                return m.channel == ctx.channel and m.author == ctx.author and len(m.content) <= 2000
+            def check_winner(m):
+                return m.channel == ctx.channel and m.author == ctx.author and m.content.isdigit()
+            def check_time(m):
+                if m.channel == ctx.channel and m.author == ctx.author:
+                    if m.content.lower() == "cancel":
                         return True
-        def check_channel(m):
-            if m.channel == ctx.channel and m.author == ctx.author:
-                if m.content.lower() == "cancel":
-                    return True
-                channel = arg.get_text_channel(ctx, m.content)
-                if channel:
-                    return True
-        await ctx.send("What channel would you like me to start this giveaway? Type \"cancel\" at anytime to cancel the creation (Respond below)")
-        try:
-            channel = await self.bot.wait_for("message", check=check_channel, timeout=300)
-            if channel.content.lower() == "cancel":
-                await ctx.send("Cancelled")
+                    else:
+                        try:
+                            seconds = ctime.convert(m.content.lower())
+                        except ValueError:
+                            return False
+                        if seconds >= 120 and seconds <= 31556926:
+                            return True
+            def check_channel(m):
+                if m.channel == ctx.channel and m.author == ctx.author:
+                    if m.content.lower() == "cancel":
+                        return True
+                    channel = arg.get_text_channel(ctx, m.content)
+                    if channel:
+                        return True
+            if not channel:
+                await ctx.send("What channel would you like me to start this giveaway? Type \"cancel\" at anytime to cancel the creation (Respond below)")
+                try:
+                    channel = await self.bot.wait_for("message", check=check_channel, timeout=300)
+                    if channel.content.lower() == "cancel":
+                        await ctx.send("Cancelled")
+                        return
+                    channel = channel.content
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out :stopwatch:")
+                    return
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out :stopwatch:")
+                    return
+            await ctx.send("What do you want to name your giveaway? (Respond below)")
+            try:
+                title = await self.bot.wait_for("message", check=checkchar, timeout=300)
+                if title.content.lower() == "cancel":
+                    await ctx.send("Cancelled")
+                    return
+                title = title.content
+            except asyncio.TimeoutError:
+                await ctx.send("Timed out :stopwatch:")
                 return
-            channel = arg.get_text_channel(ctx, channel.content)
-        except asyncio.TimeoutError:
-            await ctx.send("Timed out :stopwatch:")
-            return
-        except asyncio.TimeoutError:
-            await ctx.send("Timed out :stopwatch:")
-            return
-        await ctx.send("What do you want to name your giveaway? (Respond below)")
-        try:
-            title = await self.bot.wait_for("message", check=checkchar, timeout=300)
-            if title.content.lower() == "cancel":
-                await ctx.send("Cancelled")
-                return
-        except asyncio.TimeoutError:
-            await ctx.send("Timed out :stopwatch:")
-            return
-        await ctx.send("How many winners would you like? (Respond below)")
-        try:
-            winners = await self.bot.wait_for("message", check=check_winner, timeout=300)
-            if winners.content.lower() == "cancel":
-                await ctx.send("Cancelled")
-                return
-        except asyncio.TimeoutError:
-            await ctx.send("Timed out :stopwatch:")
-            return
-        await ctx.send("How long do you want your giveaway to last? (After the numerical value add 'd' for days, 'h' for hours, 'm' for minutes, 's' for seconds) Minimum time: 2 minutes. (Respond below)")
-        try:
-            time2 = await self.bot.wait_for("message", check=check_time, timeout=300)
-            if time2.content.lower() == "cancel":
-                await ctx.send("Cancelled")
-                return
-        except asyncio.TimeoutError:
-            await ctx.send("Timed out :stopwatch:")
-            return
-        await ctx.send("What are you giving away? (Respond below)")
-        try:
-            item = await self.bot.wait_for("message", check=check, timeout=300)
-            if item.content.lower() == "cancel":
-                await ctx.send("Cancelled")
-                return
-        except asyncio.TimeoutError:
-            await ctx.send("Timed out :stopwatch:")
-            return
+            if not winners:
+                await ctx.send("How many winners would you like? (Respond below)")
+                try:
+                    winners = await self.bot.wait_for("message", check=check_winner, timeout=300)
+                    if winners.content.lower() == "cancel":
+                        await ctx.send("Cancelled")
+                        return
+                    winners = int(winners.content)
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out :stopwatch:")
+                    return
+            if not duration:
+                await ctx.send("How long do you want your giveaway to last? (After the numerical value add 'd' for days, 'h' for hours, 'm' for minutes, 's' for seconds) Minimum time: 2 minutes. (Respond below)")
+                try:
+                    time2 = await self.bot.wait_for("message", check=check_time, timeout=300)
+                    if time2.content.lower() == "cancel":
+                        await ctx.send("Cancelled")
+                        return
+                    duration = time2.content
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out :stopwatch:")
+                    return
+            if not giveaway_item:
+                await ctx.send("What are you giving away? (Respond below)")
+                try:
+                    item = await self.bot.wait_for("message", check=check, timeout=300)
+                    if item.content.lower() == "cancel":
+                        await ctx.send("Cancelled")
+                        return
+                    giveaway_item = item.content
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out :stopwatch:")
+                    return
+            
         serverdata.update({"giveaway#": r.row["giveaway#"] + 1}).run(durability="soft")
         id = serverdata["giveaway#"].run(durability="soft")
-        giveaway_seconds = ctime.convert(time2.content.lower())
+        channel = arg.get_text_channel(ctx, channel)
+        if not channel:
+            return await ctx.send("I could not find that channel :no_entry:")
+        try:
+            giveaway_seconds = ctime.convert(duration)
+        except ValueError:
+            return await ctx.send("Invalid duration format :no_entry:")
+        if giveaway_seconds < 120:
+            return await ctx.send("Giveaways have to be at least 2 minutes long :no_entry:")
         starttime = datetime.utcnow().timestamp()
         endtime = datetime.utcnow().timestamp() + giveaway_seconds
-        s=discord.Embed(title=title.content, description="Enter by reacting with :tada:\n\nThis giveaway is for **{}**\nDuration: **{}**\nWinners: **{}**".format(item.content, self.giveaway_time(starttime, endtime), int(winners.content)), timestamp=datetime.fromtimestamp(datetime.utcnow().timestamp() + giveaway_seconds))
+        s=discord.Embed(title=title, description="Enter by reacting with :tada:\n\nThis giveaway is for **{}**\nDuration: **{}**\nWinners: **{}**".format(giveaway_item, self.giveaway_time(starttime, endtime), winners), timestamp=datetime.fromtimestamp(datetime.utcnow().timestamp() + giveaway_seconds))
         s.set_footer(text="Ends")
         message = await channel.send(embed=s)
         await message.add_reaction("🎉")
-        giveaway["title"] = title.content
+        giveaway["title"] = title
         giveaway["endtime"] = datetime.utcnow().timestamp() + giveaway_seconds
         giveaway["length"] = giveaway_seconds
-        giveaway["item"] = item.content
+        giveaway["item"] = giveaway_item
         giveaway["channel"] = str(channel.id)
         giveaway["message"] = str(message.id)
-        giveaway["winners"] = int(winners.content)
+        giveaway["winners"] = winners
         giveaway["id"] = id
         serverdata.update({"giveaways": r.row["giveaways"].append(giveaway)}).run(durability="soft")
         await ctx.send("Your giveaway has been created :tada:\nGiveaway ID: `{}` (This can be used to delete giveaways)".format(id))
@@ -217,10 +237,7 @@ class giveaway:
                             try:
                                 message = await self.bot.get_channel(int(x["channel"])).get_message(int(x["message"]))
                                 reaction = [x for x in message.reactions if x.emoji == "🎉"][0]
-                                try:
-                                    winner = random.sample([x for x in await reaction.users().flatten() if x != self.bot.user], k=x["winners"])
-                                except:
-                                    winner = random.sample([x for x in await reaction.users().flatten() if x != self.bot.user], k=len([x for x in await reaction.users().flatten() if x != self.bot.user]))
+                                winner = random.sample([x for x in await reaction.users().flatten() if x != self.bot.user], k=min(len([x for x in await reaction.users().flatten() if x != self.bot.user]), x["winners"]))
                                 if winner == []:
                                     await self.bot.get_channel(int(x["channel"])).send("No one entered the giveaway :no_entry:")
                                     await message.delete()

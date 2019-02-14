@@ -5,7 +5,7 @@ from datetime import datetime
 from collections import deque, defaultdict
 import os
 import re
-from utils import arghelp
+from utils import arghelp, dateify
 from . import owner as dev
 import math
 from io import BytesIO
@@ -35,7 +35,7 @@ class welcomer:
             r.table("welcomer").insert({"id": str(ctx.guild.id), "toggle": False, "channel": None,
             "message": "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
             "message-leave": "**{user.name}** has just left **{server}**. Bye **{user.name}**!", "dm": False, "imgwelcomertog": False, 
-            "banner": None, "leavetoggle": True}).run(durability="soft")
+            "banner": None, "leavetoggle": True, "embed": False, "embedcolour": None}).run(durability="soft")
 
     @imgwelcomer.command(name="toggle")
     @checks.has_permissions("manage_messages")
@@ -71,7 +71,7 @@ class welcomer:
             await ctx.send("Your banner for image welcomer has been reset.")
             return
         try:
-            requests.get(url=banner, stream=True)
+            img.getImage(banner)
         except:
             await ctx.send("Invalid image url :no_entry:")
         data.update({"banner": banner}).run(durability="soft")
@@ -87,7 +87,7 @@ class welcomer:
             r.table("welcomer").insert({"id": str(ctx.guild.id), "toggle": False, "channel": None,
             "message": "{user.mention}, Welcome to **{server}**. Enjoy your time here! The server now has {server.members} members.",
             "message-leave": "**{user.name}** has just left **{server}**. Bye **{user.name}**!", "dm": False, "imgwelcomertog": False, 
-            "banner": None, "leavetoggle": True}).run(durability="soft")
+            "banner": None, "leavetoggle": True, "embed": False, "embedcolour": None}).run(durability="soft")
         
     @welcomer.command()
     @checks.has_permissions("manage_messages")
@@ -103,7 +103,38 @@ class welcomer:
             data.update({"toggle": True}).run(durability="soft")
             await ctx.send("Welcomer has been **Enabled**")
             return
-            
+
+    @welcomer.command()
+    @checks.has_permissions("manage_messages")
+    async def embed(self, ctx):
+        server = ctx.guild
+        data = r.table("welcomer").get(str(server.id))
+        if data["embed"].run(durability="soft") == True:
+            data.update({"embed": False}).run(durability="soft")
+            await ctx.send("Welcome messages will no longer be embedded.")
+            return
+        if data["embed"].run(durability="soft") == False:
+            data.update({"embed": True}).run(durability="soft")
+            await ctx.send("Welcome messages will now be embedded.")
+            return
+
+    @welcomer.command()
+    @checks.has_permissions("manage_messages")
+    async def embedcolour(self, ctx, colour: str):
+        server = ctx.guild
+        data = r.table("welcomer").get(str(server.id))
+        if colour.lower() in ["none", "off"]:
+            await ctx.send("Your embed colour has been reset.")
+            return data.update({"embedcolour": None}).run(durability="soft")
+        if colour.startswith("#"):
+            colour = colour[1:]
+        try:
+            discord.Colour(int(colour, 16))
+        except:
+            return await ctx.send("Invalid hex :no_entry:")
+        await ctx.send("Updated your embed colour to **{}**".format(str(colour)))
+        data.update({"embedcolour": int(colour, 16)}).run(durability="soft")
+
     @welcomer.command()
     @checks.has_permissions("manage_messages")
     async def dmtoggle(self, ctx): 
@@ -147,6 +178,7 @@ class welcomer:
 {user} = The username + discriminator
 {server.members} = The amount of members in your server
 {server.members.prefix} = The amount of members plus a prefix ex 232nd
+{user.created.length} = How long the users account has been created for ex 1 year 2 months 3 days
 **Make sure you keep the {} brackets in the message**
 
 Example: `s?welcomer joinmessage {user.mention}, Welcome to **{server}**. We now have **{server.members}** members :tada:`"""
@@ -170,6 +202,7 @@ Example: `s?welcomer joinmessage {user.mention}, Welcome to **{server}**. We now
 {user} = The username + discriminator
 {server.members} = The amount of members in your server
 {server.members.prefix} = The amount of members plus a prefix ex 232nd
+{user.created.length} = How long the users account has been created for ex 1 year 2 months 3 days
 **Make sure you keep the {} brackets in the message**
 
 Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
@@ -193,23 +226,36 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         message = message.replace("{user}", str(author))
         message = message.replace("{server.members}", "{:,}".format(len(server.members))) 
         message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
+        message = message.replace("{user.created.length}", dateify.get((datetime.utcnow() - author.created_at).total_seconds()))
         message2 = data["message-leave"]
         message2 = message2.replace("{server}", server.name)
         message2 = message2.replace("{user.mention}", author.mention)
         message2 = message2.replace("{user.name}", author.name)
         message2 = message2.replace("{user}", str(author))
         message2 = message2.replace("{server.members}", "{:,}".format(len(server.members)))
-        message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
+        message2 = message2.replace("{server.members.prefix}", self.prefixfy(server)) 
+        message2 = message2.replace("{user.created.length}", dateify.get((datetime.utcnow() - author.created_at).total_seconds()))
+        s=discord.Embed(description=message, timestamp=datetime.utcnow(), colour=discord.Colour(data["embedcolour"]) if data["embedcolour"] else discord.Embed.Empty)
+        s.set_author(name=str(author), icon_url=author.avatar_url)
         if data["imgwelcomertog"] and data["toggle"]:
-            await ctx.send(content=message, file=self.image_welcomer(author, server))
+            if data["embed"]:
+                await ctx.send(embed=s, file=self.image_welcomer(author, server))
+            else:
+                await ctx.send(content=message, file=self.image_welcomer(author, server))
         elif data["imgwelcomertog"] and not data["toggle"]:
             await ctx.send(file=self.image_welcomer(author, server))
         elif not data["imgwelcomertog"] and data["toggle"]:
-            await ctx.send(message)
+            if data["embed"]:
+                await ctx.send(embed=s)
+            else:
+                await ctx.send(message)
         else:
             return await ctx.send("You have neither image welcomer or welcomer enabled :no_entry:")
         if data["leavetoggle"]:
-            await ctx.send(message2)
+            if data["embed"]:
+                await ctx.send(embed=s)
+            else:
+                await ctx.send(message2)
             
     @welcomer.command()
     @checks.has_permissions("manage_messages")
@@ -251,6 +297,7 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         s.add_field(name="Welcomer channel", value=channel)
         s.add_field(name="DM Welcomer", value=msg2)
         s.add_field(name="Image Welcomer", value=img)
+        s.add_field(name="Embed", value="Message: {}\nColour: {}".format("Yes" if data["embed"] else "No", discord.Colour(data["embedcolour"]) if data["embedcolour"] else "Default"))
         s.add_field(name="Join message", value=message, inline=False)
         s.add_field(name="Leave message", value=message2, inline=False)
         await ctx.send(embed=s)
@@ -288,23 +335,36 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         message = message.replace("{user}", str(member))
         message = message.replace("{server.members}", "{:,}".format(len(server.members)))
         message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
+        message = message.replace("{user.created.length}", dateify.get((datetime.utcnow() - member.created_at).total_seconds()))
+        s=discord.Embed(description=message, timestamp=datetime.utcnow(), colour=discord.Colour(data["embedcolour"]) if data["embedcolour"] else discord.Embed.Empty)
+        s.set_author(name=str(member), icon_url=member.avatar_url)
         if data["toggle"] == True and data["imgwelcomertog"] == True:
             if data["dm"] == True:
-                await member.send(content=message, file=self.image_welcomer(member, server))
+                if data["embed"]:
+                    await member.send(embed=s, file=self.image_welcomer(member, server))
+                else:
+                    await member.send(content=message, file=self.image_welcomer(member, server))
             elif data["dm"] == False:
-                await self.webhook_send(channel=channel, content=message, file=self.image_welcomer(member, server))
+                if data["embed"]:
+                    await self.webhook_send(channel=channel, embed=s, file=self.image_welcomer(member, server))
+                else:
+                    await self.webhook_send(channel=channel, content=message, file=self.image_welcomer(member, server))
         elif data["toggle"] == True and data["imgwelcomertog"] == False:
             if data["dm"] == True:
-                await member.send(content=message)
+                if data["embed"]:
+                    await member.send(embed=s)
+                else:
+                    await member.send(content=message)
             elif data["dm"] == False:
-                await self.webhook_send(channel=channel, content=message)
+                if data["embed"]:
+                    await self.webhook_send(channel=channel, embed=s)
+                else:
+                    await self.webhook_send(channel=channel, content=message)
         elif data["toggle"] == False and data["imgwelcomertog"] == True:
             if data["dm"] == True:
                 await member.send(file=self.image_welcomer(member, server))
             elif data["dm"] == False:
                 await self.webhook_send(channel=channel, file=self.image_welcomer(member, server))    
-        else:
-            pass
             
     async def on_member_remove(self, member):
         server = member.guild
@@ -326,7 +386,13 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
             message = message.replace("{user}", str(member))
             message = message.replace("{server.members}", "{:,}".format(len(server.members)))
             message = message.replace("{server.members.prefix}", self.prefixfy(server)) 
-            await self.webhook_send(channel=channel, content=message)
+            message = message.replace("{user.created.length}", dateify.get((datetime.utcnow() - member.created_at).total_seconds()))
+            if data["embed"]:
+                s=discord.Embed(description=message, timestamp=datetime.utcnow(), colour=discord.Colour(data["embedcolour"]) if data["embedcolour"] else discord.Embed.Empty)
+                s.set_author(name=str(member), icon_url=member.avatar_url)
+                await self.webhook_send(channel=channel, embed=s)
+            else:
+                await self.webhook_send(channel=channel, content=message)
 
     def image_welcomer(self, author, server):
         data = r.table("welcomer").get(str(server.id)).run(durability="soft")
@@ -396,7 +462,7 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         temp.seek(0)
         return discord.File(temp, "result.png")
 
-    async def webhook_send(self, channel, content=None, file=None):
+    async def webhook_send(self, channel, content=None, file=None, embed=None):
         if self.avatar is None:
             try:
                 with open("sx4-byellow.png", "rb") as f:
@@ -409,7 +475,7 @@ Example: `s?welcomer leavemessage {user.mention}, Goodbye!`"""
         elif webhook and channel != webhook.channel:
             await webhook.delete()
             webhook = await channel.create_webhook(name="Sx4 - Welcomer", avatar=self.avatar)
-        await webhook.send(content=content, file=file)
+        await webhook.send(content=content, file=file, embed=embed)
 
 def setup(bot): 
     bot.add_cog(welcomer(bot))

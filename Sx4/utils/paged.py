@@ -8,14 +8,15 @@ next_aliases = ["next", "n", "next page"]
 cancel_aliases = ["stop", "cancel", "c"]
 page_locations = ["title", "footer"]
 all_aliases =  previous_aliases + next_aliases + cancel_aliases
+confirmed = ["y", "yes", "accept"]
 
-async def page(ctx, array: list, selectable: bool=False, per_page: int=10, function: callable=None, timeout: int=60, indexed: bool=True, page_location: str="title", title: str="", colour: int=None, author: dict={"name": "", "icon_url": discord.Embed.Empty, "url": ""}):
+async def page(ctx, array: list, selectable: bool=False, per_page: int=10, function: callable=None, timeout: int=60, auto_select: bool=False, indexed: bool=True, page_location: str="title", title: str="", colour: int=None, author: dict={"name": "", "icon_url": discord.Embed.Empty, "url": ""}):
     bot = ctx.bot
     page_location = page_location.lower()
     current_page = 1
     max_page = math.ceil(len(array)/per_page)
     last_page_entries = len(array) % per_page if len(array) % per_page != 0 else per_page
-    if selectable and len(array) == 1:
+    if selectable and len(array) == 1 and auto_select:
         page = current_page
         index = 0
         index_on_page = 1
@@ -114,3 +115,31 @@ async def page(ctx, array: list, selectable: bool=False, per_page: int=10, funct
             except:
                 pass
             return None
+
+async def confirm(ctx, timeout: int=60, message: discord.Message=None):
+    bot = ctx.bot
+    try:
+        response = await bot.wait_for("message", check=lambda m: ctx.author == m.author and ctx.channel == m.channel, timeout=timeout)
+        if response.content.lower() in confirmed:
+            return True
+        else:
+            try:
+                if message:
+                    await message.delete()
+            except:
+                pass
+            try:
+                await response.delete()
+            except:
+                pass
+            return False
+    except asyncio.TimeoutError:
+        try:
+            if message:
+                await message.delete()
+        except:
+            pass
+        try:
+            await response.delete()
+        except:
+            pass

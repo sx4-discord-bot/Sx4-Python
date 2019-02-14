@@ -42,27 +42,121 @@ rps_settings = {"rps_wins": 0, "rps_draws": 0, "rps_losses": 0}
 class fun:
     def __init__(self, bot):
         self.bot = bot
+        self.steam_cache = bot.loop.create_task(self.update_games())
+
+    def __unload(self):
+        self.steam_cache.cancel()
+
+    @commands.command()
+    async def tts(self, ctx, *, text: str):
+        """Returns an mp3 file using text to speech of text of your choice"""
+        if len(text) > 200:
+            return await ctx.send("Text to speech can be no longer than 200 characters :no_entry:")
+        await ctx.send(file=discord.File(requests.get("https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&{}".format(urllib.parse.urlencode({"q": text}))).content, "{}.mp3".format(text)))
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def weather(self, ctx, country_code: str, *, city: str):
+        """Shows weather info on a city"""
+        data = requests.get("https://api.openweathermap.org/data/2.5/weather?{},{}&APPID={}&units=metric".format(urllib.parse.urlencode({"q": city.lower()}), country_code.lower(), Token.weather())).json()
+        if "message" in data:
+            return await ctx.send(data["message"].capitalize() + " :no_entry:")
+        direction = min({360: "North", 0: "North", 45: "North East", 90: "East", 135: "South East", 180: "South", 225: "South West", 270: "West", 315:  "North West"}.items(), key=lambda x: abs(x[0]-data["wind"]["deg"]))[1]
+        s=discord.Embed()
+        s.set_author(name=data["name"] + " (" + data["sys"]["country"] + ")")
+        s.add_field(name="Temperature", value="Minimum: {}°C\nCurrent: {}°C\nMaximum: {}°C".format(round(data["main"]["temp_min"]), round(data["main"]["temp"]), round(data["main"]["temp_max"])))
+        s.add_field(name="Humidity", value="{}%".format(data["main"]["humidity"]))
+        s.add_field(name="Wind", value="Speed: {}m/s\nDirection: {}° ({})".format(data["wind"]["speed"], data["wind"]["deg"], direction))
+        s.set_thumbnail(url="http://openweathermap.org/img/w/{}.png".format(data["weather"][0]["icon"]))
+        await ctx.send(embed=s)
+
+    @commands.command(aliases=["randomgame"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def randomsteamgame(self, ctx):
+        """Fetches a random steam game and shows you info about it"""
+        games = data.read_json("data/fun/steamgames.json")["applist"]["apps"]
+        game_id = random.choice(games)["appid"]
+        game = requests.get("https://store.steampowered.com/api/appdetails?appids=" + str(game_id)).json()[str(game_id)]
+        if not game["success"]:
+            return await ctx.send("Something went wrong on steams end, but there is no data for the random game that was selected :no_entry:")
+        else:
+            game = game["data"]
+        s=discord.Embed(description=game["short_description"])
+        s.set_image(url=game["header_image"])
+        s.set_author(name=game["name"], icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/2000px-Steam_icon_logo.svg.png", url="https://store.steampowered.com/app/" + str(game_id))
+        s.add_field(name="Price", value=game["price_overview"]["final_formatted"] if "price_overview" in game else ("Free" if game["is_free"] else "Unknown"))
+        s.add_field(name="Release Date", value=game["release_date"]["date"] + (" (Coming Soon)" if game["release_date"]["coming_soon"] else ""))
+        s.add_field(name="Required Age", value=game["required_age"] if game["required_age"] != 0 else "No Age Restriction")
+        s.add_field(name="Recommendations", value="{:,}".format(game["recommendations"]["total"]) if "recommendations" in game else "Unknown/None")
+        s.add_field(name="Supported Languages", value=game["supported_languages"].replace("<br>", "\n").replace("</br>", "\n").replace("<strong>", "").replace("</strong>", "").replace("*", "\*"))
+        s.add_field(name="Genres", value="\n".join(map(lambda x: x["description"], game["genres"])) if "genres" in game else "None")
+        s.set_footer(text="Developed by " + (", ".join(game["developers"]) if "developers" in game else "Unknown"))
+        await ctx.send(embed=s)
+
+    @commands.command()
+    async def minesweeper(self, ctx, bomb_amount: int=10, grid: str="10x10"):
+        """Play minesweeper with discords spoiler feature 10 bombs in a 10x10 grid"""
+        bombs = []
+        if not re.match("[0-9]+x[0-9]+", grid):
+            return await ctx.send("Invalid grid format make sure to format it like so <x axis>x<y axis> so like 10x10 :no_entry:")
+        grid_x = int(grid.split("x")[0])
+        grid_y = int(grid.split("x")[1])
+        if grid_x < 2 or grid_y < 2:
+            return await ctx.send("The grid has to be at least 2x2 in size :no_entry:")
+        if bomb_amount > grid_x * grid_y - 1:
+            return await ctx.send("**{}** is the max amount of bombs you can have :no_entry:".format(grid_x * grid_y - 1))
+        elif bomb_amount < 1:
+            return await ctx.send("**1** is the minimum amount of bombs you can have :no_entry:")
+        for x in range(bomb_amount):
+            tuple = (random.choice(range(grid_x)), random.choice(range(grid_y)), "x")
+            while tuple in bombs:
+                tuple = (random.choice(range(grid_x)), random.choice(range(grid_y)), "x")
+            bombs.append(tuple)
+        number = 0
+        numbers = []
+        for x in range(grid_x):
+            for y in range(grid_y):
+                if (x, y, "x") in bombs:
+                    pass
+                else:
+                    for xar in range(3):
+                        for yar in range(3):
+                            if (x + (xar - 1), y + (yar - 1), "x") in bombs:
+                                number += 1
+                    numbers.append((x, y, number))
+                    number = 0
+        all = bombs + numbers
+        all = sorted(sorted(all, key=lambda x: x[1]), key=lambda x: x[0])
+        i = 0
+        num = {"0": ":zero:", "1": ":one:", "2": ":two:", "3": ":three:", "4": ":four:", "5": ":five:", "6": ":six:", "7": ":seven:", "8": ":eight:", "9": ":nine:", "x": ":bomb:"}
+        msg = ""
+        for x in all:
+            if i == grid_x:
+                msg += "\n"
+                i = 0
+            msg += "||{}||".format(num[str(x[2])])
+            i += 1
+        if len(msg) > 2000:
+            return await ctx.send("The grid size is too big :no_entry:")
+        await ctx.send(msg)
 
     @commands.command(aliases=["gamesearch"])
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def steamsearch(self, ctx, *, game_name: str):
+    async def steamsearch(self, ctx, *, game_name: str=None):
         """Looks up a game on steam and returns info on it aswell as the link to the game page"""
-        try:
-            request = requests.get("http://api.steampowered.com/ISteamApps/GetAppList/v0002/?key=" + Token.steam() + "&format=json", timeout=5).json()["applist"]["apps"]
-        except:
-            return await ctx.send("Request Timed out, try again later :no_entry:")
-        game = sorted(list(filter(lambda x: x["name"].lower() == game_name.lower() or game_name.lower() in x["name"].lower(), request)), key=lambda x: x["name"])
+        games = data.read_json("data/fun/steamgames.json")["applist"]["apps"]
+        if not game_name:
+            game = sorted(games, key=lambda x: x["name"])
+        else:
+            game = sorted(list(filter(lambda x: x["name"].lower() == game_name.lower() or game_name.lower() in x["name"].lower(), games)), key=lambda x: x["name"])
         if not game:
             return await ctx.send("No games matched your query (Make sure the game is on Steam) :no_entry:")
         else:
-            if len(game) > 1:
-                event = await paged.page(ctx, game, selectable=True, function=lambda x: x["name"])
-                if event:
-                    game_id = event["object"]["appid"]
-                else:
-                    return
+            event = await paged.page(ctx, game, selectable=True, function=lambda x: x["name"], auto_select=True)
+            if event:
+                game_id = event["object"]["appid"]
             else:
-                game_id = game[0]["appid"] 
+                return
         game = requests.get("https://store.steampowered.com/api/appdetails?appids=" + str(game_id)).json()[str(game_id)]
         if not game["success"]:
             return await ctx.send("Something went wrong on steams end, but there is no data for that game :no_entry:")
@@ -76,8 +170,8 @@ class fun:
         s.add_field(name="Required Age", value=game["required_age"] if game["required_age"] != 0 else "No Age Restriction")
         s.add_field(name="Recommendations", value="{:,}".format(game["recommendations"]["total"]) if "recommendations" in game else "Unknown/None")
         s.add_field(name="Supported Languages", value=game["supported_languages"].replace("<br>", "\n").replace("</br>", "\n").replace("<strong>", "").replace("</strong>", "").replace("*", "\*"))
-        s.add_field(name="Genres", value="\n".join(map(lambda x: x["description"], game["genres"])))
-        s.set_footer(text="Developed by " + ", ".join(game["developers"]))
+        s.add_field(name="Genres", value="\n".join(map(lambda x: x["description"], game["genres"])) if "genres" in game else "None")
+        s.set_footer(text="Developed by " + (", ".join(game["developers"]) if "developers" in game else "Unknown"))
         await ctx.send(embed=s)
 
     @commands.command(aliases=["perksearch", "searchperk"])
@@ -109,14 +203,11 @@ class fun:
                 array = list(filter(lambda x: perk.lower() in x["name"].lower(), array))
             if not array:
                 return await ctx.send("I could not find that perk :no_entry:")
-            if len(array) == 1:
-                event = array[0]
+            event = await paged.page(ctx, array, selectable=True, per_page=15, function=lambda x: x["name"], auto_select=True)
+            if event:
+                event = event["object"]
             else:
-                event = await paged.page(ctx, array, selectable=True, per_page=15, function=lambda x: x["name"])
-                if event:
-                    event = event["object"]
-                else:
-                    return
+                return
             event2 = await paged.page(ctx, event["rarity"], function=lambda x: x.title().replace("_", " "), selectable=True)
             if event2:
                 image = "dbd_perks/iconPerks_" + event["image"] + ".png"
@@ -432,11 +523,16 @@ class fun:
     async def youtube(self, ctx, *, search: str):
         """Search for a youtube video by query"""
         url = "https://www.googleapis.com/youtube/v3/search?key=" + Token.youtube() + "&part=snippet&safeSearch=none&{}".format(urllib.parse.urlencode({"q": search}))
-        request = requests.get(url)
-        try:
-            await ctx.send("https://www.youtube.com/watch?v={}".format(request.json()["items"][0]["id"]["videoId"]))
-        except:
-            await ctx.send("No results :no_entry:")
+        request = requests.get(url).json()
+        if not request["items"]:
+            return await ctx.send("No results :no_entry:")
+        youtube_id = request["items"][0]["id"]
+        if youtube_id["kind"] == "youtube#channel":
+            await ctx.send("https://www.youtube.com/channel/{}".format(youtube_id["channelId"]))
+        elif youtube_id["kind"] == "youtube#video":
+            await ctx.send("https://www.youtube.com/watch?v={}".format(youtube_id["videoId"]))
+        elif youtube_id["kind"] == "youtube#playlist":
+            await ctx.send("https://www.youtube.com/playlist?list={}".format(youtube_id["playlistId"]))
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -640,15 +736,14 @@ class fun:
         await ctx.send(embed=s)
 
     @commands.command(pass_context=True)
-    async def say(self, ctx, *, text):
+    async def say(self, ctx, *, text: commands.clean_content):
         """Say something with the bot"""
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
         await ctx.send(text[:2000])
+
+    @commands.command()
+    async def spoilerfy(self, ctx, *, text: commands.clean_content):
+        """Make any text annoying to unvail"""
+        await ctx.send("".join(["||" + x + "||" if x != " " else x for x in text])[:2000])
         
     @commands.command(name="embed", aliases=["esay"])
     async def _embed(self, ctx, *, text):
@@ -712,48 +807,24 @@ class fun:
         await ctx.send(embed=s)
 
     @commands.command()
-    async def clapify(self, ctx, *, text):
+    async def clapify(self, ctx, *, text: commands.clean_content):
         """Claps your text"""
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
         await ctx.send(text.replace(" ", ":clap:")[:2000])
 
     @commands.command(pass_context=True)
-    async def ascend(self, ctx, *, text):
+    async def ascend(self, ctx, *, text: commands.clean_content):
         """Make text look cool"""
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
         await ctx.send(text.replace("", " ")[:2000])
          
     @commands.command(pass_context=True)
-    async def backwards(self, ctx, *, text: str):
+    async def backwards(self, ctx, *, text: commands.clean_content):
         """Make text go backwards"""
         text = text[::-1]
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
         await ctx.send(text[:2000])
         
     @commands.command()
-    async def randcaps(self, ctx, *, text: str):
+    async def randcaps(self, ctx, *, text: commands.clean_content):
         """Make your text look angry"""
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
         msg = ""
         for letter in text:
             number = randint(0, 1)
@@ -765,14 +836,8 @@ class fun:
         await ctx.send(msg[:2000])
             
     @commands.command(aliases=["altcaps"])
-    async def alternatecaps(self, ctx, *, text):
+    async def alternatecaps(self, ctx, *, text: commands.clean_content):
         """Make your text look neatly angry"""
-        if "@everyone" in text.lower():
-            await ctx.send("@Everyone. Ha get pranked :middle_finger:")
-            return
-        if "@here" in text.lower():
-            await ctx.send("@Here. Ha get pranked :middle_finger:")
-            return
         number = 0
         msg = ""
         for letter in text:
@@ -899,7 +964,6 @@ class fun:
         return page + 1, row + 1
 
     def suffix(self, number: int):
-        suffix = ""
         num = number % 100
         if num >= 11 and num <= 13:
             suffix = "th"
@@ -914,6 +978,15 @@ class fun:
             else:
                 suffix = "th"
         return "{:,}{}".format(number, suffix)
+
+    async def update_games(self):
+        while not self.bot.is_closed():
+            try:
+                games = requests.get("http://api.steampowered.com/ISteamApps/GetAppList/v0002/?key=" + Token.steam() + "&format=json", timeout=7).json()
+            except:
+                return print("Failed updating steam games file, trying again in 60 minutes")
+            data.write_json("data/fun/steamgames.json", games)
+            await asyncio.sleep(3600)
         
 def setup(bot):
     bot.add_cog(fun(bot))

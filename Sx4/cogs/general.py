@@ -13,8 +13,9 @@ import json
 import sys
 import re
 from . import owner as dev
+from .economy import economy
 import os
-from utils import arg, Token, checks, arghelp, paged
+from utils import arg, Token, checks, arghelp, paged, ctime, dateify
 from random import choice, randint
 import requests
 import rethinkdb as r
@@ -30,10 +31,93 @@ class general:
         self._stats = []
         self._stats_task = bot.loop.create_task(self.checktime())
         self._database_check = bot.loop.create_task(self.update_database())
+        self._reminder_check = bot.loop.create_task(self.check_reminders())
 
     def __unload(self):
         self._stats_task.cancel()
         self._database_check.cancel()
+        self._reminder_check.cancel()
+
+    @commands.command(aliases=["vclink", "screenshare"])
+    async def voicelink(self, ctx, *, voice_channel: str=None):
+        """Gives you a link which allows you to screenshare in public voice channels (You have to be in the right voice channel for the link to work)"""
+        if not voice_channel:
+            if ctx.author.voice:
+                if ctx.author.voice.channel:
+                    channel = ctx.author.voice.channel
+                else:
+                    return await ctx.send("You are not connected to a voice channel :no_entry:")
+            else:
+                return await ctx.send("You are not connected to a voice channel :no_entry:")
+        else:
+            channel = arg.get_voice_channel(ctx, voice_channel)
+            if not channel:
+                return await ctx.send("I could not find that voice channel :no_entry:")
+        await ctx.send("<https://discordapp.com/channels/{}/{}>".format(ctx.guild.id, channel.id))
+
+    @commands.group()
+    async def reminder(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await arghelp.send(self.bot, ctx)
+        else:
+            pass
+
+    @reminder.command(name="add")
+    async def ___add(self, ctx, time: str, *, reminder: str):
+        """Add a reminder and the bot will notify you when it's time to"""
+        try:
+            seconds = ctime.convert(time)
+        except ValueError:
+            return await ctx.send("Invalid time format, make sure it's formatted with a numerical value then a letter representing the time (d for days, h for hours, m for minutes, s for seconds) :no_entry:")
+        if seconds <= 0:
+            return await ctx.send("The reminder has to be at least a second long :no_entry:")
+        if len(reminder) > 1500:
+            return await ctx.send("Your reminder can be no longer than 1500 characters :no_entry:")
+        r.table("reminders").insert({"id": str(ctx.author.id), "reminders": [], "reminder_count": 0}).run(durability="soft", noreply=True)
+        userdata = r.table("reminders").get(str(ctx.author.id))
+        remind_at = datetime.utcnow().timestamp() + seconds
+        await ctx.send("I have added your reminder, you will be reminded about it at `{}` (Reminder ID: **{}**)".format(datetime.fromtimestamp(remind_at).strftime("%d/%m/%Y %H:%M"), userdata["reminder_count"].run() + 1))
+        userdata.update({"reminders": r.row["reminders"].append({"id": r.row["reminder_count"] + 1, "reminder": reminder, "remind_at": remind_at}), "reminder_count": r.row["reminder_count"] + 1}).run(durability="soft", noreply=True)
+
+    @reminder.command(name="remove")
+    async def ___remove(self, ctx, reminder_id: int):
+        """Remove a reminder you have previously created"""
+        userdata = r.table("reminders").get(str(ctx.author.id))
+        if not userdata.run():
+            return await ctx.send("You have not created any reminders :no_entry:")
+        if not userdata["reminders"].run():
+            return await ctx.send("You do not have any active reminders :no_entry:")
+        reminder = userdata["reminders"].filter(lambda x: x["id"] == reminder_id).run()
+        if not reminder:
+            return await ctx.send("You don't have a reminder with that ID :no_entry:")
+        await ctx.send("I have removed that reminder, you will no longer be reminded about it <:done:403285928233402378>")
+        userdata.update({"reminders": r.row["reminders"].filter(lambda x: x["id"] != reminder_id)}).run(durability="soft", noreply=True)
+
+    @reminder.command(name="list")
+    async def ___list(self, ctx, *, user: str=None):
+        """List a users current reminders"""
+        if not user:
+            user = ctx.author
+        else:
+            user = arg.get_server_member(ctx, user)
+            if not user:
+                return await ctx.send("I could not find that user :no_entry:")
+        userdata = r.table("reminders").get(str(user.id)).run()
+        if not userdata:
+            return await ctx.send("This user has not created any reminders :no_entry:")
+        if not userdata["reminders"]:
+            return await ctx.send("This user does not have any active reminders :no_entry:")
+        def visual(x):
+            if len(x["reminder"]) > 100:
+                reminder = x["reminder"][:100] + "..."
+            else:
+                reminder = x["reminder"]
+            time = dateify.get(x["remind_at"] - datetime.utcnow().timestamp())
+            return reminder + " in `" + time + "` (ID: {})".format(x["id"])
+        event = await paged.page(ctx, sorted(userdata["reminders"], key=lambda x: x["id"]), selectable=True, function=visual, author={"name": "Reminder List", "icon_url": user.avatar_url})
+        if event:
+            event = event["object"]
+            await ctx.send("ID: `{}`\nReminder: `{}`\nRemind In: `{}`".format(event["id"], event["reminder"], dateify.get(event["remind_at"] - datetime.utcnow().timestamp())))
 
     @commands.command()
     async def suggest(self, ctx, *, suggestion: str):
@@ -48,8 +132,11 @@ class general:
         s.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
         s.set_footer(text="This suggestion is currently pending")
         message = await channel.send(embed=s)
-        await message.add_reaction("✅")
-        await message.add_reaction("❌") 
+        try:
+            await message.add_reaction("✅")
+            await message.add_reaction("❌") 
+        except:
+            return
         await ctx.send("Your suggestion has been sent to {}".format(channel.mention))
         data.update({"suggestions": r.row["suggestions"].append({"id": str(message.id), "user": str(ctx.author.id), "accepted": None})}).run(durability="soft", noreply=True)
 
@@ -96,7 +183,15 @@ class general:
         elif not data["channel"].run() or not data["toggle"].run():
             return await ctx.send("Suggestions are not set up in this server :no_entry:")
         if str(message_id) in data["suggestions"].map(lambda x: x["id"]).run():
-            message = await ctx.guild.get_channel(int(data["channel"].run())).get_message(message_id)
+            try:
+                message = await ctx.guild.get_channel(int(data["channel"].run())).get_message(message_id)
+            except discord.errors.NotFound:
+                data.update({"suggestions": r.row["suggestions"].filter(lambda x: x["id"] != str(message_id))}).run(durability="soft", noreply=True)
+                return await ctx.send("That message no longer exists :no_entry:")
+            suggestions = data["suggestions"].run()
+            message_db = list(filter(lambda x: x["id"] == str(message_id), suggestions))[0]
+            if message_db["accepted"] is not None:
+                return await ctx.send("This suggestion has already had a verdict :no_entry:")
             embed = message.embeds[0]
             embed.colour = 0x5fe468
             embed.add_field(name="Moderator", value=ctx.author)
@@ -104,8 +199,12 @@ class general:
             embed.set_footer(text="Suggestion Accepted")
             await message.edit(embed=embed)
             await ctx.send("That suggestion has been accepted <:done:403285928233402378>")
-            suggestions = data["suggestions"].run()
-            message_db = list(filter(lambda x: x["id"] == str(message_id), suggestions))[0]
+            user = self.bot.get_user(int(message_db["user"]))
+            if user:
+                try:
+                    await user.send("Your suggestion below has been accepted\nhttps://discordapp.com/channels/{}/{}/{}".format(ctx.guild.id, int(data["channel"].run()), message_id))
+                except:
+                    pass
             suggestions.remove(message_db)
             message_db["accepted"] = True
             suggestions.append(message_db)
@@ -123,7 +222,15 @@ class general:
         elif not data["channel"].run() or not data["toggle"].run():
             return await ctx.send("Suggestions are not set up in this server :no_entry:")
         if str(message_id) in data["suggestions"].map(lambda x: x["id"]).run():
-            message = await ctx.guild.get_channel(int(data["channel"].run())).get_message(message_id)
+            try:
+                message = await ctx.guild.get_channel(int(data["channel"].run())).get_message(message_id)
+            except discord.errors.NotFound:
+                data.update({"suggestions": r.row["suggestions"].filter(lambda x: x["id"] != str(message_id))}).run(durability="soft", noreply=True)
+                return await ctx.send("That message no longer exists :no_entry:")
+            suggestions = data["suggestions"].run()
+            message_db = list(filter(lambda x: x["id"] == str(message_id), suggestions))[0]
+            if message_db["accepted"] is not None:
+                return await ctx.send("This suggestion has already had a verdict :no_entry:")
             embed = message.embeds[0]
             embed.colour = 0xf84b50
             embed.add_field(name="Moderator", value=ctx.author)
@@ -131,8 +238,12 @@ class general:
             embed.set_footer(text="Suggestion Denied")
             await message.edit(embed=embed)
             await ctx.send("That suggestion has been denied <:done:403285928233402378>")
-            suggestions = data["suggestions"].run()
-            message_db = list(filter(lambda x: x["id"] == str(message_id), suggestions))[0]
+            user = self.bot.get_user(int(message_db["user"]))
+            if user:
+                try:
+                    await user.send("Your suggestion below has been denied\nhttps://discordapp.com/channels/{}/{}/{}".format(ctx.guild.id, int(data["channel"].run()), message_id))
+                except:
+                    pass
             suggestions.remove(message_db)
             message_db["accepted"] = False
             suggestions.append(message_db)
@@ -201,7 +312,7 @@ class general:
             else:
                 accepted = "Denied"
             return "[{}'s Suggestion - {}]({})".format(self.bot.get_user(int(x["user"])).name if self.bot.get_user(int(x["user"])) else x["user"], accepted, url + x["id"])
-        await paged.page(ctx, sorted(data["suggestions"], key=lambda x: int(x["id"])), indexed=False, function=function, per_page=20, author={"name": "Suggestions", "icon_url": ctx.guild.icon_url})
+        await paged.page(ctx, sorted(data["suggestions"], key=lambda x: int(x["id"])), indexed=False, function=function, per_page=10, author={"name": "Suggestions", "icon_url": ctx.guild.icon_url})
 
     @commands.group()
     async def imagemode(self, ctx):
@@ -226,35 +337,34 @@ class general:
 
     @imagemode.command(name="slowmode")
     @checks.has_permissions("manage_messages")
-    async def _slowmode(self, ctx, time_interval):
+    async def _slowmode(self, ctx, *, time_interval: str):
         """Set the slowmode on a channel with image mode on so people can only post images once every however long"""
-        try:
-            if time_interval.endswith("d"):
-                time_interval = int(time_interval[:-1])*86400
-            elif time_interval.endswith("h"):
-                time_interval = int(time_interval[:-1])*3600
-            elif time_interval.endswith("m"):
-                time_interval = int(time_interval[:-1])*60
-            elif time_interval.endswith("s"):
-                time_interval = int(time_interval[:-1])
-            elif time_interval.lower() in ["off", "none"]:
-                time_interval = 0
-            else:
-                time_interval = int(time_interval)
-        except:
-            return await ctx.send("Invalid time interval :no_entry:")
+        if time_interval in ["off", "none"]:
+            time_interval = 0
+        else:
+            try:
+                time_interval = ctime.convert(time_interval)
+            except ValueError:
+                return await ctx.send("Invalid time interval :no_entry:")
         data = r.table("imagemode").get(str(ctx.guild.id))
         if str(ctx.channel.id) not in data["channels"].map(lambda x: x["id"]).run():
             await ctx.send("Turn image mode on for this channel using `{}imagemode toggle` before you set the slowmode.".format(ctx.prefix))
         else:
             data.update({"channels": r.row["channels"].map(lambda x: r.branch(x["id"] == str(ctx.channel.id), x.merge({"slowmode": str(time_interval)}), x))}).run(durability="soft")
-            await ctx.send("Slowmode has been updated for image mode in this channel.")
+            if time_interval == 0:
+                await ctx.send("Slowmode has been turned off for image mode in this channel.")
+            else:
+                await ctx.send("Slowmode has been set to {} for image mode in this channel.".format(dateify.get(time_interval)))
 
     @imagemode.command(name="stats")
-    async def __stats(self, ctx, channel: discord.TextChannel=None):
+    async def __stats(self, ctx, channel: str=None):
         data = r.table("imagemode").get(str(ctx.guild.id))
         if not channel:
             channel = ctx.channel
+        else:
+            channel = arg.get_text_channel(ctx, channel)
+            if not channel:
+                return await ctx.send("I could not find that text channel :no_entry:")
         if str(channel.id) not in data["channels"].map(lambda x: x["id"]).run():
             await ctx.send("Image mode is not enabled in this channel :no_entry:")
         else:
@@ -395,7 +505,7 @@ class general:
             message = list(await self.bot.get_channel(455806567577681921).history(limit=1).flatten())[0]
         else:
             if "/" in date:
-                year = int(datetime.now().strftime("%y"))
+                year = int(datetime.utcnow().strftime("%y"))
                 try:
                     day = int(date.split("/")[0])
                     month = int(date.split("/")[1])
@@ -405,27 +515,37 @@ class general:
                     year = int(date.split("/")[2])
                 except IndexError:
                     pass
+                except ValueError:
+                    return await ctx.send("Invalid date format :no_entry:")
+                if datetime(datetime.strptime(str(year), "%y").year, month, day) > datetime.utcnow():
+                    return await ctx.send("That date is ahead of today, so there are no changes :no_entry:")
+                elif datetime.utcnow() - timedelta(days=100) > datetime(datetime.strptime(str(year), "%y").year, month, day):
+                    return await ctx.send("That date is more than 100 days before today, the bot can not fetch changes older than 100 days :no_entry:")
                 for x in await self.bot.get_channel(455806567577681921).history(limit=100).flatten():
-                    date = x.content.split("\n\n")[7].split("(")[1][:-1]
-                    day_message = int(date.split("/")[0])
-                    month_message = int(date.split("/")[1])
-                    year_message = int(date.split("/")[2])
+                    date2 = x.content.split("\n\n")[7].split("(")[1][:-1]
+                    day_message = int(date2.split("/")[0])
+                    month_message = int(date2.split("/")[1])
+                    year_message = int(date2.split("/")[2])
                     if day == day_message and month_message == month and year == year_message:
                         message = x
                         break
             else:
                 return await ctx.send("Invalid date format :no_entry:")
         if not message:
-            return await ctx.send("I could not find changes from that date (Make sure the date is within 100 days within today and isn't in the future) :no_entry:")
-        bugfixes = message.content.split("\n\n")[2]
-        updates = message.content.split("\n\n")[4]
-        announcements = message.content.split("\n\n")[6]
-        date = message.content.split("\n\n")[7]
-        s=discord.Embed(timestamp=message.edited_at if message.edited_at else message.created_at).set_author(name="Sx4 Change Log", icon_url=self.bot.user.avatar_url)
+            bugfixes = "- None"
+            updates = "- None"
+            announcements = "- None"
+            date = "Sx4 changes (" + (date + "/" + datetime.utcnow().strftime("%y") if len(date) == 5 else date) + ")"
+        else:
+            bugfixes = message.content.split("\n\n")[2]
+            updates = message.content.split("\n\n")[4]
+            announcements = message.content.split("\n\n")[6]
+            date = message.content.split("\n\n")[7]
+        s=discord.Embed(timestamp=(message.edited_at if message.edited_at else message.created_at) if message else discord.Embed.Empty).set_author(name="Sx4 Change Log", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Bug Fixes", value=bugfixes, inline=False)
         s.add_field(name="Updates", value=updates, inline=False)
         s.add_field(name="Announcements", value=announcements, inline=False)
-        s.set_footer(text=date + " | Last Updated")
+        s.set_footer(text=date + (" | Last Updated" if message else ""))
         await ctx.send(embed=s)
 
     @commands.command()
@@ -450,8 +570,8 @@ class general:
             responsetime = response.created_at.timestamp()
         await ctx.send("Your reaction speed was **{}ms** (Discord API ping and Message ping have been excluded)".format(round(((responsetime - message.created_at.timestamp()) - self.bot.latency - ping)*1000)))
 
-    @commands.command()
-    async def invites(self, ctx, *, user: str=None):
+    @commands.command(name="invites")
+    async def _invites(self, ctx, *, user: str=None):
         """View how many invites you have or a user has"""
         if not user:
             user = ctx.author
@@ -496,8 +616,8 @@ class general:
         await ctx.send("{} has **{}** invites which means they have the **{}** most invites. They have invited **{}%** of all users.".format(user, amount, self.prefixfy(place), percent))
         del entries
 
-    @commands.command(aliases=["ilb", "inviteslb"])
-    async def invitesleaderboard(self, ctx, page: int=None):
+    @commands.command(aliases=["lbinvites", "lbi", "ilb"])
+    async def inviteslb(self, ctx, page: int=None):
         """View a leaderboard sorted by the users with the most invites"""
         if not page:
             page = 1
@@ -521,7 +641,7 @@ class general:
         sorted_invites = sorted(entries["user"].items(), key=lambda x: x[1]["uses"], reverse=True)
         msg, i = "", page*10-10
         try:
-            place = list(map(lambda x: x[0], sorted_invites)).index(str(ctx.author.id))
+            place = list(map(lambda x: x[0], sorted_invites)).index(str(ctx.author.id)) + 1
         except:
             place = None
         for x in sorted_invites[page*10-10:page*10]:
@@ -1010,8 +1130,8 @@ class general:
         shea = discord.utils.get(self.bot.get_all_members(), id=402557516728369153)
         joakim = discord.utils.get(self.bot.get_all_members(), id=190551803669118976)
         description = ("Sx4 is a bot which intends to make your discord experience easier yet fun, it has multiple different purposes"
-        ", which includes Moderation, utility and economy. Sx4 began as a red bot to help teach it's owner more about coding, it has now evolved in to"
-        " a self coded bot with the help of some bot developers and intends to go further.")
+        ", which includes Moderation, utility, economy, music, logs and a lot more. Sx4 began as a red bot to help teach it's owner more about discord bots, it has now evolved in to"
+        " a bot coded in Python and Java with the help of some bot developers and intends to go further.")
         s=discord.Embed(description=description, colour=0xfff90d)
         s.set_author(name="Info!", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Stats", value="Ping: {}ms\nServers: {}\nUsers: {}".format(ping, servers, users))
@@ -1023,9 +1143,10 @@ class general:
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def shardinfo(self, ctx):
         "Look at Sx4s' shards"
-        s=discord.Embed(colour=0xffff00)
+        latencies = list(map(lambda x: x[1]*1000, self.bot.latencies))
+        s=discord.Embed(colour=0xffff00, description="```prolog\nTotal Shards: {}\nTotal Servers: {:,}\nTotal Users: {:,}\nAverage Ping: {}ms```".format(self.bot.shard_count, len(self.bot.guilds), len(self.bot.users), round(sum(latencies)/len(latencies))))
         s.set_author(name="Shard Info!", icon_url=self.bot.user.avatar_url)
-        s.set_footer(text="> indicates what shard your server is in | Users are not unique", icon_url=ctx.author.avatar_url)
+        s.set_footer(text="> indicates what shard your server is in", icon_url=ctx.author.avatar_url)
         servers = self.bot.guilds
         for x in range(self.bot.shard_count):
             if x == ctx.guild.shard_id:
@@ -1300,14 +1421,15 @@ class general:
         """Check how many users have the discriminator 0001 seeing as though that's all people care about"""
         if not page:
             page = 1
-        number = len([x for x in list(set(self.bot.get_all_members())) if x.discriminator == discriminator])
+        users = sorted([x for x in self.bot.users if x.discriminator == discriminator], key=lambda x: x.name)
+        number = len(users)
         if page - 1 > number / 20:
             await ctx.send("Invalid Page :no_entry:")
             return
         if page < 1:
             await ctx.send("Invalid Page :no_entry:")
             return
-        msg = "\n".join(["{}#{}".format(x.name, x.discriminator) for x in sorted(list(set(self.bot.get_all_members())), key=lambda x: x.name.lower()) if x.discriminator == discriminator][page*20-20:page*20])
+        msg = "\n".join(list(map(lambda x: str(x), users))[page*20-20:page*20])
         if number == 0: 
             await ctx.send("There's no one with that discriminator or it's not a valid discriminator :no_entry:")
             return
@@ -1363,6 +1485,7 @@ class general:
             return
             
     @trigger.command(pass_context=True)
+    @checks.has_permissions("manage_guild")
     async def case(self, ctx):
         """Toggles your triggers between case sensitive and not"""
         server = ctx.guild 
@@ -1464,7 +1587,7 @@ class general:
                 channel = imagemodedata["channels"].filter(lambda x: x["id"] == str(message.channel.id))[0]
                 users = channel["users"]
                 usersran = channel["users"].run()
-                supported = ["png", "jpg", "jpeg", "gif", "webp", "mp4", "gifv", "mov"]
+                supported = ["png", "jpg", "jpeg", "gif", "webp", "mp4", "gifv", "mov", "image"]
                 if not message.attachments:
                     embeds = message.embeds
                     if embeds:
@@ -1526,10 +1649,10 @@ class general:
                 return await ctx.send("I could not find that channel :no_entry:")
         await ctx.send("<#{}> ID: `{}`".format(channel.id, channel.id))
         
-    @commands.command(pass_context=True, aliases=["uinfo", "user"])
+    @commands.command(aliases=["uinfo", "user"])
     async def userinfo(self, ctx, *, user: str=None):
         """Get some info on a user in the server"""
-        author = ctx.message.author
+        author = ctx.author
         server = ctx.guild
         if not user:
             user = author
@@ -1549,16 +1672,18 @@ class general:
                     status="DND<:dnd:361440487179157505>"
                 if user.status == discord.Status.offline:
                     status="Offline<:offline:361445086275567626>"
-                if not user.activity:
-                    pass
-                elif isinstance(user.activity, discord.Spotify):
-                    m, s = divmod(user.activity.duration.total_seconds(), 60)
-                    duration = "%d:%02d" % (m, s)
-                    description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
-                elif user.activity:
-                    description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
-                elif user.activity.url:
-                    description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
+                if user.activity:
+                    if isinstance(user.activity, discord.Spotify):
+                        m, s = divmod(user.activity.duration.total_seconds(), 60)
+                        currentm, currents = divmod((datetime.utcnow() - user.activity.start).total_seconds(), 60)
+                        time_format = "%d:%02d"
+                        duration = time_format % (m, s)
+                        current = time_format % (currentm, currents)
+                        description = "Listening to [{} by {}](https://open.spotify.com/track/{}) `[{}/{}]`".format(user.activity.title, user.activity.artists[0], user.activity.track_id, current, duration)
+                    elif isinstance(user.activity, discord.Streaming):
+                        description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
+                    else:
+                        description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
                 author_name = str(user) + (" 📱" if user.is_on_mobile() else "")
             else:
                 author_name = str(user)
@@ -1589,16 +1714,18 @@ class general:
             status="Offline<:offline:361445086275567626>"
         description=""
         input = sorted([x for x in ctx.guild.members if x.joined_at], key=lambda x: x.joined_at).index(user) + 1
-        if not user.activity:
-            pass
-        elif isinstance(user.activity, discord.Spotify):
-            m, s = divmod(user.activity.duration.total_seconds(), 60)
-            duration = "%d:%02d" % (m, s)
-            description = "Listening to {} by {} `[{}]`".format(user.activity.title, user.activity.artists[0], duration)
-        elif user.activity:
-            description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps and "start" in user.activity.timestamps else ""))
-        elif user.activity.url:
-            description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
+        if user.activity:
+            if isinstance(user.activity, discord.Spotify):
+                m, s = divmod(user.activity.duration.total_seconds(), 60)
+                currentm, currents = divmod((datetime.utcnow() - user.activity.start).total_seconds(), 60)
+                time_format = "%d:%02d"
+                duration = time_format % (m, s)
+                current = time_format % (currentm, currents)
+                description = "Listening to [{} by {}](https://open.spotify.com/track/{}) `[{}/{}]`".format(user.activity.title, user.activity.artists[0], user.activity.track_id, current, duration)
+            elif isinstance(user.activity, discord.Streaming):
+                description="Streaming [{}]({})".format(user.activity.name, user.activity.url)
+            else:
+                description="{} {}{}".format(user.activity.type.name.title(), user.activity.name, (" for " + self.format_time_activity(datetime.now().timestamp() - (user.activity.timestamps["start"]/1000)) if hasattr(user.activity, "timestamps") and "start" in user.activity.timestamps else ""))
         roles=[x.mention for x in user.roles if x.name != "@everyone"][::-1][:20]
         s=discord.Embed(description=description, colour=user.colour, timestamp=datetime.utcnow())
         s.set_author(name=user.name + (" 📱" if user.is_on_mobile() else ""), icon_url=user.avatar_url)
@@ -1705,20 +1832,23 @@ class general:
     async def stats(self, ctx):
         """View the bots live stats"""
         server = ctx.guild
+        await ctx.channel.trigger_typing()
         r.table("botstats").insert({"id": "stats", "messages": 0, "commands": 0, "servers": 0, "users": [], "commandcounter": []}).run(durability="soft")
         botdata = r.table("botstats").get("stats").run(durability="soft")
-        uptime = self.format_time_stats(ctx.message.created_at.timestamp() - self.bot.uptime)
+        uptime = dateify.get(ctx.message.created_at.timestamp() - self.bot.uptime)
         members = list(set(self.bot.get_all_members()))
-        online = len(set(filter(lambda m: not m.status == discord.Status.offline, members)))
-        offline = len(set(filter(lambda m: m.status == discord.Status.offline, members)))
+        online = len(list(filter(lambda m: not m.status == discord.Status.offline, members)))
+        offline = len(list(filter(lambda m: m.status == discord.Status.offline, members)))
         process = psutil.Process(os.getpid())
+        all_memory = str(round(psutil.virtual_memory().total/1073741824, 2)) + "GB"
+        process_memory = str(round(process.memory_info().rss/1073741824, 2)) + "GB" if round(process.memory_info().rss/1048576) > 1024 else str(round(process.memory_info().rss/1048576)) + "MB"
         s=discord.Embed(description="Bot ID: {}".format(self.bot.user.id))
         s.set_author(name=self.bot.user.name + " Stats", icon_url=self.bot.user.avatar_url)
         s.set_thumbnail(url=self.bot.user.avatar_url)
         s.set_footer(text="Uptime: {} | Python {}.{}.{}".format(uptime, sys.version_info.major, sys.version_info.minor, sys.version_info.micro))
         s.add_field(name="Developer", value=str(discord.utils.get(self.bot.get_all_members(), id=402557516728369153)))
         s.add_field(name="Library", value="Discord.py {}".format(discord.__version__))
-        s.add_field(name="Memory Usage", value="{:,}".format(round(process.memory_info().rss/1000000)) + " MB")
+        s.add_field(name="Memory Usage", value=process_memory + "/" + all_memory)
         s.add_field(name="CPU Usage", value=str(psutil.cpu_percent()) + "%")
         s.add_field(name="Text Channels", value="{:,}".format(len([x for x in self.bot.get_all_channels() if isinstance(x, discord.TextChannel)])))
         s.add_field(name="Voice Channels", value="{:,}".format(len([x for x in self.bot.get_all_channels() if isinstance(x, discord.VoiceChannel)])))
@@ -1729,36 +1859,6 @@ class general:
         s.add_field(name="Servers", value="{:,}".format(len(self.bot.guilds)))
         s.add_field(name="Users ({:,} total)".format(len(members)), value="{:,} Online\n{:,} Offline\n{:,} use the bot".format(online, offline, len(botdata["users"])))
         await ctx.send(embed=s)
-
-    def format_time_stats(self, time):
-        m, s = divmod(time, 60)
-        h, m = divmod(m, 60)
-        d, h = divmod(h, 24)
-        if d == 1:
-            days = "day"
-        else: 
-            days = "days"
-        if h == 1:
-            hours = "hour"
-        else: 
-            hours = "hours"
-        if m == 1:
-            minutes = "minute"
-        else: 
-            minutes = "minutes"
-        if s == 1:
-            seconds = "second"
-        else: 
-            seconds = "seconds"
-        if d == 0 and h == 0:
-            time = "%d {} %d {}".format(minutes, seconds) % (m, s)
-        elif d == 0 and h == 0 and m == 0:
-            time = "%d {}".format(seconds) % (s)
-        elif d == 0:
-            time = "%d {} %d {} %d {}".format(hours, minutes, seconds) % (h, m, s)
-        else:
-            time = "%d {} %d {} %d {} %d {}".format(days, hours, minutes, seconds) % (d, h, m, s)
-        return time
         
     def prefixfy(self, input):
         number = str(input)
@@ -1822,21 +1922,21 @@ class general:
 
     async def checktime(self):
         while not self.bot.is_closed():
-            if datetime.utcnow().hour == 23:
+            if datetime.utcnow().hour == 0 and datetime.utcnow().minute == 0:
                 botdata = r.table("botstats").get("stats")
                 servers = len(self.bot.guilds) - botdata["servercountbefore"].run()
                 s=discord.Embed(colour=0xffff00, timestamp=datetime.utcnow())
                 s.set_author(name="Bot Logs", icon_url=self.bot.user.avatar_url)
                 if 86400/botdata["commands"].run(durability="soft") >= 1:
-                   s.add_field(name="Average Command Usage", value="1 every {}s ({})".format(round(86400/botdata["commands"].run(durability="soft")), botdata["commands"].run()))
+                    s.add_field(name="Average Command Usage", value="1 every {}s ({})".format(round(86400/botdata["commands"].run(durability="soft")), botdata["commands"].run()))
                 else:
                     s.add_field(name="Average Command Usage", value="{} every second ({})".format(round(botdata["commands"].run(durability="soft")/86400), botdata["commands"].run()))
                 s.add_field(name="Servers", value="{} ({})".format(len(self.bot.guilds), "+" + str(servers) if servers >= 0 else servers), inline=False)
-                s.add_field(name="Users (No Bots)", value=len(set(filter(lambda m: not m.bot, list(set(self.bot.get_all_members()))))))
+                s.add_field(name="Users (No Bots)", value=len(list(filter(lambda m: not m.bot, self.bot.users))))
                 await self.bot.get_channel(445982429522690051).send(embed=s)
                 botdata.update({"commands": 0, "messages": 0, "servercountbefore": len(self.bot.guilds)}).run(durability="soft", noreply=True)
                 r.table("stats").delete().run(durability="soft", noreply=True)
-            await asyncio.sleep(3580)
+            await asyncio.sleep(60)
 
     async def update_database(self):
         while not self.bot.is_closed():
@@ -1849,6 +1949,20 @@ class general:
             except Exception as e:
                 await self.bot.get_channel(344091594972069888).send(e)
             await asyncio.sleep(300)
+
+    async def check_reminders(self):
+        while not self.bot.is_closed():
+            for x in r.table("reminders").run():
+                if x["reminders"]:
+                    for reminder in x["reminders"]:
+                        if reminder["remind_at"] < datetime.utcnow().timestamp():
+                            user = self.bot.get_user(int(x["id"]))
+                            try:
+                                await user.send("You wanted me to remind you about **{}**".format(reminder["reminder"]))
+                            except:
+                                pass
+                            r.table("reminders").get(x["id"]).update({"reminders": r.row["reminders"].filter(lambda y: y["id"] != reminder["id"])}).run(durability="soft", noreply=True)
+            await asyncio.sleep(15)
 
     async def on_member_update(self, before, after):
         if after.status != discord.Status.offline and before.status == discord.Status.offline:

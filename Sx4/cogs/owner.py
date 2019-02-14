@@ -262,8 +262,10 @@ class owner:
                     if int(x.content.split(" ")[0].replace(",", "")) > guilds:
                         await x.delete() 
 
-    async def on_command(self, ctx):
-        webhook = discord.utils.get(await self.bot.get_guild(330399610273136641).webhooks(), id=507684441020170251)
+    async def on_command(self, ctx, *args, **kwargs):
+        guild = self.bot.get_guild(330399610273136641)
+        channel = guild.get_channel(507684635673886742)
+        webhook = discord.utils.get(await channel.webhooks(), id=507684441020170251)
         if checks.is_owner_c(ctx.author):
             ctx.command.reset_cooldown(ctx)
         try:
@@ -272,7 +274,7 @@ class owner:
             s.add_field(name="Channel", value="Name: {}\nID: {}".format(ctx.channel.name, ctx.channel.id), inline=False)
             s.add_field(name="Guild", value="Name: {}\nID: {}\nShard: {}\nMember Count: {:,}".format(ctx.guild.name, ctx.guild.id, ctx.guild.shard_id + 1, ctx.guild.member_count), inline=False)
             s.add_field(name="Author", value="User: {}\nID: {}".format(ctx.author, ctx.author.id), inline=False)
-            s.add_field(name="Command", value="Prefix: {}\nCommand: {}\nArguments: {}".format(ctx.prefix, ctx.command, ctx.kwargs), inline=False)
+            s.add_field(name="Command", value="Prefix: {}\nCommand: {}\nArguments: {}".format(ctx.prefix, ctx.command, kwargs), inline=False)
             s.add_field(name="Attachments", value="\n".join(map(lambda x: x.url, ctx.message.attachments)) if ctx.message.attachments else "None", inline=False)
             await webhook.send(embed=s)
         except Exception as e:

@@ -18,8 +18,9 @@ async def get_member_info(ctx, user_arg):
         id = int(match_mention.group(1))
         user = ctx.guild.get_member(id)
         if not user:
-            user = {x.id: x for x in bot.get_all_members()}[id]
-            if not user:
+            try:
+                user = {x.id: x for x in bot.get_all_members()}[id]
+            except KeyError:
                 try:
                     user = await bot.get_user_info(id)
                 except:
@@ -38,8 +39,9 @@ async def get_member_info(ctx, user_arg):
         id = int(match_id.group(1))
         user = ctx.guild.get_member(id)
         if not user:
-            user = {x.id: x for x in bot.get_all_members()}[id]
-            if not user:
+            try:
+                user = {x.id: x for x in bot.get_all_members()}[id]
+            except KeyError:
                 try:
                     user = await bot.get_user_info(id)
                 except:
