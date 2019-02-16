@@ -12,7 +12,7 @@ def convert(time: str):
             seconds += int(x[:-1]) * 3600
         elif x.lower().endswith("d"):
             seconds += int(x[:-1]) * 86400
-        elif x.lower().isdigit():
+        elif x.isdigit():
             seconds += int(x)
         else:
             pass
