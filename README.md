@@ -1,6 +1,6 @@
 # <u>__Sx4__</u>
 
-Sx4 is a mutlipurpose bot, this means it can be used for many different purposes making it easier for you to focus your whole server around a few bots. It also has over 190 commands (Over 400 including sub commands) for many different purposes
+Sx4 is a mutlipurpose bot, this means it can be used for many different purposes making it easier for you to focus your whole server around a few bots. It also has over 210 commands (Over 500 including sub commands) for many different purposes
 
 <u>__Moderation__</u>
 
@@ -24,9 +24,9 @@ sell your stuff on an online auction house built into the bot where you can also
 You can also get some bonus money by simply voting for the bot to rocket your start in the economy, make sure to vote every 12 
 hours as it's very profitable in the long run (If you give your referral links to friends you get bonus money just for referring them) and it doubles on weekends due to votes counting as 2 so double the reward!
 
-<u>__General-Use__</u>
+<u>__Utility__</u>
 
-Sx4 has many general use commands such as detailed user, server and role info commands so you can get detailed statistics about users, servers and roles in the specific server.
+Sx4 has many utility commands such as commands like serverinfo, userinfo, channelinfo and roleinfo which gives detailed info on the desired user/role/server/channel. There are also commands such as invites which displays how many invites a user has for the current server, their placement for amount of invites and the percent of the server they have invited. This and so much more!
 
 <u>__Logging__</u>
 
@@ -46,14 +46,12 @@ Sx4 can log your server to make sure your server stays safe, it has a very detai
 
 <u>__Welcomer__</u>
 
-Sx4 has a welcomer which is highly customizable, you can edit the message it welcomes the user with and even the leave message, or you can just choose for it to be sent to the user's dms which automatically disables the leave message.
+Sx4 has a welcomer which is highly customizable, you can edit the message it welcomes the user with and even the leave message, or you can just choose for it to be sent to the user's dms which automatically disables the leave message. You also have the option for your message to be displayed in an embed and a image welcomer options with a customizable banner.
 
 <u>__Music__ </u>
   
-Sx4 has 16 music commands and is really simple to use all you do is play a song or playlist and as long as you're in a voice channel it'll stream smooth music to your ears for you to enjoy!
+Sx4 has 18 music commands and is really simple to use all you do is play a song or playlist and as long as you're in a voice channel it'll stream smooth music to your ears for you to enjoy, with commands such as play, search, playlist, seek, rewind, movesong and more you will not be left with little choice.
 
 <u>__Fun__</u>
 
-There are many fun commands on Sx4 to keep you entertained, there are commands such as rock paper scissors which you can play against the bot (the bot logs how many you've won/lost in stats) you can also marry/divorce other users which can be displayed on your very own customizable profile, as well as use google, steam, urbandictionary and much more!
-
-[![Discord Bots](https://discordbots.org/api/widget/440996323156819968.svg)](https://discordbots.org/bot/440996323156819968)
+There are many fun commands on Sx4 to keep you entertained, there are commands such as rock paper scissors which you can play against the bot (the bot logs how many you've won/lost in stats) you can also marry/divorce other users which can be displayed on your very own customizable profile, as well as use google, steam, urbandictionary, steamsearch so you can search for games easily, a randomly generated minesweeperr with the new addition of spoilers, google translate and much more!
