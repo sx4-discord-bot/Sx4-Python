@@ -54,4 +54,4 @@ Sx4 has 18 music commands and is really simple to use all you do is play a song 
 
 <u>__Fun__</u>
 
-There are many fun commands on Sx4 to keep you entertained, there are commands such as rock paper scissors which you can play against the bot (the bot logs how many you've won/lost in stats) you can also marry/divorce other users which can be displayed on your very own customizable profile, as well as use google, steam, urbandictionary, steamsearch so you can search for games easily, a randomly generated minesweeperr with the new addition of spoilers, google translate and much more!
+There are many fun commands on Sx4 to keep you entertained, there are commands such as rock paper scissors which you can play against the bot (the bot logs how many you've won/lost in stats) you can also marry/divorce other users which can be displayed on your very own customizable profile, as well as use google, steam, urbandictionary, steamsearch so you can search for games easily, a randomly generated minesweeper with the new addition of spoilers, google translate and much more!
