@@ -4,13 +4,13 @@ def convert(time: str):
     times = time.split(" ")
     seconds = 0
     for x in times:
-        if x.endswith("s"):
+        if x.lower().endswith("s"):
             seconds += int(x[:-1])
-        elif x.endswith("m"):
+        elif x.lower().endswith("m"):
             seconds += int(x[:-1]) * 60
-        elif x.endswith("h"):
+        elif x.lower().endswith("h"):
             seconds += int(x[:-1]) * 3600
-        elif x.endswith("d"):
+        elif x.lower().endswith("d"):
             seconds += int(x[:-1]) * 86400
         elif x.isdigit():
             seconds += int(x)

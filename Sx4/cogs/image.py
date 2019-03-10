@@ -32,35 +32,53 @@ colours = data.read_json("data/colours/colournames.json")
 class image:
     """Fun image commands"""
       
-    def __init__(self, bot):  
+    def __init__(self, bot, connection):  
         self.bot = bot
+        self.db = connection
 
-    @commands.command()
+    @commands.command(aliases=["htg"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def howtogoogle(self, ctx, *, text):
+        """Shows someone how to use google"""
+        if len(text) > 50:
+            return await ctx.send("You can only use **50** characters :no_entry:")
+        async with ctx.channel.typing():
+            async with aiohttp.ClientSession() as session:
+                async with session.get("http://localhost:8443/api/google?{}".format(urllib.parse.urlencode({"q": text}))) as f:
+                    if f.status == 200:
+                        await ctx.send(file=discord.File(f.content, "google.{}".format(f.headers["Content-Type"].split("/")[1])))
+                    elif f.status == 400:
+                        await ctx.send(await f.text())
+                    else:
+                        await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
+
+    @commands.command(usage="[user | image]")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def hot(self, ctx, user_or_image: str=None):
         """The specified user/image will be called hot by will smith"""
         if ctx.message.attachments and not user_or_image:
             url = ctx.message.attachments[0].url
         elif not ctx.message.attachments and not user_or_image:
-            url = ctx.author.avatar_url_as(format="png")
+            url = get_avatar_url(ctx.author)
         else:
-            user = await arg.get_member(ctx, user_or_image)
+            user = arg.get_server_member(ctx, user_or_image)
             if not user:
                 url = user_or_image
             else:
-                url = user.avatar_url_as(format="png")
+                url = get_avatar_url(user)
         async with aiohttp.ClientSession() as session:
             async with session.get("http://localhost:8443/api/hot?image={}".format(url)) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "hot.png"))
+                    await ctx.send(file=discord.File(f.content, "hot.{}".format(f.headers["Content-Type"].split("/")[1])))
                 elif f.status == 400:
                     await ctx.send(await f.text())
                 else:
                     await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
-    @commands.command(name="discord")
+    @commands.command(name="discord", usage="<user> <text>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def _discord(self, ctx, user: str, *, discord_text: str):
+        """Recreate a message from discord using this command"""
         user = arg.get_server_member(ctx, user)
         if not user:
             return await ctx.send("Invalid user :no_entry:")
@@ -69,12 +87,12 @@ class image:
             discord_text = discord_text[:-8]
         else: 
             white = False
-        url = "http://localhost:8443/api/discord?image={}&theme={}&{}&colour={}&{}&bot={}".format(user.avatar_url_as(format="png"), "dark" if not white else "white", urllib.parse.urlencode({"text": discord_text}),
+        url = "http://localhost:8443/api/discord?image={}&theme={}&{}&colour={}&{}&bot={}".format(get_avatar_url(user), "dark" if not white else "white", urllib.parse.urlencode({"text": discord_text}),
         str(user.colour)[1:], urllib.parse.urlencode({"name": user.display_name}), user.bot)
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "discord.png"))
+                    await ctx.send(file=discord.File(f.content, "discord.{}".format(f.headers["Content-Type"].split("/")[1])))
                 elif f.status == 400:
                     await ctx.send(await f.text())
                 else:
@@ -83,214 +101,67 @@ class image:
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def flag(self, ctx, flag_initial: str, *, user: discord.Member=None):
+        """Put a flag on top of your profile picture"""
         if not user:
             user = ctx.author
         async with aiohttp.ClientSession() as session:
-            async with session.get("http://localhost:8443/api/flag?image={}&flag={}".format(user.avatar_url_as(format="png"), flag_initial)) as f:
+            async with session.get("http://localhost:8443/api/flag?image={}&flag={}".format(get_avatar_url(user), flag_initial.lower())) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "flag.png"))
+                    await ctx.send(file=discord.File(f.content, "flag.{}".format(f.headers["Content-Type"].split("/")[1])))
                 elif f.status == 400:
                     await ctx.send(await f.text())
                 else:
                     await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
-    @commands.command()
-    @commands.cooldown(1, 15, commands.BucketType.user)
-    async def christmas(self, ctx, user_or_image: str=None, enhance: int=None):
+    @commands.command(usage="[user | image]")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def christmas(self, ctx, *, user_or_image: str=None):
         """Turn an image into a christmas themed one"""
         if not user_or_image:
             if ctx.message.attachments:
-                try:
-                    r = requests.get(ctx.message.attachments[0].url, stream=True)
-                    url = ctx.message.attachments[0].url
-                    if ".gif" in url:
-                        gif = True 
-                    else:
-                        gif = False
-                except:
-                    ctx.command.reset_cooldown(ctx)
-                    return await ctx.send("Invalid user/image :no_entry:")
+                url = ctx.message.attachments[0].url
             else:
-                user = ctx.author
-                r = requests.get(user.avatar_url, stream=True)
-                url = user.avatar_url
-                if ".gif" in user.avatar_url:
-                    gif = True 
-                else:
-                    gif = False
+                url = get_avatar_url(ctx.author)
         else:
-            user = await arg.get_member(ctx, user_or_image)
+            user = arg.get_server_member(ctx, user_or_image)
             if not user:
-                try: 
-                    r = requests.get(user_or_image, stream=True)
-                    url = user_or_image
-                    if ".gif" in user_or_image:
-                        gif = True 
-                    else:
-                        gif = False
-                except:
-                    ctx.command.reset_cooldown(ctx)
-                    return await ctx.send("Invalid user/image :no_entry:")
+                url = user_or_image
             else:
-                r = requests.get(user.avatar_url, stream=True)
-                url = user.avatar_url
-                if ".gif" in user.avatar_url:
-                    gif = True 
+                url = get_avatar_url(user)
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/christmas?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "christmas.{}".format(f.headers["Content-Type"].split("/")[1])))
+                elif f.status == 400:
+                    await ctx.send(await f.text())
                 else:
-                    gif = False
-        if not gif:
-            img = Image.open(r.raw)
-            if enhance:
-                img = img.convert(mode='L')
-                img = ImageEnhance.Contrast(img).enhance(enhance)
-            img = img.convert("RGBA")
-            basewidth = 400
-            wpercent = (basewidth/float(img.size[0]))
-            hsize = int((float(img.size[1])*float(wpercent)))
-            white = Image.new("RGBA", (basewidth, hsize), (255, 255, 255))
-            img = img.resize((basewidth, hsize))
+                    await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
-            pixels = img.load()
-
-            for y in range(img.height):
-                for x in range(img.width):
-                    r, g, b, a = img.getpixel((x, y))
-                    o = math.sqrt(0.299*r**2 + 0.587*g**2 + 0.114*b**2)
-                    o *= ((o - 102) / 128)
-                    o = 255 - o
-                    pixels[x, y] = (255, 0, 0, int(o))
-            white.paste(img, (0, 0), img)
-            await send_file(ctx, white)
-        else:
-            with open("avatar.gif", "wb") as f:
-                f.write(requests.get(url).content)
-            img = Image.open("avatar.gif")
-            basewidth = 128
-            new = []
-            frames = [frame.copy() for frame in ImageSequence.Iterator(img)]
-            try:
-                for frame in frames:
-                    if enhance:
-                        frame = frame.convert(mode='L')
-                        frame = ImageEnhance.Contrast(frame).enhance(enhance)
-                    wpercent = (basewidth/float(img.size[0]))
-                    hsize = int((float(img.size[1])*float(wpercent)))
-                    white = Image.new("RGBA", (basewidth, hsize), (255, 255, 255))
-                    frame = frame.convert("RGBA").resize((basewidth, hsize))
-                    pixels = frame.load()
-                    for y in range(frame.height):
-                        for x in range(frame.width):
-                            r, g, b, a = pixels[x, y]
-                            o = math.sqrt(0.299*r**2 + 0.587*g**2 + 0.114*b**2)
-                            o *= ((o - 102) / 128)
-                            o = 255 - o
-                            pixels[x, y] = (255, 0, 0, int(o))
-                    white.paste(frame, (0, 0), frame)
-                    new.append(white)
-            except EOFError:
-                pass
-            await ctx.send(file=get_file_gif(new[0], new[1:]))
-            try:
-                os.remove("avatar.gif")
-            except:
-                pass
-
-    @commands.command()
-    @commands.cooldown(1, 15, commands.BucketType.user)
-    async def halloween(self, ctx, user_or_image: str=None, enhance: int=None):
+    @commands.command(usage="[user | image]")
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def halloween(self, ctx, *, user_or_image: str=None):
         """Turn an image into a halloween themed one"""
         if not user_or_image:
             if ctx.message.attachments:
-                try:
-                    r = requests.get(ctx.message.attachments[0].url, stream=True)
-                    url = ctx.message.attachments[0].url
-                    if ".gif" in url:
-                        gif = True 
-                    else:
-                        gif = False
-                except:
-                    ctx.command.reset_cooldown(ctx)
-                    return await ctx.send("Invalid user/image :no_entry:")
+                url = ctx.message.attachments[0].url
             else:
-                user = ctx.author
-                r = requests.get(user.avatar_url, stream=True)
-                url = user.avatar_url
-                if ".gif" in user.avatar_url:
-                    gif = True 
-                else:
-                    gif = False
+                url = get_avatar_url(ctx.author)
         else:
-            user = await arg.get_member(ctx, user_or_image)
+            user = arg.get_server_member(ctx, user_or_image)
             if not user:
-                try: 
-                    r = requests.get(user_or_image, stream=True)
-                    url = user_or_image
-                    if ".gif" in user_or_image:
-                        gif = True 
-                    else:
-                        gif = False
-                except:
-                    ctx.command.reset_cooldown(ctx)
-                    return await ctx.send("Invalid user/image :no_entry:")
+                url = user_or_image
             else:
-                r = requests.get(user.avatar_url, stream=True)
-                url = user.avatar_url
-                if ".gif" in user.avatar_url:
-                    gif = True 
+                url = get_avatar_url(user)
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8443/api/halloween?image={}".format(url)) as f:
+                if f.status == 200:
+                    await ctx.send(file=discord.File(f.content, "halloween.{}".format(f.headers["Content-Type"].split("/")[1])))
+                elif f.status == 400:
+                    await ctx.send(await f.text())
                 else:
-                    gif = False
-        if not gif:
-            img = Image.open(r.raw)
-            if enhance:
-                img = img.convert(mode='L')
-                img = ImageEnhance.Contrast(img).enhance(enhance)
-            img = img.convert("RGBA")
-            basewidth = 400
-            wpercent = (basewidth/float(img.size[0]))
-            hsize = int((float(img.size[1])*float(wpercent)))
-            img = img.resize((basewidth, hsize))
-
-            pixels = img.load()
-
-            for y in range(img.height):
-                for x in range(img.width):
-                    r, g, b, a = img.getpixel((x, y))
-                    o = math.sqrt(0.299*r**2 + 0.587*g**2 + 0.114*b**2)
-                    o *= ((o - 102) / 128)
-                    pixels[x, y] = (int(o), int((o - 10) / 2), 0, a)
-            await send_file(ctx, img)
-        else:
-            with open("avatar.gif", "wb") as f:
-                f.write(requests.get(url).content)
-            img = Image.open("avatar.gif")
-            new = []
-            frames = [frame.copy() for frame in ImageSequence.Iterator(img)]
-            try:
-                for frame in frames:
-                    if enhance:
-                        frame = frame.convert(mode='L')
-                        frame = ImageEnhance.Contrast(frame).enhance(enhance)
-                    basewidth = 128
-                    wpercent = (basewidth/float(img.size[0]))
-                    hsize = int((float(img.size[1])*float(wpercent)))
-                    frame = frame.convert("RGBA").resize((basewidth, hsize))
-                    pixels = frame.load()
-                    for y in range(frame.height):
-                        for x in range(frame.width):
-                            r, g, b, a = pixels[x, y]
-                            o = math.sqrt(0.299*r**2 + 0.587*g**2 + 0.114*b**2)
-                            o *= ((o - 102) / 128)
-                            pixels[x, y] = (int(o), int((o - 10) / 2), 0, a)
-                    new.append(frame)
-            except EOFError:
-                pass
-            await ctx.send(file=get_file_gif(new[0], new[1:]))
-            try:
-                os.remove("avatar.gif")
-            except:
-                pass
+                    await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
         
-    @commands.command()
+    @commands.command(usage="[user | image]")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def trash(self, ctx, user_or_imagelink: str=None):
         """Make someone look like trash"""
@@ -310,13 +181,13 @@ class image:
         async with aiohttp.ClientSession() as session:
             async with session.get("http://localhost:8443/api/trash?image={}".format(url)) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "flag.png"))
+                    await ctx.send(file=discord.File(f.content, "trash.png"))
                 elif f.status == 400:
                     await ctx.send(await f.text())
                 else:
                     await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
-    @commands.command(aliases=["www"]) 
+    @commands.command(aliases=["www"], usage="[user | image] [user | image]") 
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def whowouldwin(self, ctx, user_or_imagelink: str, user_or_imagelink2: str=None):
         """Who would win out of 2 images"""
@@ -344,7 +215,7 @@ class image:
                 else:
                     await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
             
-    @commands.command() 
+    @commands.command(usage="[user | image]") 
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def fear(self, ctx, user_or_imagelink: str=None):
         """Make someone look feared of"""
@@ -354,23 +225,23 @@ class image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = author.avatar_url_as(format="png")
+                url = get_avatar_url(author)
         else:
             user = arg.get_server_member(ctx, user_or_imagelink)
             if not user:
                 url = user_or_imagelink
             else:
-                url = user.avatar_url_as(format="png")
+                url = get_avatar_url(user)
         async with aiohttp.ClientSession() as session:
             async with session.get("http://localhost:8443/api/fear?image={}".format(url)) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "fear.png"))
+                    await ctx.send(file=discord.File(f.content, "fear.{}".format(f.headers["Content-Type"].split("/")[1])))
                 elif f.status == 400:
                     await ctx.send(await f.text())
                 else:
                     await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
         
-    @commands.command() 
+    @commands.command(usage="[user | image]") 
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def emboss(self, ctx, user_or_image: str=None):
         """Make a profile picture emboss"""
@@ -380,23 +251,23 @@ class image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = author.avatar_url_as(format="png")
+                url = get_avatar_url(author)
         else:
             user = arg.get_server_member(ctx, user_or_image)
             if not user:
                 url = user_or_image
             else:
-                url = user.avatar_url_as(format="png")
+                url = get_avatar_url(user)
         async with aiohttp.ClientSession() as session:
             async with session.get("http://localhost:8443/api/emboss?image={}".format(url)) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "emboss.png"))
+                    await ctx.send(file=discord.File(f.content, "emboss.{}".format(f.headers["Content-Type"].split("/")[1])))
                 elif f.status == 400:
                     await ctx.send(await f.text())
                 else:
                     await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
             
-    @commands.command()
+    @commands.command(usage="<user> [user]")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def ship(self, ctx, user1: str, *, user2: str=None):
         """Ship 2 users"""
@@ -424,7 +295,7 @@ class image:
                 else:
                     return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
-    @commands.command()
+    @commands.command(usage="[user | image]")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def vr(self, ctx, user_or_image: str=None):
         """Make someone feel emotional in vr"""	
@@ -434,24 +305,24 @@ class image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = author.avatar_url_as(format="png")
+                url = get_avatar_url(author)
         else:
             user = arg.get_server_member(ctx, user_or_image)
             if not user:
                 url = user_or_image
             else:
-                url = user.avatar_url_as(format="png")
+                url = get_avatar_url(user)
         async with aiohttp.ClientSession() as session:
             async with session.get("http://localhost:8443/api/vr?image={}".format(url)) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "vr.png"))
+                    await ctx.send(file=discord.File(f.content, "vr.{}".format(f.headers["Content-Type"].split("/")[1])))
                 elif f.status == 400:
                     return await ctx.send(await f.text())
                 else:
                     return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 					
             
-    @commands.command()
+    @commands.command(usage="[user | image]")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def shit(self, ctx, user_or_image: str=None):
         """Choose who you want to be shit"""
@@ -461,23 +332,23 @@ class image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = author.avatar_url_as(format="png")
+                url = get_avatar_url(author)
         else:
             user = arg.get_server_member(ctx, user_or_image)
             if not user:
                 url = user_or_image
             else:
-                url = user.avatar_url_as(format="png")
+                url = get_avatar_url(user)
         async with aiohttp.ClientSession() as session:
             async with session.get("http://localhost:8443/api/shit?image={}".format(url)) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "shit.png"))
+                    await ctx.send(file=discord.File(f.content, "shit.{}".format(f.headers["Content-Type"].split("/")[1])))
                 elif f.status == 400:
                     return await ctx.send(await f.text())
                 else:
                     return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
 
-    @commands.command()
+    @commands.command(usage="[user | image]")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def beautiful(self, ctx, user_or_image: str=None):
         """Turn something to a masterpiece"""
@@ -487,23 +358,23 @@ class image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = author.avatar_url_as(format="png")
+                url = get_avatar_url(author)
         else:
             user = arg.get_server_member(ctx, user_or_image)
             if not user:
                 url = user_or_image
             else:
-                url = user.avatar_url_as(format="png")
+                url = get_avatar_url(user)
         async with aiohttp.ClientSession() as session:
             async with session.get("http://localhost:8443/api/beautiful?image={}".format(url)) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "beautiful.png"))
+                    await ctx.send(file=discord.File(f.content, "beautiful.{}".format(f.headers["Content-Type"].split("/")[1])))
                 elif f.status == 400:
                     return await ctx.send(await f.text())
                 else:
                     return await ctx.send("Oops something went wrong! Status code: {}".format(f.status))
             
-    @commands.command()
+    @commands.command(usage="[user | image]")
     async def gay(self, ctx, user_or_imagelink: str=None):
         """Turn someone or yourself gay"""
         channel = ctx.message.channel
@@ -512,17 +383,17 @@ class image:
             if ctx.message.attachments:
                 url = ctx.message.attachments[0].url
             else:
-                url = author.avatar_url_as(format="png")
+                url = get_avatar_url(author)
         else:
             user = arg.get_server_member(ctx, user_or_imagelink)
             if not user:
-                return await ctx.send("Invalid user :no_entry:")
+                url = user_or_imagelink
             else:
-                url = user.avatar_url_as(format="png")
+                url = get_avatar_url(user)
         async with aiohttp.ClientSession() as session:
             async with session.get("http://localhost:8443/api/gay?image={}".format(url)) as f:
                 if f.status == 200:
-                    await ctx.send(file=discord.File(f.content, "gay.png"))
+                    await ctx.send(file=discord.File(f.content, "gay.{}".format(f.headers["Content-Type"].split("/")[1])))
                 elif f.status == 400:
                     return await ctx.send(await f.text())
                 else:
@@ -559,7 +430,7 @@ class image:
             return
         retweets = randint(1, ctx.guild.member_count)
         likes = randint(1, ctx.guild.member_count)
-        urls = list(map(lambda x: x.avatar_url_as(format="png", size=128), random.sample(ctx.guild.members, min(ctx.guild.member_count, 10, likes))))
+        urls = list(map(lambda x: x.avatar_url_as(format="png", size=64), random.sample(ctx.guild.members, min(ctx.guild.member_count, 10, likes))))
         data = {"displayName": user.display_name, "name": user.name, "avatarUrl": user.avatar_url_as(format="png", size=128), "urls": urls, "likes": likes, "retweets": retweets, "text": text}
         async with aiohttp.ClientSession() as session:
             async with session.post("http://localhost:8443/api/tweet", json=data, headers={"Content-Type": "application/json"}) as f:
@@ -607,7 +478,7 @@ class image:
         draw.text((95, 285), description, (0, 0, 0), font=font)
         await send_file(ctx, img)
             
-    @commands.command()
+    @commands.command(aliases=["color", "hex"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def colour(self, ctx, *, colour: str=None):
         """View a colours hex code and RGB and a image with the colour, if a colour is not specified it will get a random one"""
@@ -723,7 +594,7 @@ class image:
         img.paste(img2, (270, 335))
         await send_file(ctx, img)
 
-    @commands.command()
+    @commands.command(usage="[user | image]")
     async def commoncolour(self, ctx, user_or_imagelink: str=None):
         """Returns the most common colour from an image"""
         if not user_or_imagelink:
@@ -754,6 +625,13 @@ class image:
         await ctx.send(file=get_file(image), embed=discord.Embed(title="Most Common Colour: #{}".format(hex.upper()), description="RGB: {}".format(sorted(entries.items(), key=lambda x: x[1], reverse=True)[0][0]), colour=discord.Colour(int(hex, 16))).set_image(url="attachment://result.png").set_thumbnail(url=url))
         del entries
 
+    
+def get_avatar_url(user):
+    if ".gif" in user.avatar_url:
+        return user.avatar_url
+    else:
+        return user.avatar_url_as(format="png")
+
 
 async def send_file(ctx, img):
     temp = BytesIO()
@@ -778,5 +656,5 @@ def getImage(url):
     img = Image.open(r.raw).convert('RGBA')
     return img
         
-def setup(bot):
-    bot.add_cog(image(bot))
+def setup(bot, connection):
+    bot.add_cog(image(bot, connection))

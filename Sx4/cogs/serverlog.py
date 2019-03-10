@@ -13,13 +13,14 @@ from utils import dateify
 class serverlog:
     """Shows when the bot joins and leaves a server"""
 
-    def __init__(self, bot):
+    def __init__(self, bot, connection):
         self.bot = bot 
+        self.db = connection
 
     async def on_guild_join(self, guild):
         try:
             server = guild
-            s=discord.Embed(description="I am now in {:,} servers and connected to {:,} users".format(len(self.bot.guilds), len(set(self.bot.get_all_members()))), colour=0x5fe468, timestamp=datetime.utcnow())
+            s=discord.Embed(description="I am now in {:,} servers and connected to {:,} users".format(len(self.bot.guilds), len(self.bot.users)), colour=0x5fe468, timestamp=datetime.utcnow())
             s.set_author(name="Joined Server!", icon_url=self.bot.user.avatar_url)
             s.add_field(name="Server Name", value=server.name)
             s.add_field(name="Server ID", value=server.id)
@@ -69,7 +70,7 @@ class serverlog:
     async def on_guild_remove(self, guild):
         try:
             server = guild
-            s=discord.Embed(description="I am now in {:,} servers and connected to {:,} users".format(len(self.bot.guilds), len(set(self.bot.get_all_members()))), colour=0xf84b50, timestamp=datetime.utcnow())
+            s=discord.Embed(description="I am now in {:,} servers and connected to {:,} users".format(len(self.bot.guilds), len(self.bot.users)), colour=0xf84b50, timestamp=datetime.utcnow())
             s.set_author(name="Left Server!", icon_url=self.bot.user.avatar_url)
             s.add_field(name="Server Name", value=server.name)
             s.add_field(name="Server ID", value=server.id)
@@ -88,5 +89,5 @@ class serverlog:
             await self.bot.get_channel(396013262514421761).send(e)
 
 
-def setup(bot): 
-    bot.add_cog(serverlog(bot))
+def setup(bot, connection): 
+    bot.add_cog(serverlog(bot, connection))

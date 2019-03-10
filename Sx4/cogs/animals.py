@@ -7,8 +7,9 @@ import urllib
 import requests
 
 class animals:
-    def __init__(self, bot):
+    def __init__(self, bot, connection):
         self.bot = bot
+        self.db = connection
 
     @commands.command()
     async def catfact(self, ctx):
@@ -20,32 +21,6 @@ class animals:
         s.set_author(name="Did you know?")
         s.set_thumbnail(url="https://emojipedia-us.s3.amazonaws.com/thumbs/120/twitter/134/cat-face_1f431.png")
         await ctx.send(embed=s)
-        
-    @commands.command()
-    async def dogfact(self, ctx):
-        """Learn dog stuff"""
-        url = "https://fact.birb.pw/api/v1/dog"
-        request = Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0')
-        data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed(description=data["string"], colour=ctx.message.author.colour)
-        s.set_author(name="Did you know?")
-        s.set_thumbnail(url="https://emojipedia-us.s3.amazonaws.com/thumbs/120/twitter/134/dog-face_1f436.png")
-        await ctx.send(embed=s)
-        
-    @commands.command(aliases=["bird"])
-    async def birb(self, ctx):
-        """Shows a random birb"""
-        url = "http://random.birb.pw/tweet.json/"
-        request = Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0')
-        data = json.loads(urlopen(request).read().decode())
-        s=discord.Embed(description=":bird:", colour=ctx.message.author.colour)
-        s.set_image(url="http://random.birb.pw/img/" + data["file"])
-        try:
-            await ctx.send(embed=s)
-        except:
-            await ctx.send("The birb didn't make it, sorry :no_entry:")
         
     @commands.command()
     async def dog(self, ctx):
@@ -60,6 +35,18 @@ class animals:
             await ctx.send(embed=s)
         except:
             await ctx.send("The dog didn't make it, sorry :no_entry:")
+
+    @commands.command()
+    async def birb(self, ctx):
+        url = "https://api.alexflipnote.xyz/birb"
+        try:
+            response = requests.get(url, timeout=2).json()
+        except:
+            return await ctx.send("Request timed out :no_entry:")
+        s=discord.Embed(description=":bird:", colour=ctx.author.colour)
+        s.set_image(url=response["file"])
+        s.set_footer(text="api.alexflipnote.xyz")
+        await ctx.send(embed=s)
         
     @commands.command()
     async def cat(self, ctx):
@@ -105,5 +92,5 @@ class animals:
         except:
             await ctx.send("The Fox didn't make it, sorry :no_entry:")
         
-def setup(bot):
-    bot.add_cog(animals(bot))
+def setup(bot, connection):
+    bot.add_cog(animals(bot, connection))

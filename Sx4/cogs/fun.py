@@ -5,6 +5,7 @@ from random import choice as randchoice
 import time
 import datetime
 import html
+import aiohttp
 import random
 import math
 from utils import arghelp
@@ -40,8 +41,9 @@ from difflib import get_close_matches
 rps_settings = {"rps_wins": 0, "rps_draws": 0, "rps_losses": 0}
 
 class fun:
-    def __init__(self, bot):
+    def __init__(self, bot, connection):
         self.bot = bot
+        self.db = connection
         self.steam_cache = bot.loop.create_task(self.update_games())
 
     def __unload(self):
@@ -58,7 +60,7 @@ class fun:
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def weather(self, ctx, country_code: str, *, city: str):
         """Shows weather info on a city"""
-        data = requests.get("https://api.openweathermap.org/data/2.5/weather?{},{}&APPID={}&units=metric".format(urllib.parse.urlencode({"q": city.lower()}), country_code.lower(), Token.weather())).json()
+        data = requests.get("https://api.openweathermap.org/data/2.5/weather?{},{}&APPID=af50a6ae4e6abac046b1a95af816669b&units=metric".format(urllib.parse.urlencode({"q": city.lower()}), country_code.lower())).json()
         if "message" in data:
             return await ctx.send(data["message"].capitalize() + " :no_entry:")
         direction = min({360: "North", 0: "North", 45: "North East", 90: "East", 135: "South East", 180: "South", 225: "South West", 270: "West", 315:  "North West"}.items(), key=lambda x: abs(x[0]-data["wind"]["deg"]))[1]
@@ -328,14 +330,14 @@ class fun:
     @commands.command()
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def convert(self, ctx, amount: float, currency_from: str, currency_to: str):
-        request = requests.get("https://free.currencyconverterapi.com/api/v6/convert?q={}_{}".format(currency_from.upper(), currency_to.upper())).json()
+        request = requests.get("https://free.currencyconverterapi.com/api/v6/convert?q={}_{}&apiKey=4a355639d6e2e3ab32c6".format(currency_from.upper(), currency_to.upper())).json()
         if request["query"]["count"] == 0:
             return await ctx.send("Invalid currency :no_entry:")
         else:
             result = request["results"]["{}_{}".format(currency_from.upper(), currency_to.upper())]
             currency = format(result["val"] * amount, ".2f")
             amount = format(amount, ".2f")
-            await ctx.send("**{}** {} to **{}** {}".format(amount, currency_from.upper(), currency, currency_to.upper()))
+            await ctx.send("**{}** {} \➡ **{}** {}".format(amount, currency_from.upper(), currency, currency_to.upper()))
 
     @commands.command(aliases=["gtn"])
     @commands.cooldown(1, 30, commands.BucketType.user)
@@ -348,14 +350,18 @@ class fun:
             return await ctx.send("You can't play this game by yourself :no_entry:")
         if bet:
             if bet > 0:
-                await self._set_bank(ctx.author)
-                await self._set_bank(user)
                 authordata = r.table("bank").get(str(ctx.author.id))
                 userdata = r.table("bank").get(str(user.id))
-                if userdata["balance"].run() < bet:
+                if not authordata.run(self.db):
+                    ctx.command.reset_cooldown(ctx)
+                    return await ctx.send("**{}** doesn't have enough money :no_entry:".format(ctx.author))
+                if not userdata.run(self.db):
                     ctx.command.reset_cooldown(ctx)
                     return await ctx.send("**{}** doesn't have enough money :no_entry:".format(user))
-                if authordata["balance"].run() < bet:
+                if userdata["balance"].run(self.db) < bet:
+                    ctx.command.reset_cooldown(ctx)
+                    return await ctx.send("**{}** doesn't have enough money :no_entry:".format(user))
+                if authordata["balance"].run(self.db) < bet:
                     ctx.command.reset_cooldown(ctx)
                     return await ctx.send("**{}** doesn't have enough money :no_entry:".format(ctx.author))
             else: 
@@ -420,19 +426,19 @@ class fun:
                         winner = ctx.author
                     if bet and winner:
                         if winner == ctx.author:
-                            if userdata["balance"].run() < bet:
+                            if userdata["balance"].run(self.db) < bet:
                                 msg += "\nBet was cancelled due to **{}** not having enough money.".format(user.name)
                             else:
                                 msg += "\nThey have been rewarded **${:,}**".format(bet*2)
-                                authordata.update({"balance": r.row["balance"] + bet}).run(durability="soft")
-                                userdata.update({"balance": r.row["balance"] - bet}).run(durability="soft")
+                                authordata.update({"balance": r.row["balance"] + bet}).run(self.db, durability="soft")
+                                userdata.update({"balance": r.row["balance"] - bet}).run(self.db, durability="soft")
                         elif winner == user:
-                            if authordata["balance"].run() < bet:
+                            if authordata["balance"].run(self.db) < bet:
                                 msg += "\nBet was cancelled due to **{}** not having enough money.".format(ctx.author.name)
                             else:
                                 msg += "\nThey have been rewarded **${:,}**".format(bet*2)
-                                userdata.update({"balance": r.row["balance"] + bet}).run(durability="soft")
-                                authordata.update({"balance": r.row["balance"] - bet}).run(durability="soft")
+                                userdata.update({"balance": r.row["balance"] + bet}).run(self.db, durability="soft")
+                                authordata.update({"balance": r.row["balance"] - bet}).run(self.db, durability="soft")
                     await ctx.send(msg)
             else:
                 ctx.command.reset_cooldown(ctx)
@@ -456,7 +462,7 @@ class fun:
                 language = languages.get(part3=language).name
             except:
                 pass
-        request = requests.get("http://localhost:8080/translate/{}?{}".format(language, urllib.parse.urlencode({"q": text.lower()})))
+        request = requests.get("http://localhost:8080/translate/{}?{}".format(language, urllib.parse.urlencode({"q": text.lower()})), timeout=3)
         try:
             await ctx.send(request.json()["message"].replace("'", "`") + " :no_entry:")
         except:
@@ -554,14 +560,17 @@ class fun:
         url = "https://www.reddit.com/r/dankmemes.json?sort=new&limit=100"
         url2 = "https://www.reddit.com/r/memeeconomy.json?sort=new&limit=100"
         url = random.choice([url, url2])
-        request = Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0')
-        data = json.loads(urlopen(request).read().decode())["data"]["children"][number]["data"]
-        s=discord.Embed()
-        s.set_author(name=data["title"], url="https://www.reddit.com" + data["permalink"])
-        s.set_image(url=data["url"])
-        s.set_footer(text="Score: " + str(data["score"]))
-        await ctx.send(embed=s)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as f:
+                if f.status == 200:
+                    data = (await f.json())["data"]["children"][number]["data"]
+                    s=discord.Embed()
+                    s.set_author(name=data["title"], url="https://www.reddit.com" + data["permalink"])
+                    s.set_image(url=data["url"])
+                    s.set_footer(text="Score: " + str(data["score"]))
+                    await ctx.send(embed=s)
+                else:
+                    await ctx.send(await f.text())
 
     @commands.command(pass_context=True)
     @commands.cooldown(1, 3, commands.BucketType.user)
@@ -894,11 +903,11 @@ class fun:
             your_choice = "**Scissors :scissors:**"
         await ctx.send("{}: {}\nSx4: {}\n\n{}".format(author.name, your_choice, bot_choice, end))
         if end == "You lose, better luck next time.":
-            authordata.update({"rps_losses": r.row["rps_losses"] + 1}).run(durability="soft")
+            authordata.update({"rps_losses": r.row["rps_losses"] + 1}).run(self.db, durability="soft")
         if end == "Draw, let's go again!":
-            authordata.update({"rps_draws": r.row["rps_draws"] + 1}).run(durability="soft")
+            authordata.update({"rps_draws": r.row["rps_draws"] + 1}).run(self.db, durability="soft")
         if end == "You win! :trophy:":
-            authordata.update({"rps_wins": r.row["rps_wins"] + 1}).run(durability="soft")
+            authordata.update({"rps_wins": r.row["rps_wins"] + 1}).run(self.db, durability="soft")
          
     @commands.command(pass_context=True, aliases=["rpss"])
     async def rpsstats(self, ctx, *, user: discord.Member=None): 
@@ -906,7 +915,7 @@ class fun:
         author = ctx.message.author
         if not user:
             user = author
-        userdata = r.table("rps").get(str(user.id))
+        userdata = r.table("rps").get(str(user.id)).run(self.db)
         s=discord.Embed(colour=user.colour)
         s.set_author(name="{}'s RPS Stats".format(user.name), icon_url=user.avatar_url)
         if not userdata:
@@ -914,9 +923,9 @@ class fun:
             s.add_field(name="Draws", value="0")
             s.add_field(name="Losses", value="0")
         else:
-            s.add_field(name="Wins", value=userdata["rps_wins"].run(durability="soft"))
-            s.add_field(name="Draws", value=userdata["rps_draws"].run(durability="soft"))
-            s.add_field(name="Losses", value=userdata["rps_losses"].run(durability="soft"))
+            s.add_field(name="Wins", value=userdata["rps_wins"])
+            s.add_field(name="Draws", value=userdata["rps_draws"])
+            s.add_field(name="Losses", value=userdata["rps_losses"])
         await ctx.send(embed=s)
 
     async def _set_bank(self, author):
@@ -924,7 +933,7 @@ class fun:
             return
         r.table("bank").insert({"id": str(author.id), "rep": 0, "balance": 0, "streak": 0, "streaktime": None,
         "reptime": None, "items": [], "pickdur": None, "roddur": None, "minertime": None, "winnings": 0,
-        "fishtime": None, "factorytime": None, "picktime": None}).run(durability="soft")
+        "fishtime": None, "factorytime": None, "picktime": None}).run(self.db, durability="soft")
 
     def index_dbd(self, perk: str, type: str="survivor"):
         index = {"UNCOMMON": 1, "RARE": 2, "VERY_RARE": 3, "ULTRA_RARE": 3}
@@ -982,11 +991,16 @@ class fun:
     async def update_games(self):
         while not self.bot.is_closed():
             try:
-                games = requests.get("http://api.steampowered.com/ISteamApps/GetAppList/v0002/?key=" + Token.steam() + "&format=json", timeout=7).json()
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("http://api.steampowered.com/ISteamApps/GetAppList/v0002/?key=" + Token.steam() + "&format=json", timeout=7) as f:
+                        if f.status == 200:
+                            data.write_json("data/fun/steamgames.json", await f.json())
+                        else:
+                            print("Steam applist api returned a {}, trying again in 60 minutes".format(f.status))
+                        await asyncio.sleep(3600)
             except:
                 return print("Failed updating steam games file, trying again in 60 minutes")
-            data.write_json("data/fun/steamgames.json", games)
-            await asyncio.sleep(3600)
+                await asyncio.sleep(3600)
         
-def setup(bot):
-    bot.add_cog(fun(bot))
+def setup(bot, connection):
+    bot.add_cog(fun(bot, connection))

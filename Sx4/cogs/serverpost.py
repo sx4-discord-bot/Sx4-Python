@@ -28,8 +28,9 @@ headersdb = {"Authorization" : dbotspwtoken, "Content-Type" : "application/json"
 headersbs = {"Authorization" : botspacetoken, "Content-Type" : "application/json"}
 
 class serverpost:
-    def __init__(self, bot):
+    def __init__(self, bot, connection):
         self.bot = bot
+        self.db = connection
         self.task = bot.loop.create_task(self.server_post())
 
     def __unload(self):
@@ -80,5 +81,5 @@ class serverpost:
                 pass
             await asyncio.sleep(3600)
 
-def setup(bot):
-    bot.add_cog(serverpost(bot))
+def setup(bot, connection):
+    bot.add_cog(serverpost(bot, connection))

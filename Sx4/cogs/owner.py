@@ -65,8 +65,9 @@ def log(method):
     return timed
 
 class owner:
-    def __init__(self, bot):
+    def __init__(self, bot, connection):
         self.bot = bot
+        self.db = connection
 
     @commands.command(hidden=True)
     @checks.is_owner()
@@ -164,10 +165,10 @@ class owner:
     async def commandlog(self, ctx, *, code: str=None):
         if not code:
             with open("commandlog.json", "wb") as f:
-                f.write(json.dumps(r.table("botstats").get("stats")["commandlog"].run(durability="soft")).encode())
+                f.write(json.dumps(r.table("botstats").get("stats")["commandlog"].run(self.db, durability="soft")).encode())
         else:
             with open("commandlog.json", "wb") as f:
-                f.write(json.dumps(list(eval(code.replace("data", 'r.table("botstats").get("stats")["commandlog"].run(durability="soft")')))).encode())
+                f.write(json.dumps(list(eval(code.replace("data", 'r.table("botstats").get("stats")["commandlog"].run(self.db, durability="soft")')))).encode())
         await ctx.send(file=discord.File("commandlog.json"))
         os.remove("commandlog.json")
 
@@ -175,13 +176,13 @@ class owner:
     @checks.is_owner()
     async def blacklistuser(self, ctx, user: str):
         user = await arg.get_member(ctx, user)
-        r.table("blacklist").insert({"id": "owner", "users": []}).run(durability="soft")
+        r.table("blacklist").insert({"id": "owner", "users": []}).run(self.db, durability="soft")
         data = r.table("blacklist").get("owner")
-        if str(user.id) not in data["users"].run(durability="soft"):
-            data.update({"users": r.row["users"].append(str(user.id))}).run(durability="soft")
+        if str(user.id) not in data["users"].run(self.db, durability="soft"):
+            data.update({"users": r.row["users"].append(str(user.id))}).run(self.db, durability="soft")
             await ctx.send("{} has been blacklisted.".format(user))
-        elif str(user.id) in data["users"].run(durability="soft"):
-            data.update({"users": r.row["users"].difference([str(user.id)])}).run(durability="soft")
+        elif str(user.id) in data["users"].run(self.db, durability="soft"):
+            data.update({"users": r.row["users"].difference([str(user.id)])}).run(self.db, durability="soft")
             await ctx.send("{} is no longer blacklisted".format(user))
 
     @commands.command(hidden=True)
@@ -280,5 +281,5 @@ class owner:
         except Exception as e:
             await webhook.send(e)
 		
-def setup(bot):
-    bot.add_cog(owner(bot))
+def setup(bot, connection):
+    bot.add_cog(owner(bot, connection))

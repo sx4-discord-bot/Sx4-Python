@@ -20,8 +20,9 @@ import asyncio
 from difflib import get_close_matches
 
 class page:
-	def __init__(self, bot):
+	def __init__(self, bot, connection):
 		self.bot = bot
+		self.db = connection
 	
 	@commands.command(no_pm=True, aliases=["sroles", "roles"])
 	async def serverroles(self, ctx):
@@ -192,5 +193,5 @@ class page:
 				
 				await paged_result.select(number)
 	
-def setup(bot):
-	bot.add_cog(page(bot))
+def setup(bot, connection):
+	bot.add_cog(page(bot, connection))

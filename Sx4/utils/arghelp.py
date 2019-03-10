@@ -10,13 +10,16 @@ async def send(bot, ctx):
             perms = ctx.command.checks[0]
         except:
             perms = None
-        for x in ctx.command.params:
-            if x != "ctx":
-                if x != "self":
-                    if "=" in str(ctx.command.params[x]):
-                        msg += "[{}] ".format(x)
-                    else:
-                        msg += "<{}> ".format(x)
+        if not ctx.command.usage:
+            for x in ctx.command.params:
+                if x != "ctx":
+                    if x != "self":
+                        if "=" in str(ctx.command.params[x]):
+                            msg += "[{}] ".format(x)
+                        else:
+                            msg += "<{}> ".format(x)
+        else:
+            msg += ctx.command.usage
         if not ctx.command.aliases:
             aliases = "None"
         else:

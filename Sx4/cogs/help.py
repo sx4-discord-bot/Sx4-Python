@@ -25,8 +25,9 @@ from difflib import get_close_matches
 class help:
     """help command"""
 
-    def __init__(self, bot):
+    def __init__(self, bot, connection):
         self.bot = bot
+        self.db = connection
         
     @commands.command()
     async def help(self, ctx, commandname=None, *, subcommand=None):
@@ -77,13 +78,16 @@ class help:
                 except:
                     await ctx.send("That is not a valid command or module :no_entry:")
                     return
-            for x in self.bot.all_commands[commandname.lower()].params:
-                if x != "ctx":
-                    if x != "self":
-                        if "=" in str(self.bot.all_commands[commandname.lower()].params[x]):
-                            msg += "[{}] ".format(x)
-                        else:
-                            msg += "<{}> ".format(x)
+            if not self.bot.all_commands[commandname.lower()].usage:
+                for x in self.bot.all_commands[commandname.lower()].params:
+                    if x != "ctx":
+                        if x != "self":
+                            if "=" in str(self.bot.all_commands[commandname.lower()].params[x]):
+                                msg += "[{}] ".format(x)
+                            else:
+                                msg += "<{}> ".format(x)
+            else:
+                msg += self.bot.all_commands[commandname.lower()].usage
             if not self.bot.all_commands[commandname.lower()].aliases:
                 aliases = "None"
             else:
@@ -111,13 +115,16 @@ class help:
             except:
                await ctx.send("That is not a command :no_entry:")
                return
-            for x in self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].params:
-                if x != "ctx":
-                    if x != "self":
-                        if "=" in str(self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].params[x]):
-                            msg += "[{}] ".format(x)
-                        else:
-                            msg += "<{}> ".format(x)
+            if not self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].usage:
+                for x in self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].params:
+                    if x != "ctx":
+                        if x != "self":
+                            if "=" in str(self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].params[x]):
+                                msg += "[{}] ".format(x)
+                            else:
+                                msg += "<{}> ".format(x)
+            else:
+                msg += self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].usage
             if not self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].aliases:
                 aliases = "None"
             else:
@@ -131,7 +138,7 @@ class help:
             s.set_author(name=self.bot.all_commands[commandname.lower()].name + " " + self.bot.all_commands[commandname.lower()].all_commands[subcommand.lower()].name, icon_url=self.bot.user.avatar_url)
             await ctx.send(embed=s)
             
-def setup(bot):
-    n = help(bot)
+def setup(bot, connection):
+    n = help(bot, connection)
     bot.remove_command('help')
     bot.add_cog(n)

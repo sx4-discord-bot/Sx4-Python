@@ -95,7 +95,7 @@ async def get_member(ctx, user_arg):
             user = bot.get_user(id)
             if not user:
                 try:
-                    user = await bot.get_user_info(id2)
+                    user = await bot.get_user_info(id)
                 except:
                     return None
     elif match_name:

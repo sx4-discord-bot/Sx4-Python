@@ -10,18 +10,20 @@ from urllib.request import Request, urlopen
 import requests
 from utils import Token
 import inspect
+import importlib
 import logging
 import aiohttp
 import json
 import rethinkdb as r
+from utils.database import Database
 import traceback
 import sys
 import os
 import subprocess
 
 async def prefix_function(bot, message):
-    user = r.table("prefix").get(str(message.author.id)).run()
-    server = r.table("prefix").get(str(message.guild.id)).run()
+    user = r.table("prefix").get(str(message.author.id)).run(connection)
+    server = r.table("prefix").get(str(message.guild.id)).run(connection)
     if user and user["prefixes"] != []:
         return [x.encode().decode() for x in user["prefixes"]] + ['<@440996323156819968> ', '<@!440996323156819968> ']
     elif server and server["prefixes"] != []:
@@ -34,24 +36,35 @@ logging.basicConfig(level=logging.INFO)
 wrap = "```py\n{}\n```"
 modules = ["cogs." + x.replace(".py", "") for x in os.listdir("cogs") if ".py" in x]
 
+connection = Database.get_connection()
+
+def load_extension(self, name):
+    if name in self.extensions:
+        return
+
+    lib = importlib.import_module(name)
+    if not hasattr(lib, 'setup'):
+        del lib
+        del sys.modules[name]
+        raise discord.ClientException('extension does not have a setup function')
+
+    lib.setup(self, connection)
+    self.extensions[name] = lib
+
+commands.AutoShardedBot.load_extension = load_extension
+
 @bot.event
 async def on_ready():
     print('Logged in as')
     print(bot.user.name + '#' + str(bot.user.discriminator) + ' (' + str(bot.user.id) + ')')
     print('Connected to {} servers and {} users | {} shards'.format(len(bot.guilds), len(set(bot.get_all_members())), bot.shard_count))
     print('------')
-    try:
-        r.db_create("sx4").run()
-    except:
-        pass
-    r.connect(db="sx4").repl()
-    r.table("blacklist").insert({"id": "owner", "users": []}).run()
     for extension in modules:
         try:
             bot.load_extension(extension)
         except Exception as e:
             print(e)
-    setattr(bot, "uptime", datetime.datetime.utcnow().timestamp())
+    r.table("blacklist").insert({"id": "owner", "users": []}).run(connection)
 
 @bot.event
 async def on_shard_ready(shard_id):
@@ -66,7 +79,7 @@ async def on_shard_ready(shard_id):
 @bot.event 
 async def on_message(message):
     ctx = await bot.get_context(message)
-    serverdata = r.table("blacklist").get(str(message.guild.id))
+    serverdata = r.table("blacklist").get(str(message.guild.id)).run(connection)
     if not ctx.command:
         return
     elif checks.is_owner_check(ctx):
@@ -75,13 +88,13 @@ async def on_message(message):
         return await message.channel.send("You can't use commands in private messages :no_entry:")
     elif message.author.bot:
         return
-    elif str(message.author.id) in r.table("blacklist").get("owner")["users"].run():
+    elif str(message.author.id) in r.table("blacklist").get("owner")["users"].run(connection):
         return await ctx.send("You are blacklisted from using the bot, to appeal make sure to join the bots support server which can be found in `{}support`".format(ctx.prefix))
-    elif serverdata.run():
+    elif serverdata:
         if not checks.has_permissions("administrator").__closure__[0].cell_contents(ctx):
-            commands = serverdata["commands"].map(lambda x: x["id"]).run()
+            commands = list(map(lambda x: x["id"], serverdata["commands"]))
             if ctx.command.module[5:] in commands:
-                whitelisted = list(filter(lambda x: x["id"] == ctx.command.module[5:], serverdata["commands"].run()))[0]["whitelisted"]
+                whitelisted = list(filter(lambda x: x["id"] == ctx.command.module[5:], serverdata["commands"]))[0]["whitelisted"]
                 if whitelisted != []:
                     if str(message.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", whitelisted)):
                         return await bot.process_commands(message)
@@ -91,7 +104,7 @@ async def on_message(message):
                         if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", whitelisted)):
                             return await bot.process_commands(message)
             if str(ctx.command) in commands:
-                whitelisted = list(filter(lambda x: x["id"] == str(ctx.command), serverdata["commands"].run()))[0]["whitelisted"]
+                whitelisted = list(filter(lambda x: x["id"] == str(ctx.command), serverdata["commands"]))[0]["whitelisted"]
                 if whitelisted != []:
                     if str(message.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", whitelisted)):
                         return await bot.process_commands(message)
@@ -101,7 +114,7 @@ async def on_message(message):
                         if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", whitelisted)):
                             return await bot.process_commands(message)
             if ctx.command.module[5:] in commands:
-                blacklisted = list(filter(lambda x: x["id"] == ctx.command.module[5:], serverdata["commands"].run()))[0]["blacklisted"]
+                blacklisted = list(filter(lambda x: x["id"] == ctx.command.module[5:], serverdata["commands"]))[0]["blacklisted"]
                 if blacklisted != []:
                     if str(message.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", blacklisted)):
                         return await ctx.send("You cannot use any commands in the module {} in this channel :no_entry:".format(ctx.command.module[5:]))
@@ -111,7 +124,7 @@ async def on_message(message):
                         if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", blacklisted)):
                             return await ctx.send("You are in the role `{}` which means you are blacklisted from using any commands in the module {} in this server :no_entry:".format(x.name, ctx.command.module[5:]))
             if str(ctx.command) in commands:
-                blacklisted = list(filter(lambda x: x["id"] == str(ctx.command), serverdata["commands"].run()))[0]["blacklisted"]
+                blacklisted = list(filter(lambda x: x["id"] == str(ctx.command), serverdata["commands"]))[0]["blacklisted"]
                 if blacklisted != []:
                     if str(message.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", blacklisted)):
                         return await ctx.send("You cannot use that command in this channel :no_entry:")
@@ -120,16 +133,16 @@ async def on_message(message):
                     for x in message.author.roles:
                         if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", blacklisted)):
                             return await ctx.send("You are in the role `{}` which means you are blacklisted from using that command in this server :no_entry:".format(x.name))
-            if str(ctx.command) in serverdata["disabled"].run():
+            if str(ctx.command) in serverdata["disabled"]:
                 return await ctx.send("That command is disabled across the server :no_entry:")
     await bot.process_commands(message)
 
 @bot.event 
 async def on_message_edit(before, after):
-    ctx = await bot.get_context(after)
-    serverdata = r.table("blacklist").get(str(after.guild.id))
     if before.content == after.content:
         return
+    ctx = await bot.get_context(after)
+    serverdata = r.table("blacklist").get(str(after.guild.id)).run(connection)
     if not ctx.command:
         return
     elif checks.is_owner_check(ctx):
@@ -138,13 +151,13 @@ async def on_message_edit(before, after):
         return await after.channel.send("You can't use commands in private messages :no_entry:")
     elif after.author.bot:
         return
-    elif str(after.author.id) in r.table("blacklist").get("owner")["users"].run():
+    elif str(after.author.id) in r.table("blacklist").get("owner")["users"].run(connection):
         return await ctx.send("You are blacklisted from using the bot, to appeal make sure to join the bots support server which can be found in `{}support`".format(ctx.prefix))
-    elif serverdata.run():
+    elif serverdata:
         if not checks.has_permissions("administrator").__closure__[0].cell_contents(ctx):
-            commands = serverdata["commands"].map(lambda x: x["id"]).run()
+            commands = list(map(lambda x: x["id"], serverdata["commands"]))
             if ctx.command.module[5:] in commands:
-                whitelisted = list(filter(lambda x: x["id"] == ctx.command.module[5:], serverdata["commands"].run()))[0]["whitelisted"]
+                whitelisted = list(filter(lambda x: x["id"] == ctx.command.module[5:], serverdata["commands"]))[0]["whitelisted"]
                 if whitelisted != []:
                     if str(after.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", whitelisted)):
                         return await bot.process_commands(after)
@@ -154,7 +167,7 @@ async def on_message_edit(before, after):
                         if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", whitelisted)):
                             return await bot.process_commands(after)
             if str(ctx.command) in commands:
-                whitelisted = list(filter(lambda x: x["id"] == str(ctx.command), serverdata["commands"].run()))[0]["whitelisted"]
+                whitelisted = list(filter(lambda x: x["id"] == str(ctx.command), serverdata["commands"]))[0]["whitelisted"]
                 if whitelisted != []:
                     if str(after.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", whitelisted)):
                         return await bot.process_commands(after)
@@ -164,7 +177,7 @@ async def on_message_edit(before, after):
                         if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", whitelisted)):
                             return await bot.process_commands(after)
             if ctx.command.module[5:] in commands:
-                blacklisted = list(filter(lambda x: x["id"] == ctx.command.module[5:], serverdata["commands"].run()))[0]["blacklisted"]
+                blacklisted = list(filter(lambda x: x["id"] == ctx.command.module[5:], serverdata["commands"]))[0]["blacklisted"]
                 if blacklisted != []:
                     if str(after.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", blacklisted)):
                         return await ctx.send("You cannot use any commands in the module {} in this channel :no_entry:".format(ctx.command.module[5:]))
@@ -174,7 +187,7 @@ async def on_message_edit(before, after):
                         if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", blacklisted)):
                             return await ctx.send("You are in the role `{}` which means you are blacklisted from using any commands in the module {} in this server :no_entry:".format(x.name, ctx.command.module[5:]))
             if str(ctx.command) in commands:
-                blacklisted = list(filter(lambda x: x["id"] == str(ctx.command), serverdata["commands"].run()))[0]["blacklisted"]
+                blacklisted = list(filter(lambda x: x["id"] == str(ctx.command), serverdata["commands"]))[0]["blacklisted"]
                 if blacklisted != []:
                     if str(after.channel.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "channel", blacklisted)):
                         return await ctx.send("You cannot use that command in this channel :no_entry:")
@@ -183,7 +196,7 @@ async def on_message_edit(before, after):
                     for x in after.author.roles:
                         if str(x.id) in map(lambda x: x["id"], filter(lambda x: x["type"] == "role", blacklisted)):
                             return await ctx.send("You are in the role `{}` which means you are blacklisted from using that command in this server :no_entry:".format(x.name))
-            if str(ctx.command) in serverdata["disabled"].run():
+            if str(ctx.command) in serverdata["disabled"]:
                 return await ctx.send("That command is disabled across the server :no_entry:")
     await bot.process_commands(after)
 			
@@ -240,13 +253,16 @@ async def on_command_error(ctx, error, *args, **kwargs):
         except:
             perms = None
         msg = ""
-        for x in ctx.command.params:
-            if x != "ctx":
-                if x != "self":
-                    if "=" in str(ctx.command.params[x]):
-                        msg += "[{}] ".format(x)
-                    else:
-                        msg += "<{}> ".format(x)
+        if not ctx.command.usage:
+            for x in ctx.command.params:
+                if x != "ctx":
+                    if x != "self":
+                        if "=" in str(ctx.command.params[x]):
+                            msg += "[{}] ".format(x)
+                        else:
+                            msg += "<{}> ".format(x)
+        else:
+            msg += ctx.command.usage
         if not ctx.command.aliases:
             aliases = "None"
         else:
@@ -379,6 +395,8 @@ async def on_error(self, event_method, *args, **kwargs):
     pass
 
 bot.on_error = on_error
+
+setattr(bot, "uptime", datetime.datetime.utcnow().timestamp())
 		
 bot.add_cog(Main(bot))
 

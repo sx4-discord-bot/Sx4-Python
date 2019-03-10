@@ -19,18 +19,18 @@ from random import choice as randchoice
 from discord.ext.commands import CommandNotFound
 
 class logs:
-    def __init__(self, bot):
+    def __init__(self, bot, connection):
         self.bot = bot
-        self.avatar = None
+        self.db = connection
 		
-    @commands.group()
+    @commands.group(usage="<sub command>")
     async def logs(self, ctx):
         """Log actions in your server"""
         server = ctx.guild
         if ctx.invoked_subcommand is None:
             await arghelp.send(self.bot, ctx)
         else:
-            r.table("logs").insert({"id": str(server.id), "channel": None, "toggle": False}).run(durability="soft")
+            r.table("logs").insert({"id": str(server.id), "channel": None, "toggle": False}).run(self.db, durability="soft")
 		
     @logs.command()
     @checks.has_permissions("manage_guild")
@@ -40,7 +40,7 @@ class logs:
         serverdata = r.table("logs").get(str(server.id))
         if not channel:
             channel = ctx.message.channel
-        serverdata.update({"channel": str(channel.id)}).run(durability="soft")
+        serverdata.update({"channel": str(channel.id)}).run(self.db, durability="soft")
         await ctx.send("Logs will be recorded in <#{}> if toggled on <:done:403285928233402378>".format(channel.id))
 		
     @logs.command()
@@ -49,24 +49,24 @@ class logs:
         """Toggle logs on or off"""
         server = ctx.guild
         serverdata = r.table("logs").get(str(server.id))
-        if serverdata["toggle"].run(durability="soft") == False:
-            serverdata.update({"toggle": True}).run(durability="soft")
+        if serverdata["toggle"].run(self.db, durability="soft") == False:
+            serverdata.update({"toggle": True}).run(self.db, durability="soft")
             await ctx.send("Logs have been toggled **on** <:done:403285928233402378>")
             return
-        if serverdata["toggle"].run(durability="soft") == True:
-            serverdata.update({"toggle": False}).run(durability="soft")
+        if serverdata["toggle"].run(self.db, durability="soft") == True:
+            serverdata.update({"toggle": False}).run(self.db, durability="soft")
             await ctx.send("Logs have been toggled **off** <:done:403285928233402378>")
             return
 
     @logs.command()
     async def stats(self, ctx):
         server = ctx.guild
-        serverdata = r.table("logs").get(str(server.id)).run(durability="soft")
+        serverdata = r.table("logs").get(str(server.id)).run(self.db, durability="soft")
         s=discord.Embed(colour=0xffff00)
         s.set_author(name="Logs Settings", icon_url=self.bot.user.avatar_url)
         s.add_field(name="Status", value="Enabled" if serverdata["toggle"] else "Disabled")
-        s.add_field(name="Channel", value=server.get_channel(int(serverdata["channel"])).mention if serverdata["channel"] else "Not set")
+        s.add_field(name="Channel", value=server.get_channel(int(serverdata["channel"])).mention if serverdata["channel"] and server.get_channel(int(serverdata["channel"])) else "Not set")
         await ctx.send(embed=s)
 
-def setup(bot): 
-    bot.add_cog(logs(bot))
+def setup(bot, connection): 
+    bot.add_cog(logs(bot, connection))

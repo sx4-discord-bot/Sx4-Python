@@ -18,8 +18,9 @@ url_re = re.compile('https?:\/\/(?:www\.)?.+')
 
 class music:
 
-    def __init__(self, bot):
+    def __init__(self, bot, connection):
         self.bot = bot
+        self.db = connection
         self.votes = []
         self.timeout = bot.loop.create_task(self.check_timeout())
         if not hasattr(bot, 'lavalink'):
@@ -174,8 +175,6 @@ class music:
             return await arghelp.send(self.bot, ctx)
         else:
             query = query.strip('<>').replace("music.", "")
-        if player.fetch("sessionowner") in map(lambda c: c.id, player.connected_channel.members) and player.fetch("sessionowner") != ctx.author.id:
-            return await ctx.send("You have to be the session owner to use this command :no_entry:")
         if player.is_connected:
             if not ctx.author.voice or not ctx.author.voice.channel or player.connected_channel.id != ctx.author.voice.channel.id:
                 return await ctx.send("I'm already in a voice channel :no_entry:")
@@ -186,6 +185,8 @@ class music:
                 player.store('sessionowner', ctx.author.id)
                 player.store('channel', ctx.channel.id)
                 await player.connect(ctx.author.voice.channel.id)
+        if player.fetch("sessionowner") in map(lambda c: c.id, player.connected_channel.members) and player.fetch("sessionowner") != ctx.author.id:
+            return await ctx.send("You have to be the session owner to use this command :no_entry:")
         if not url_re.match(query):
             query = "ytsearch:{}".format(query)
         results = await self.bot.lavalink.get_tracks(query)
@@ -589,5 +590,5 @@ class music:
                         player.delete("nousers")
             await asyncio.sleep(45)
 
-def setup(bot):
-    bot.add_cog(music(bot))
+def setup(bot, connection):
+    bot.add_cog(music(bot, connection))
